@@ -41,7 +41,7 @@ fn preview(state: State<AppState>, recipe_id: String, input: String, params: Has
 #[tauri::command]
 fn enqueue(state: State<AppState>, recipe_id: String, input: String, params: HashMap<String, String>) -> Result<u64, String> {
     let r = find_recipe(&state.recipes, &recipe_id)?;
-    let fp = locate::ffprobe().ok_or("ffprobe not found")?;
+    let fp = locate::ffprobe().ok_or("ffprobe not found (brew install ffmpeg)")?;
     let info = probe::probe(&fp, std::path::Path::new(&input)).map_err(|e| e.to_string())?;
     // Ruling 20 / spec §8: validate before launching, not after ffmpeg fails.
     if !queue::input_accepted(&r.input.types, info.media_type) {

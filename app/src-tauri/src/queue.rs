@@ -71,6 +71,9 @@ impl Queue {
         let id = g.next_id;
         g.next_id += 1;
         let view = JobView { id, recipe_id, input, output, status: "queued".into(), percent: 0.0, error: None, error_detail: None };
+        // This emit fires while `g` is still held, so the send MUST stay non-blocking:
+        // `notify` is an unbounded `Sender`. Swapping it for a bounded `SyncSender`
+        // would deadlock here as soon as the relay thread falls behind.
         self.emit(view.clone());
         g.jobs.push(Job { view, argv, duration_s, cancel: CancelToken::new() });
         id
