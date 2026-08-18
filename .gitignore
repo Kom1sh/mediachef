@@ -5,4 +5,5 @@ dist/
 fixtures/*.mp4
 fixtures/*.mp3
 fixtures/*.png
+fixtures/smoke-out/
 .DS_Store
