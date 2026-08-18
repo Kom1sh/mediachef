@@ -1,0 +1,8 @@
+node_modules/
+target/
+dist/
+/bin/
+fixtures/*.mp4
+fixtures/*.mp3
+fixtures/*.png
+.DS_Store
