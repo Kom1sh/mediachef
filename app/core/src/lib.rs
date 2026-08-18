@@ -5,6 +5,6 @@ pub mod template;
 pub mod naming;
 pub mod progress;
 pub mod probe;
-// pub mod runner;
+pub mod runner;
 pub mod locate;
-// pub mod errors;
+pub mod errors;
