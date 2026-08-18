@@ -10,6 +10,7 @@ const COLOR: Record<JobView["status"], string> = {
 
 export function QueuePanel({ recipes }: { recipes: Recipe[] }) {
   const [jobs, setJobs] = useState<Map<number, JobView>>(new Map());
+  const [actionError, setActionError] = useState<string>("");
   const notified = useRef(new Set<number>());
 
   useEffect(() => {
@@ -21,7 +22,7 @@ export function QueuePanel({ recipes }: { recipes: Recipe[] }) {
         isPermissionGranted().then(async ok => {
           if (!ok) ok = (await requestPermission()) === "granted";
           if (ok) sendNotification({ title: "MediaChef", body: `Done: ${j.output.split("/").pop()}` });
-        });
+        }).catch(() => {});
       }
     });
     return () => { un.then(f => f()); };
@@ -51,18 +52,19 @@ export function QueuePanel({ recipes }: { recipes: Recipe[] }) {
               </>
             )}
             {j.status === "done" && (
-              <button onClick={() => revealFile(j.output)} className="mt-1 text-blue-400 hover:underline">Show in Finder</button>
+              <button onClick={() => revealFile(j.output).then(() => setActionError("")).catch(e => setActionError(String(e)))} className="mt-1 text-blue-400 hover:underline">Show in Finder</button>
             )}
             {j.status === "error" && (
               <details className="mt-1">
                 <summary className="cursor-pointer text-red-400">{j.error ?? "Failed"}</summary>
                 <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap text-neutral-500">{j.error_detail}</pre>
-                <button onClick={() => navigator.clipboard.writeText(j.error_detail ?? "")} className="mt-1 text-neutral-400">Copy log</button>
+                <button onClick={() => navigator.clipboard.writeText(j.error_detail ?? "").then(() => setActionError("")).catch(e => setActionError(String(e)))} className="mt-1 text-neutral-400">Copy log</button>
               </details>
             )}
           </div>
         ))}
       </div>
+      {actionError ? <p className="mt-2 text-xs text-red-400">{actionError}</p> : null}
     </aside>
   );
 }
