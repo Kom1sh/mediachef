@@ -1,7 +1,11 @@
-pub struct ProgressParser { total_s: Option<f64> }
+pub struct ProgressParser {
+    total_s: Option<f64>,
+}
 
 impl ProgressParser {
-    pub fn new(total_s: Option<f64>) -> Self { Self { total_s } }
+    pub fn new(total_s: Option<f64>) -> Self {
+        Self { total_s }
+    }
 
     pub fn parse_line(&self, line: &str) -> Option<f32> {
         let (key, val) = line.trim().split_once('=')?;

@@ -6,25 +6,50 @@ pub enum RecipeError {
     #[error("yaml error in {file}: {src}")]
     Yaml { file: String, src: String },
     #[error("duplicate {kind}: {value} (in {file})")]
-    Duplicate { kind: &'static str, value: String, file: String },
+    Duplicate {
+        kind: &'static str,
+        value: String,
+        file: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LocStr { pub en: String, pub ru: String }
+pub struct LocStr {
+    pub en: String,
+    pub ru: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LocList { pub en: Vec<String>, pub ru: Vec<String> }
+pub struct LocList {
+    pub en: Vec<String>,
+    pub ru: Vec<String>,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum MediaType { Video, Audio, Image, Subtitle, Any }
+pub enum MediaType {
+    Video,
+    Audio,
+    Image,
+    Subtitle,
+    Any,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct InputSpec { pub types: Vec<MediaType> }
+pub struct InputSpec {
+    pub types: Vec<MediaType>,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum ParamType { Enum, Int, Float, Bool, String, Path }
+pub enum ParamType {
+    Enum,
+    Int,
+    Float,
+    Bool,
+    String,
+    Path,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Param {
@@ -49,20 +74,35 @@ impl Param {
     pub fn default_str(&self) -> String {
         match &self.default {
             serde_yaml::Value::String(s) => s.clone(),
-            v => serde_yaml::to_string(v).unwrap_or_default().trim().to_string(),
+            v => serde_yaml::to_string(v)
+                .unwrap_or_default()
+                .trim()
+                .to_string(),
         }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Engine { Ffmpeg, Whisper, Pipeline }
+pub enum Engine {
+    Ffmpeg,
+    Whisper,
+    Pipeline,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OutputSpec { pub ext: String, #[serde(default)] pub suffix: Option<String> }
+pub struct OutputSpec {
+    pub ext: String,
+    #[serde(default)]
+    pub suffix: Option<String>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Seo { pub slug: String, #[serde(default)] pub priority: Option<String> }
+pub struct Seo {
+    pub slug: String,
+    #[serde(default)]
+    pub priority: Option<String>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Recipe {
@@ -84,21 +124,37 @@ pub struct Recipe {
 
 impl Recipe {
     pub fn from_yaml(s: &str) -> Result<Recipe, RecipeError> {
-        serde_yaml::from_str(s).map_err(|e| RecipeError::Yaml { file: "<inline>".into(), src: e.to_string() })
+        serde_yaml::from_str(s).map_err(|e| RecipeError::Yaml {
+            file: "<inline>".into(),
+            src: e.to_string(),
+        })
     }
 }
 
 pub fn load_all(pairs: &[(String, String)]) -> Result<Vec<Recipe>, RecipeError> {
     let mut out: Vec<Recipe> = Vec::new();
     for (file, content) in pairs {
-        let r: Recipe = serde_yaml::from_str(content)
-            .map_err(|e| RecipeError::Yaml { file: file.clone(), src: e.to_string() })?;
+        let r: Recipe = serde_yaml::from_str(content).map_err(|e| RecipeError::Yaml {
+            file: file.clone(),
+            src: e.to_string(),
+        })?;
         if out.iter().any(|x| x.id == r.id) {
-            return Err(RecipeError::Duplicate { kind: "id", value: r.id, file: file.clone() });
+            return Err(RecipeError::Duplicate {
+                kind: "id",
+                value: r.id,
+                file: file.clone(),
+            });
         }
         if let Some(s) = &r.seo {
-            if out.iter().any(|x| x.seo.as_ref().is_some_and(|xs| xs.slug == s.slug)) {
-                return Err(RecipeError::Duplicate { kind: "slug", value: s.slug.clone(), file: file.clone() });
+            if out
+                .iter()
+                .any(|x| x.seo.as_ref().is_some_and(|xs| xs.slug == s.slug))
+            {
+                return Err(RecipeError::Duplicate {
+                    kind: "slug",
+                    value: s.slug.clone(),
+                    file: file.clone(),
+                });
             }
         }
         out.push(r);
@@ -144,7 +200,11 @@ seo: {slug: video-to-mp3, priority: high}
 
     #[test]
     fn duplicate_ids_rejected() {
-        let e = load_all(&[("a.yaml".into(), SAMPLE.into()), ("b.yaml".into(), SAMPLE.into())]).unwrap_err();
+        let e = load_all(&[
+            ("a.yaml".into(), SAMPLE.into()),
+            ("b.yaml".into(), SAMPLE.into()),
+        ])
+        .unwrap_err();
         assert!(e.to_string().contains("duplicate"));
     }
 

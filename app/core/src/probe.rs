@@ -1,8 +1,8 @@
+use crate::recipe::MediaType;
+use serde::Serialize;
 use std::path::Path;
 use std::process::Command;
-use serde::Serialize;
 use thiserror::Error;
-use crate::recipe::MediaType;
 
 #[derive(Debug, Error)]
 pub enum ProbeError {
@@ -32,27 +32,55 @@ pub fn detect_media_type(raw: &serde_json::Value) -> MediaType {
     if format_name.contains("image") || format_name.ends_with("_pipe") {
         return MediaType::Image;
     }
-    if has_real_video { return MediaType::Video; }
-    if streams.iter().any(|s| s["codec_type"] == "audio") { return MediaType::Audio; }
+    if has_real_video {
+        return MediaType::Video;
+    }
+    if streams.iter().any(|s| s["codec_type"] == "audio") {
+        return MediaType::Audio;
+    }
     MediaType::Any
 }
 
 pub fn probe(ffprobe: &Path, file: &Path) -> Result<ProbeInfo, ProbeError> {
     let out = Command::new(ffprobe)
-        .args(["-v", "error", "-print_format", "json", "-show_format", "-show_streams"])
+        .args([
+            "-v",
+            "error",
+            "-print_format",
+            "json",
+            "-show_format",
+            "-show_streams",
+        ])
         .arg(file)
         .output()?;
     if !out.status.success() {
-        return Err(ProbeError::Failed(String::from_utf8_lossy(&out.stderr).to_string()));
+        return Err(ProbeError::Failed(
+            String::from_utf8_lossy(&out.stderr).to_string(),
+        ));
     }
-    let raw: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| ProbeError::Failed(e.to_string()))?;
-    let duration_s = raw["format"]["duration"].as_str().and_then(|d| d.parse::<f64>().ok()).filter(|d| *d > 0.0);
+    let raw: serde_json::Value =
+        serde_json::from_slice(&out.stdout).map_err(|e| ProbeError::Failed(e.to_string()))?;
+    let duration_s = raw["format"]["duration"]
+        .as_str()
+        .and_then(|d| d.parse::<f64>().ok())
+        .filter(|d| *d > 0.0);
     let size_bytes = raw["format"]["size"].as_str().and_then(|s| s.parse().ok());
     let media_type = detect_media_type(&raw);
-    let codecs: Vec<String> = raw["streams"].as_array().cloned().unwrap_or_default()
-        .iter().filter_map(|s| s["codec_name"].as_str().map(String::from)).collect();
+    let codecs: Vec<String> = raw["streams"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|s| s["codec_name"].as_str().map(String::from))
+        .collect();
     let summary = codecs.join(" + ");
-    Ok(ProbeInfo { duration_s, media_type, size_bytes, summary, raw })
+    Ok(ProbeInfo {
+        duration_s,
+        media_type,
+        size_bytes,
+        summary,
+        raw,
+    })
 }
 
 #[cfg(test)]
@@ -76,7 +104,10 @@ mod tests {
             "format": {"format_name": "mp3"},
             "streams": [{"codec_type": "audio"}, {"codec_type": "video", "disposition": {"attached_pic": 1}}]
         });
-        assert_eq!(detect_media_type(&mp3_cover), crate::recipe::MediaType::Audio);
+        assert_eq!(
+            detect_media_type(&mp3_cover),
+            crate::recipe::MediaType::Audio
+        );
         // Pins the image-before-video precedence: a still carries a real video stream, so flipping
         // the branch order in detect_media_type would classify every PNG as Video.
         let png: serde_json::Value = serde_json::json!({

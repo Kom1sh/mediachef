@@ -1,5 +1,5 @@
-use include_dir::{include_dir, Dir};
 use crate::recipe::{load_all, Recipe};
+use include_dir::{include_dir, Dir};
 
 static RECIPES_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/../../recipes");
 
@@ -7,7 +7,12 @@ pub fn bundled() -> Vec<Recipe> {
     let pairs: Vec<(String, String)> = RECIPES_DIR
         .files()
         .filter(|f| f.path().extension().is_some_and(|e| e == "yaml"))
-        .map(|f| (f.path().display().to_string(), f.contents_utf8().unwrap_or_default().to_string()))
+        .map(|f| {
+            (
+                f.path().display().to_string(),
+                f.contents_utf8().unwrap_or_default().to_string(),
+            )
+        })
         .collect();
     load_all(&pairs).expect("bundled recipes must be valid")
 }
@@ -23,10 +28,22 @@ mod tests {
         assert!(all.len() >= 9, "expected >=9 recipes, got {}", all.len());
         for r in &all {
             if matches!(r.engine, Engine::Ffmpeg) && r.id != "custom-ffmpeg" {
-                assert!(r.args.iter().any(|a| a.contains("{input}")), "{} lacks {{input}}", r.id);
-                assert!(r.args.iter().any(|a| a.contains("{output}")), "{} lacks {{output}}", r.id);
+                assert!(
+                    r.args.iter().any(|a| a.contains("{input}")),
+                    "{} lacks {{input}}",
+                    r.id
+                );
+                assert!(
+                    r.args.iter().any(|a| a.contains("{output}")),
+                    "{} lacks {{output}}",
+                    r.id
+                );
             }
-            assert!(!r.title.ru.is_empty() && !r.title.en.is_empty(), "{} title", r.id);
+            assert!(
+                !r.title.ru.is_empty() && !r.title.en.is_empty(),
+                "{} title",
+                r.id
+            );
             assert!(!r.aliases.ru.is_empty(), "{} needs ru aliases", r.id);
         }
     }

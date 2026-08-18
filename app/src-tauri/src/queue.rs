@@ -4,11 +4,11 @@
 //! `Sender<JobView>` and a runner closure, so the whole state machine is
 //! unit-testable without a running app. `lib.rs` owns the wiring.
 
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::{Arc, Mutex};
-use serde::Serialize;
 use mediachef_core::recipe::MediaType;
 use mediachef_core::runner::CancelToken;
+use serde::Serialize;
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::{Arc, Mutex};
 
 /// The payload the frontend sees, both from `jobs()` and from `job:update`.
 /// `status` ∈ `queued|running|done|error|cancelled`.
@@ -34,7 +34,9 @@ pub struct Job {
 /// What a successful runner reports back. The runner cannot distinguish a
 /// cancelled run from a finished one on its own — `run_next` re-reads the
 /// cancel token to pick the final status.
-pub enum TestOutcome { Done }
+pub enum TestOutcome {
+    Done,
+}
 
 /// Everything `run_next` hands a runner: job id, argv, media duration (for
 /// progress percentages) and the job's cancel token.
@@ -52,11 +54,20 @@ pub struct Queue {
     notify: Sender<JobView>,
 }
 
-struct Inner { jobs: Vec<Job>, next_id: u64 }
+struct Inner {
+    jobs: Vec<Job>,
+    next_id: u64,
+}
 
 impl Queue {
     pub fn new(notify: Sender<JobView>) -> Self {
-        Self { inner: Arc::new(Mutex::new(Inner { jobs: Vec::new(), next_id: 1 })), notify }
+        Self {
+            inner: Arc::new(Mutex::new(Inner {
+                jobs: Vec::new(),
+                next_id: 1,
+            })),
+            notify,
+        }
     }
 
     pub fn new_for_test() -> (Self, Receiver<JobView>) {
@@ -64,18 +75,41 @@ impl Queue {
         (Self::new(tx), rx)
     }
 
-    fn emit(&self, v: JobView) { let _ = self.notify.send(v); }
+    fn emit(&self, v: JobView) {
+        let _ = self.notify.send(v);
+    }
 
-    pub fn push(&self, recipe_id: String, input: String, output: String, argv: Vec<String>, duration_s: Option<f64>) -> u64 {
+    pub fn push(
+        &self,
+        recipe_id: String,
+        input: String,
+        output: String,
+        argv: Vec<String>,
+        duration_s: Option<f64>,
+    ) -> u64 {
         let mut g = self.inner.lock().unwrap();
         let id = g.next_id;
         g.next_id += 1;
-        let view = JobView { id, recipe_id, input, output, status: "queued".into(), percent: 0.0, error: None, error_detail: None };
+        let view = JobView {
+            id,
+            recipe_id,
+            input,
+            output,
+            status: "queued".into(),
+            percent: 0.0,
+            error: None,
+            error_detail: None,
+        };
         // This emit fires while `g` is still held, so the send MUST stay non-blocking:
         // `notify` is an unbounded `Sender`. Swapping it for a bounded `SyncSender`
         // would deadlock here as soon as the relay thread falls behind.
         self.emit(view.clone());
-        g.jobs.push(Job { view, argv, duration_s, cancel: CancelToken::new() });
+        g.jobs.push(Job {
+            view,
+            argv,
+            duration_s,
+            cancel: CancelToken::new(),
+        });
         id
     }
 
@@ -100,11 +134,23 @@ impl Queue {
     }
 
     pub fn view(&self, id: u64) -> Option<JobView> {
-        self.inner.lock().unwrap().jobs.iter().find(|j| j.view.id == id).map(|j| j.view.clone())
+        self.inner
+            .lock()
+            .unwrap()
+            .jobs
+            .iter()
+            .find(|j| j.view.id == id)
+            .map(|j| j.view.clone())
     }
 
     pub fn views(&self) -> Vec<JobView> {
-        self.inner.lock().unwrap().jobs.iter().map(|j| j.view.clone()).collect()
+        self.inner
+            .lock()
+            .unwrap()
+            .jobs
+            .iter()
+            .map(|j| j.view.clone())
+            .collect()
     }
 
     fn take_next(&self) -> Option<RunSpec> {
@@ -136,7 +182,9 @@ impl Queue {
             j.view.status = status.into();
             j.view.error = error;
             j.view.error_detail = detail;
-            if status == "done" { j.view.percent = 100.0; }
+            if status == "done" {
+                j.view.percent = 100.0;
+            }
             let v = j.view.clone();
             drop(g);
             self.emit(v);
@@ -145,19 +193,32 @@ impl Queue {
 
     /// Выполнить следующую queued-задачу переданным раннером (тестируемо).
     /// Returns false when nothing was queued, so the worker thread knows to idle.
-    pub fn run_next(&self, runner: impl FnOnce(&RunSpec, &mut dyn FnMut(f32)) -> Result<TestOutcome, String>) -> bool {
-        let Some(job) = self.take_next() else { return false; };
+    pub fn run_next(
+        &self,
+        runner: impl FnOnce(&RunSpec, &mut dyn FnMut(f32)) -> Result<TestOutcome, String>,
+    ) -> bool {
+        let Some(job) = self.take_next() else {
+            return false;
+        };
         let id = job.0;
         let cancel = job.3.clone();
         let mut on_p = |p: f32| self.set_progress(id, p);
         match runner(&job, &mut on_p) {
             Ok(TestOutcome::Done) => {
-                if cancel.is_cancelled() { self.finish(id, "cancelled", None, None); }
-                else { self.finish(id, "done", None, None); }
+                if cancel.is_cancelled() {
+                    self.finish(id, "cancelled", None, None);
+                } else {
+                    self.finish(id, "done", None, None);
+                }
             }
             Err(e) => {
                 let human = mediachef_core::errors::humanize(&e);
-                self.finish(id, "error", Some(human.unwrap_or_else(|| "FFmpeg failed".into())), Some(e));
+                self.finish(
+                    id,
+                    "error",
+                    Some(human.unwrap_or_else(|| "FFmpeg failed".into())),
+                    Some(e),
+                );
             }
         }
         true
@@ -172,7 +233,10 @@ mod tests {
     fn lifecycle_queued_running_done() {
         let (q, rx) = Queue::new_for_test();
         let id = q.push_test_job();
-        q.run_next(|_job, on_progress| { on_progress(50.0); Ok(crate::queue::TestOutcome::Done) });
+        q.run_next(|_job, on_progress| {
+            on_progress(50.0);
+            Ok(crate::queue::TestOutcome::Done)
+        });
         let states: Vec<String> = rx.try_iter().map(|v| v.status).collect();
         assert_eq!(states, vec!["queued", "running", "running", "done"]);
         assert_eq!(q.view(id).unwrap().status, "done");
@@ -204,10 +268,25 @@ mod tests {
         use mediachef_core::recipe::MediaType;
         assert!(input_accepted(&[MediaType::Video], MediaType::Video));
         assert!(!input_accepted(&[MediaType::Video], MediaType::Audio));
-        assert!(input_accepted(&[MediaType::Video, MediaType::Audio], MediaType::Audio));
-        for mt in [MediaType::Video, MediaType::Audio, MediaType::Image, MediaType::Subtitle, MediaType::Any] {
-            assert!(input_accepted(&[MediaType::Any], mt), "any must accept {mt:?}");
+        assert!(input_accepted(
+            &[MediaType::Video, MediaType::Audio],
+            MediaType::Audio
+        ));
+        for mt in [
+            MediaType::Video,
+            MediaType::Audio,
+            MediaType::Image,
+            MediaType::Subtitle,
+            MediaType::Any,
+        ] {
+            assert!(
+                input_accepted(&[MediaType::Any], mt),
+                "any must accept {mt:?}"
+            );
         }
-        assert!(!input_accepted(&[], MediaType::Video), "empty types accept nothing");
+        assert!(
+            !input_accepted(&[], MediaType::Video),
+            "empty types accept nothing"
+        );
     }
 }

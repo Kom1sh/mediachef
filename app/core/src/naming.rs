@@ -1,8 +1,11 @@
-use std::path::{Path, PathBuf};
 use crate::recipe::Recipe;
+use std::path::{Path, PathBuf};
 
 pub fn output_path(input: &Path, suffix: &str, ext: &str) -> PathBuf {
-    let stem = input.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "output".into());
+    let stem = input
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "output".into());
     let dir = input.parent().unwrap_or(Path::new("."));
     dir.join(format!("{stem}.{suffix}.{ext}"))
 }
@@ -11,8 +14,14 @@ pub fn dedupe(p: &Path) -> PathBuf {
     if !p.exists() {
         return p.to_path_buf();
     }
-    let stem = p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-    let ext = p.extension().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+    let stem = p
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let ext = p
+        .extension()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
     let dir = p.parent().unwrap_or(Path::new("."));
     for i in 1.. {
         let cand = dir.join(format!("{stem} ({i}).{ext}"));
@@ -24,7 +33,11 @@ pub fn dedupe(p: &Path) -> PathBuf {
 }
 
 pub fn plan_output(recipe: &Recipe, input: &Path) -> PathBuf {
-    let suffix = recipe.output.suffix.clone().unwrap_or_else(|| recipe.id.clone());
+    let suffix = recipe
+        .output
+        .suffix
+        .clone()
+        .unwrap_or_else(|| recipe.id.clone());
     dedupe(&output_path(input, &suffix, &recipe.output.ext))
 }
 
@@ -71,7 +84,10 @@ output: {OUTPUT}
         let r = recipe_with_output("{ext: mp3}");
         assert!(r.output.suffix.is_none());
         let p = plan_output(&r, Path::new("/dir/in.mp4"));
-        assert_eq!(p.file_name().unwrap().to_string_lossy(), "in.extract-audio-mp3.mp3");
+        assert_eq!(
+            p.file_name().unwrap().to_string_lossy(),
+            "in.extract-audio-mp3.mp3"
+        );
     }
 
     #[test]
