@@ -1,7 +1,6 @@
-# Tauri + React + Typescript
+# app/
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+React + Vite frontend of MediaChef, plus the Tauri shell in `src-tauri/` and the
+engine-agnostic core crate in `core/`.
 
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+Setup, test and lint commands live in the root [README](../README.md).

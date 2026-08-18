@@ -17,6 +17,18 @@ jobs:
       - run: cargo test -p mediachef-core
       - run: cargo run -p mediachef-core --bin smoke
 
+  # The tauri crate builds only where its webview toolkit does: macOS needs no
+  # extra system packages, Linux would need webkit2gtk. No ffmpeg here — the
+  # queue tests inject a fake runner instead of spawning one.
+  rust-tauri:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: "clippy" }
+      - run: cargo test --manifest-path app/src-tauri/Cargo.toml
+      - run: cargo clippy -p mediachef -- -D warnings
+
   web:
     runs-on: ubuntu-latest
     steps:
