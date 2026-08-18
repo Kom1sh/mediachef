@@ -25,6 +25,8 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts"],
+  /* `*.test.*`, not `*.test.ts`: a future .test.tsx must not slip into the
+     browser program (where node globals are absent) unchecked. */
+  "exclude": ["src/**/*.test.*"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

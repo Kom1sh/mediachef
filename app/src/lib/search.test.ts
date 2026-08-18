@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import yaml from "js-yaml";
+import goldenJson from "../../../fixtures/ipc-recipe.golden.json";
 import { buildIndex, normalize, search } from "./search";
-import type { Recipe } from "./types";
+import type { MediaType, Param, Recipe } from "./types";
 
 const dir = path.resolve(__dirname, "../../../recipes");
 const recipes = fs.readdirSync(dir).filter(f => f.endsWith(".yaml"))
@@ -24,6 +25,11 @@ describe("search", () => {
   it("finds gif recipe by english", () => {
     expect(search(index, "make gif")[0].id).toBe("video-to-gif");
   });
+  // Spec §14 acceptance query, verbatim: this exact phrase must put the gif
+  // recipe first, not merely somewhere in the results.
+  it("puts video-to-gif first for the acceptance query", () => {
+    expect(search(index, "video to gif")[0].id).toBe("video-to-gif");
+  });
   it("tolerates typo", () => {
     expect(search(index, "extrct audio").some(r => r.id === "extract-audio-mp3")).toBe(true);
   });
@@ -31,5 +37,44 @@ describe("search", () => {
     const audioOnly = search(index, "", "audio");
     expect(audioOnly.some(r => r.id === "convert-mp3-wav")).toBe(true);
     expect(audioOnly.some(r => r.id === "resize-720p")).toBe(false);
+  });
+});
+
+/* IPC contract, TypeScript half. `app/core/src/catalog.rs` asserts this same
+   golden file equals `serde_json::to_value(&bundled()[0])`, so the JSON below is
+   literally what `invoke("recipes")` delivers. The assignment is the compile-time
+   check: TypeScript widens every JSON string to `string`, so the three enum-shaped
+   fields are re-narrowed here, and every other field has to line up with the
+   hand-written mirror in types.ts — a field renamed or dropped on the Rust side
+   surfaces as a missing property, not as a runtime surprise in the app. */
+const golden: Recipe = {
+  ...goldenJson,
+  engine: goldenJson.engine as Recipe["engine"],
+  input: { types: goldenJson.input.types as MediaType[] },
+  params: goldenJson.params.map(p => ({ ...p, type: p.type as Param["type"] })),
+};
+
+describe("ipc golden recipe", () => {
+  it("carries the field names and lowercase enums the mirror expects", () => {
+    expect(golden.id).toBe("compress-video-crf");
+    expect(golden.engine).toBe("ffmpeg");
+    expect(golden.input.types).toEqual(["video"]);
+    // `type` is Rust's `r#type` renamed on the wire — the rename is easy to lose.
+    expect(golden.params[0].type).toBe("enum");
+    expect(golden.output.ext).toBe("mp4");
+    expect(golden.output.suffix).toBe("compressed");
+    for (const s of [golden.engine, golden.params[0].type, ...golden.input.types]) {
+      expect(s).toBe(s.toLowerCase());
+    }
+  });
+
+  it("spells absent options as null rather than dropping the key", () => {
+    expect(golden.params[0].min).toBeNull();
+    expect(golden.params[0].unit).toBeNull();
+    expect("min" in golden.params[0]).toBe(true);
+  });
+
+  it("is consumable by the search index as shipped", () => {
+    expect(search(buildIndex([golden]), "compress video")[0].id).toBe("compress-video-crf");
   });
 });

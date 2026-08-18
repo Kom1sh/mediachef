@@ -7,6 +7,8 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["src/**/*.test.ts", "src/lib"],
+  /* Mirror of the browser program's exclude glob: every file that program skips
+     must be picked up here, or a .test.tsx would go unchecked by both. */
+  "include": ["src/**/*.test.*", "src/lib"],
   "exclude": []
 }

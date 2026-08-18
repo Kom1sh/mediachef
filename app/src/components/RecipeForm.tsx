@@ -37,15 +37,37 @@ export function RecipeForm({ recipe, input, onQueued, onClose }:
   const [params, setParams] = useState<Record<string, string>>(initial);
   const [cmd, setCmd] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [hint, setHint] = useState<string>("");
+  // In-flight guard (spec §7 "never silently overwrite"): a double-click used to
+  // fire two enqueues for one intent. The queue now hands the second job its own
+  // output path, so the duplicate would produce a real second file — the user
+  // asked once, so we send once.
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => {
       previewCmd(recipe.id, input, params)
-        .then(argv => { setError(""); setCmd("ffmpeg " + argv.map(a => (/\s/.test(a) ? `"${a}"` : a)).join(" ")); })
+        .then(argv => { setError(""); setHint(""); setCmd("ffmpeg " + argv.map(a => (/\s/.test(a) ? `"${a}"` : a)).join(" ")); })
         .catch(e => setError(String(e)));
     }, 150);
     return () => clearTimeout(t);
   }, [recipe.id, input, params]);
+
+  const add = () => {
+    if (busy) return;
+    setBusy(true);
+    enqueueJob(recipe.id, input, params)
+      .then(onQueued)
+      .catch(e => setError(String(e)))
+      .finally(() => setBusy(false));
+  };
+
+  const copyCmd = () => {
+    if (!cmd) return;
+    navigator.clipboard.writeText(cmd)
+      .then(() => setHint("Copied to clipboard"))
+      .catch(e => setHint(String(e)));
+  };
 
   const main = recipe.params.filter(p => !p.advanced);
   const advanced = recipe.params.filter(p => p.advanced);
@@ -66,12 +88,14 @@ export function RecipeForm({ recipe, input, onQueued, onClose }:
           </details>
         )}
       </div>
-      <pre className="mt-3 overflow-x-auto rounded bg-neutral-900 p-2 text-xs text-neutral-400">{error || cmd}</pre>
+      <pre onClick={copyCmd} title={cmd ? "Click to copy" : undefined}
+        className="mt-3 overflow-x-auto rounded bg-neutral-900 p-2 text-xs text-neutral-400 [&:not(:empty)]:cursor-pointer">{error || cmd}</pre>
+      {hint ? <p className="mt-1 text-xs text-neutral-500">{hint}</p> : null}
       <button
-        onClick={() => { enqueueJob(recipe.id, input, params).then(onQueued).catch(e => setError(String(e))); }}
-        disabled={!!error}
+        onClick={add}
+        disabled={!!error || busy}
         className="mt-3 w-full rounded-lg bg-blue-600 p-2 text-sm font-medium disabled:opacity-50">
-        Add to queue
+        {busy ? "Adding…" : "Add to queue"}
       </button>
     </div>
   );
