@@ -27,6 +27,8 @@ pub fn detect_media_type(raw: &serde_json::Value) -> MediaType {
         s["codec_type"] == "video" && s["disposition"]["attached_pic"].as_i64().unwrap_or(0) == 0
     });
     let format_name = raw["format"]["format_name"].as_str().unwrap_or("");
+    // Image formats are tested before the video branch: image containers (png_pipe etc.) carry a
+    // non-attached_pic video stream, so checking video first would classify every still as Video.
     if format_name.contains("image") || format_name.ends_with("_pipe") {
         return MediaType::Image;
     }
@@ -75,6 +77,13 @@ mod tests {
             "streams": [{"codec_type": "audio"}, {"codec_type": "video", "disposition": {"attached_pic": 1}}]
         });
         assert_eq!(detect_media_type(&mp3_cover), crate::recipe::MediaType::Audio);
+        // Pins the image-before-video precedence: a still carries a real video stream, so flipping
+        // the branch order in detect_media_type would classify every PNG as Video.
+        let png: serde_json::Value = serde_json::json!({
+            "format": {"format_name": "png_pipe"},
+            "streams": [{"codec_type": "video", "disposition": {"attached_pic": 0}}]
+        });
+        assert_eq!(detect_media_type(&png), crate::recipe::MediaType::Image);
     }
 
     #[test]
