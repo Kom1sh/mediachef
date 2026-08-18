@@ -3,9 +3,7 @@ import { DropZone } from "./components/DropZone";
 import { FileCard } from "./components/FileCard";
 import { RecipeForm } from "./components/RecipeForm";
 import { RecipeList } from "./components/RecipeList";
-// TODO(task-13): QueuePanel lands in Task 13 — restore the import and the
-// <QueuePanel recipes={recipes} /> usage below once the component exists.
-// import { QueuePanel } from "./components/QueuePanel";
+import { QueuePanel } from "./components/QueuePanel";
 import { getRecipes, probeFile } from "./lib/ipc";
 import { buildIndex, search } from "./lib/search";
 import type { ProbeInfo, Recipe } from "./lib/types";
@@ -50,7 +48,7 @@ export default function App() {
           : <RecipeList recipes={results} onPick={r => setSelected(r)} />}
         {!file && <p className="text-xs text-neutral-500">Drop a file to filter recipes by type.</p>}
       </section>
-      {/* TODO(task-13): <QueuePanel recipes={recipes} /> */}
+      <QueuePanel recipes={recipes} />
     </main>
   );
 }
