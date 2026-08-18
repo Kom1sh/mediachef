@@ -1,51 +1,52 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { DropZone } from "./components/DropZone";
+import { FileCard } from "./components/FileCard";
+import { RecipeForm } from "./components/RecipeForm";
+import { RecipeList } from "./components/RecipeList";
+// TODO(task-13): QueuePanel lands in Task 13 — restore the import and the
+// <QueuePanel recipes={recipes} /> usage below once the component exists.
+// import { QueuePanel } from "./components/QueuePanel";
+import { getRecipes, probeFile } from "./lib/ipc";
+import { buildIndex, search } from "./lib/search";
+import type { ProbeInfo, Recipe } from "./lib/types";
+import "./index.css";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+export default function App() {
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [file, setFile] = useState<string | null>(null);
+  const [info, setInfo] = useState<ProbeInfo | null>(null);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<Recipe | null>(null);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  useEffect(() => { getRecipes().then(setRecipes); }, []);
+
+  const onFile = useCallback((p: string) => {
+    setFile(p); setInfo(null); setSelected(null);
+    probeFile(p).then(setInfo).catch(() => setInfo(null));
+  }, []);
+
+  const index = useMemo(() => buildIndex(recipes), [recipes]);
+  const results = useMemo(
+    () => search(index, query, info?.media_type),
+    [index, query, info],
+  );
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
+    <main className="grid h-screen grid-cols-[1fr_360px] gap-4 bg-neutral-950 p-4 text-neutral-100">
+      <section className="flex min-h-0 flex-col gap-3 overflow-y-auto">
+        {file ? <FileCard path={file} info={info} /> : null}
+        <DropZone onFile={onFile} />
         <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+          value={query} onChange={e => setQuery(e.target.value)}
+          placeholder="Search: «видео в мп3», «make gif»…"
+          className="w-full rounded-lg border border-neutral-700 bg-transparent p-2 text-sm"
         />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+        {selected && file
+          ? <RecipeForm recipe={selected} input={file} onQueued={() => setSelected(null)} onClose={() => setSelected(null)} />
+          : <RecipeList recipes={results} onPick={r => setSelected(r)} />}
+        {!file && <p className="text-xs text-neutral-500">Drop a file to filter recipes by type.</p>}
+      </section>
+      {/* TODO(task-13): <QueuePanel recipes={recipes} /> */}
     </main>
   );
 }
-
-export default App;
