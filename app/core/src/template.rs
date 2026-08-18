@@ -72,7 +72,10 @@ pub fn build_argv(recipe: &Recipe, input: &str, output: &str, params: &HashMap<S
             for piece in pieces {
                 subbed.push(substitute(&piece, input, output, params)?);
             }
-            staged.push((subbed, false));
+            // an empty value splits into zero tokens — collapse it with its flag,
+            // same as a lone `{key}` that resolved to an empty string
+            let empty = subbed.is_empty();
+            staged.push((subbed, empty));
             continue;
         }
         let lone_key = token.strip_prefix('{').and_then(|t| t.strip_suffix('}')).filter(|k| !k.contains('{'));
@@ -166,5 +169,13 @@ output: {{ext: mp4}}
     fn unknown_placeholder_is_error() {
         let r = recipe(&["{nope}"], BITRATE);
         assert!(build_argv(&r, "i", "o", &resolve_params(&r, &HashMap::new()).unwrap()).is_err());
+    }
+
+    #[test]
+    fn empty_split_drops_preceding_flag() {
+        const FILTERS: &str = r#"  - {key: filters, type: string, default: "", label: {en: F, ru: Ф}}"#;
+        let r = recipe(&["-i", "{input}", "-vf", "{filters:split}", "{output}"], FILTERS);
+        let v = build_argv(&r, "i.mp4", "o.mp4", &resolve_params(&r, &HashMap::new()).unwrap()).unwrap();
+        assert_eq!(v, vec!["-i", "i.mp4", "o.mp4"]);
     }
 }
