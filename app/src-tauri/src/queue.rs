@@ -4,9 +4,12 @@
 //! `Sender<JobView>` and a runner closure, so the whole state machine is
 //! unit-testable without a running app. `lib.rs` owns the wiring.
 
-use mediachef_core::recipe::MediaType;
+use mediachef_core::naming;
+use mediachef_core::recipe::{MediaType, Recipe};
 use mediachef_core::runner::CancelToken;
 use serde::Serialize;
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 
@@ -57,6 +60,12 @@ pub struct Queue {
 struct Inner {
     jobs: Vec<Job>,
     next_id: u64,
+    /// Planned output paths of every non-terminal job (queued or running).
+    /// `Path::exists` cannot see these — the file appears only once ffmpeg starts
+    /// writing — so without this set two identical enqueues issued back to back
+    /// plan the SAME path and the second run overwrites the first's output
+    /// (spec §7: never silently overwrite).
+    reserved: HashSet<String>,
 }
 
 impl Queue {
@@ -65,6 +74,7 @@ impl Queue {
             inner: Arc::new(Mutex::new(Inner {
                 jobs: Vec::new(),
                 next_id: 1,
+                reserved: HashSet::new(),
             })),
             notify,
         }
@@ -79,6 +89,51 @@ impl Queue {
         let _ = self.notify.send(v);
     }
 
+    /// Plan an output path that collides with neither the filesystem NOR any
+    /// still-pending job, and reserve it inside the same critical section — so
+    /// two concurrent `enqueue` calls for the same input+recipe cannot both be
+    /// handed the same path.
+    ///
+    /// Mirrors `naming::plan_output`'s rule (`{stem}.{suffix}.{ext}`, then a
+    /// ` (N)` suffix on collision), but tests every candidate against both
+    /// worlds; `naming::dedupe` knows about the filesystem only.
+    ///
+    /// The reservation is handed over to `push`. A caller that bails out between
+    /// the two (e.g. `build_argv` fails) MUST call `unreserve`, or the path stays
+    /// blocked for the rest of the session.
+    pub fn plan_unique(&self, recipe: &Recipe, input: &Path) -> PathBuf {
+        let suffix = recipe
+            .output
+            .suffix
+            .clone()
+            .unwrap_or_else(|| recipe.id.clone());
+        let base = naming::output_path(input, &suffix, &recipe.output.ext);
+        let stem = base
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let ext = base
+            .extension()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let dir = base.parent().unwrap_or(Path::new(".")).to_path_buf();
+
+        let mut g = self.inner.lock().unwrap();
+        let mut cand = base;
+        let mut n = 0u32;
+        while cand.exists() || g.reserved.contains(&cand.display().to_string()) {
+            n += 1;
+            cand = dir.join(format!("{stem} ({n}).{ext}"));
+        }
+        g.reserved.insert(cand.display().to_string());
+        cand
+    }
+
+    /// Drop a reservation taken by `plan_unique` for a job that never got pushed.
+    pub fn unreserve(&self, output: &str) {
+        self.inner.lock().unwrap().reserved.remove(output);
+    }
+
     pub fn push(
         &self,
         recipe_id: String,
@@ -90,6 +145,9 @@ impl Queue {
         let mut g = self.inner.lock().unwrap();
         let id = g.next_id;
         g.next_id += 1;
+        // Idempotent when `plan_unique` already reserved this path; the insert
+        // matters for callers that plan an output some other way.
+        g.reserved.insert(output.clone());
         let view = JobView {
             id,
             recipe_id,
@@ -114,7 +172,10 @@ impl Queue {
     }
 
     pub fn push_test_job(&self) -> u64 {
-        self.push("t".into(), "i".into(), "o".into(), vec![], Some(1.0))
+        // Distinct output per job, so the reservation invariant (one path is held
+        // by at most one non-terminal job) holds in tests as it does in the app.
+        let n = self.inner.lock().unwrap().next_id;
+        self.push("t".into(), "i".into(), format!("o{n}"), vec![], Some(1.0))
     }
 
     /// Cancellable in any status: a queued job flips to `cancelled` right here,
@@ -127,6 +188,9 @@ impl Queue {
             if j.view.status == "queued" {
                 j.view.status = "cancelled".into();
                 let v = j.view.clone();
+                // Terminal now, so the path is free for the next enqueue. A
+                // *running* job releases in `finish` instead, once ffmpeg is gone.
+                g.reserved.remove(&v.output);
                 drop(g);
                 self.emit(v);
             }
@@ -186,6 +250,10 @@ impl Queue {
                 j.view.percent = 100.0;
             }
             let v = j.view.clone();
+            // Every `finish` status is terminal (done/error/cancelled): the job
+            // no longer owns its output path, so a later enqueue may reuse it —
+            // `dedupe` will then see the finished file on disk and step aside.
+            g.reserved.remove(&v.output);
             drop(g);
             self.emit(v);
         }
@@ -288,5 +356,141 @@ mod tests {
             !input_accepted(&[], MediaType::Video),
             "empty types accept nothing"
         );
+    }
+
+    const RECIPE: &str = r#"
+id: compress-video-crf
+category: compress
+title: {en: C, ru: С}
+aliases: {en: [c], ru: [с]}
+description: {en: D, ru: Д}
+input: {types: [video]}
+params: []
+engine: ffmpeg
+args: ["-i", "{input}", "{output}"]
+output: {ext: mp4, suffix: compressed}
+"#;
+
+    fn recipe() -> Recipe {
+        Recipe::from_yaml(RECIPE).unwrap()
+    }
+
+    // Spec §7 "never silently overwrite": queueing the same recipe twice for the
+    // same input before the first job runs must NOT hand out the same path. The
+    // filesystem cannot answer this — neither output exists yet.
+    #[test]
+    fn duplicate_plan_gets_distinct_outputs() {
+        let (q, _rx) = Queue::new_for_test();
+        let d = tempfile::tempdir().unwrap();
+        let input = d.path().join("clip.mp4");
+        std::fs::write(&input, b"x").unwrap();
+        let r = recipe();
+
+        let a = q.plan_unique(&r, &input);
+        q.push(
+            "compress-video-crf".into(),
+            input.display().to_string(),
+            a.display().to_string(),
+            vec![],
+            None,
+        );
+        let b = q.plan_unique(&r, &input);
+
+        assert_eq!(a.file_name().unwrap(), "clip.compressed.mp4");
+        assert_eq!(b.file_name().unwrap(), "clip.compressed (1).mp4");
+        assert_ne!(
+            a, b,
+            "second enqueue would overwrite the first job's output"
+        );
+        assert!(
+            !a.exists() && !b.exists(),
+            "neither file exists yet — reservation, not fs, must separate them"
+        );
+    }
+
+    // fs-dedupe and reservation compose: an existing file takes ` (1)`, so the
+    // pending job's reservation must push the next plan to ` (2)`.
+    #[test]
+    fn plan_skips_both_existing_files_and_reservations() {
+        let (q, _rx) = Queue::new_for_test();
+        let d = tempfile::tempdir().unwrap();
+        let input = d.path().join("clip.mp4");
+        std::fs::write(&input, b"x").unwrap();
+        std::fs::write(d.path().join("clip.compressed.mp4"), b"x").unwrap();
+        let r = recipe();
+
+        let a = q.plan_unique(&r, &input);
+        assert_eq!(a.file_name().unwrap(), "clip.compressed (1).mp4");
+        q.push(
+            "compress-video-crf".into(),
+            input.display().to_string(),
+            a.display().to_string(),
+            vec![],
+            None,
+        );
+        let b = q.plan_unique(&r, &input);
+        assert_eq!(b.file_name().unwrap(), "clip.compressed (2).mp4");
+    }
+
+    // The reservation is a lease, not a lifetime claim: once the job reaches a
+    // terminal status the path is free again (the finished file on disk then
+    // drives the ` (N)` suffix, which is `dedupe`'s job).
+    #[test]
+    fn reservation_released_on_finish_allows_reuse() {
+        let (q, _rx) = Queue::new_for_test();
+        let d = tempfile::tempdir().unwrap();
+        let input = d.path().join("clip.mp4");
+        std::fs::write(&input, b"x").unwrap();
+        let r = recipe();
+
+        let a = q.plan_unique(&r, &input);
+        let id = q.push(
+            "compress-video-crf".into(),
+            input.display().to_string(),
+            a.display().to_string(),
+            vec![],
+            None,
+        );
+        q.run_next(|_j, _p| Ok(TestOutcome::Done));
+        assert_eq!(q.view(id).unwrap().status, "done");
+        // The runner is a stub here, so nothing was written — the freed path is
+        // planned again verbatim, proving the lease was dropped.
+        assert_eq!(q.plan_unique(&r, &input), a);
+    }
+
+    #[test]
+    fn reservation_released_when_queued_job_cancelled() {
+        let (q, _rx) = Queue::new_for_test();
+        let d = tempfile::tempdir().unwrap();
+        let input = d.path().join("clip.mp4");
+        std::fs::write(&input, b"x").unwrap();
+        let r = recipe();
+
+        let a = q.plan_unique(&r, &input);
+        let id = q.push(
+            "compress-video-crf".into(),
+            input.display().to_string(),
+            a.display().to_string(),
+            vec![],
+            None,
+        );
+        q.cancel(id);
+        assert_eq!(q.view(id).unwrap().status, "cancelled");
+        assert_eq!(q.plan_unique(&r, &input), a);
+    }
+
+    // `unreserve` is the escape hatch for enqueue failing after planning (a bad
+    // custom-ffmpeg template): the path must not stay blocked for the session.
+    #[test]
+    fn unreserve_frees_a_path_that_was_never_pushed() {
+        let (q, _rx) = Queue::new_for_test();
+        let d = tempfile::tempdir().unwrap();
+        let input = d.path().join("clip.mp4");
+        std::fs::write(&input, b"x").unwrap();
+        let r = recipe();
+
+        let a = q.plan_unique(&r, &input);
+        q.unreserve(&a.display().to_string());
+        assert_eq!(q.plan_unique(&r, &input), a);
     }
 }

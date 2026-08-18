@@ -20,10 +20,20 @@ fn recipes(state: State<AppState>) -> Vec<Recipe> {
     state.recipes.clone()
 }
 
-#[tauri::command]
+/// Every error string that reaches the webview goes through the humanizer first:
+/// the raw ffprobe/io text survives only when the table has nothing friendlier
+/// to say (spec §7 — the user should not have to read FFmpeg's stderr).
+fn human(e: impl std::fmt::Display) -> String {
+    let m = e.to_string();
+    mediachef_core::errors::humanize(&m).unwrap_or(m)
+}
+
+/// `async` so the ffprobe spawn runs off the main thread — a slow or hung probe
+/// must not freeze the window.
+#[tauri::command(async)]
 fn probe_file(path: String) -> Result<probe::ProbeInfo, String> {
     let fp = locate::ffprobe().ok_or("ffprobe not found (brew install ffmpeg)")?;
-    probe::probe(&fp, std::path::Path::new(&path)).map_err(|e| e.to_string())
+    probe::probe(&fp, std::path::Path::new(&path)).map_err(human)
 }
 
 fn find_recipe<'a>(recipes: &'a [Recipe], id: &str) -> Result<&'a Recipe, String> {
@@ -47,12 +57,12 @@ fn preview(
         .map_err(|e| e.to_string())
 }
 
-// KNOWN WAVE-1 LIMITATION (Ruling 19): `naming::plan_output` dedupes against the
-// filesystem only, so two identical enqueues issued before the first job runs both
-// plan the SAME output path — the second run then overwrites the first's output.
-// Fixing it needs a queue-level reservation of planned outputs (checked against
-// pending/running jobs, not just `Path::exists`); that lands in wave 2.
-#[tauri::command]
+/// Ruling 19 (spec §7 "never silently overwrite"): the output path comes from
+/// `Queue::plan_unique`, not `naming::plan_output` — the latter dedupes against
+/// the filesystem only, so two identical enqueues issued before the first job
+/// runs would both plan the same path and the second run would overwrite the
+/// first's output. `async` for the same reason as `probe_file`.
+#[tauri::command(async)]
 fn enqueue(
     state: State<AppState>,
     recipe_id: String,
@@ -61,25 +71,28 @@ fn enqueue(
 ) -> Result<u64, String> {
     let r = find_recipe(&state.recipes, &recipe_id)?;
     let fp = locate::ffprobe().ok_or("ffprobe not found (brew install ffmpeg)")?;
-    let info = probe::probe(&fp, std::path::Path::new(&input)).map_err(|e| e.to_string())?;
+    let info = probe::probe(&fp, std::path::Path::new(&input)).map_err(human)?;
     // Ruling 20 / spec §8: validate before launching, not after ffmpeg fails.
     if !queue::input_accepted(&r.input.types, info.media_type) {
         return Err(format!(
-            "recipe {} does not accept {:?} input",
-            recipe_id, info.media_type
+            "recipe {recipe_id} does not accept {} input",
+            info.media_type
         ));
     }
-    let resolved = template::resolve_params(r, &params).map_err(|e| e.to_string())?;
-    let output = naming::plan_output(r, std::path::Path::new(&input));
-    let argv = template::build_argv(r, &input, &output.display().to_string(), &resolved)
-        .map_err(|e| e.to_string())?;
-    Ok(state.queue.push(
-        recipe_id,
-        input,
-        output.display().to_string(),
-        argv,
-        info.duration_s,
-    ))
+    let resolved = template::resolve_params(r, &params).map_err(human)?;
+    // Reserved from here on; release it if we bail out before `push`.
+    let output = state.queue.plan_unique(r, std::path::Path::new(&input));
+    let out_s = output.display().to_string();
+    let argv = match template::build_argv(r, &input, &out_s, &resolved) {
+        Ok(argv) => argv,
+        Err(e) => {
+            state.queue.unreserve(&out_s);
+            return Err(human(e));
+        }
+    };
+    Ok(state
+        .queue
+        .push(recipe_id, input, out_s, argv, info.duration_s))
 }
 
 #[tauri::command]
@@ -124,11 +137,7 @@ pub fn run() {
                             .as_ref()
                             .ok_or("ffmpeg not found (brew install ffmpeg)".to_string())?;
                         match mediachef_core::runner::run_ffmpeg(
-                            ffmpeg,
-                            &job.1,
-                            job.2,
-                            &job.3,
-                            |p| on_p(p),
+                            ffmpeg, &job.1, job.2, &job.3, on_p,
                         ) {
                             Ok(_) => Ok(TestOutcome::Done),
                             Err(e) => Err(format!("{}\n{}", e.message, e.stderr_tail)),

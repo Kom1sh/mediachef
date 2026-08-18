@@ -27,3 +27,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 mediachef-core = { path = "../core" }
 
+[dev-dependencies]
+# Queue tests plan real output paths, so they need a real (throwaway) directory.
+tempfile = "3"
+
