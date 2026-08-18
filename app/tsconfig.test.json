@@ -1,0 +1,12 @@
+{
+  /* Test program: the vitest files run in node, so they need node globals
+     (node:fs, node:path, __dirname) that the browser program deliberately
+     lacks. Vitest transpiles without tsc, so this config is a typecheck gate
+     only — see the `typecheck` script in package.json. */
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src/**/*.test.ts", "src/lib"],
+  "exclude": []
+}

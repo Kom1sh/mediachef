@@ -9,6 +9,10 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    /* Browser program: no ambient node globals. `vite/client` still arrives
+       through the triple-slash reference in src/vite-env.d.ts. Tests get node
+       types from tsconfig.test.json instead. */
+    "types": [],
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -21,5 +25,6 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
+  "exclude": ["src/**/*.test.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

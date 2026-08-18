@@ -4,12 +4,12 @@ export type Loc = { en: string; ru: string };
 export interface Param {
   key: string;
   type: "enum" | "int" | "float" | "bool" | "string" | "path";
-  values?: string[];
+  values?: string[] | null;
   default: unknown;
   label: Loc;
-  min?: number;
-  max?: number;
-  unit?: string;
+  min?: number | null;
+  max?: number | null;
+  unit?: string | null;
   advanced?: boolean;
 }
 
@@ -23,8 +23,8 @@ export interface Recipe {
   params: Param[];
   engine: "ffmpeg" | "whisper" | "pipeline";
   args: string[];
-  output: { ext: string; suffix?: string };
-  seo?: { slug: string; priority?: string };
+  output: { ext: string; suffix?: string | null };
+  seo?: { slug: string; priority?: string } | null;
 }
 
 export interface JobView {

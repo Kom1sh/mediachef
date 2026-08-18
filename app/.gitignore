@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# tsc writes build info for composite/incremental projects even under --noEmit
+*.tsbuildinfo
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
