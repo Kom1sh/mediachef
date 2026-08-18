@@ -1,0 +1,73 @@
+{
+  "aliases": {
+    "en": [
+      "compress video",
+      "reduce video size",
+      "make video smaller"
+    ],
+    "ru": [
+      "сжать видео",
+      "уменьшить размер видео",
+      "видео весит меньше"
+    ]
+  },
+  "args": [
+    "-i",
+    "{input}",
+    "-c:v",
+    "libx264",
+    "-crf",
+    "{crf}",
+    "-preset",
+    "veryfast",
+    "-c:a",
+    "aac",
+    "-b:a",
+    "128k",
+    "{output}"
+  ],
+  "category": "compress",
+  "description": {
+    "en": "Re-encodes with H.264 at a chosen quality level.",
+    "ru": "Перекодирует в H.264 с выбранным уровнем качества."
+  },
+  "engine": "ffmpeg",
+  "id": "compress-video-crf",
+  "input": {
+    "types": [
+      "video"
+    ]
+  },
+  "output": {
+    "ext": "mp4",
+    "suffix": "compressed"
+  },
+  "params": [
+    {
+      "advanced": false,
+      "default": "28",
+      "key": "crf",
+      "label": {
+        "en": "Quality (lower = better)",
+        "ru": "Качество (меньше = лучше)"
+      },
+      "max": null,
+      "min": null,
+      "type": "enum",
+      "unit": null,
+      "values": [
+        "23",
+        "28",
+        "33"
+      ]
+    }
+  ],
+  "seo": {
+    "priority": "high",
+    "slug": "compress-video"
+  },
+  "title": {
+    "en": "Compress video (quality preset)",
+    "ru": "Сжать видео (пресет качества)"
+  }
+}

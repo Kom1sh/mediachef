@@ -7,8 +7,9 @@ aliases:
 description: {en: "Run any FFmpeg arguments. {input} and {output} are substituted.", ru: "Любые аргументы FFmpeg. {input} и {output} подставляются."}
 input: {types: [any]}
 params:
+  # Wave 1 always writes .mp4 here (`output.ext` below). A user-chosen output
+  # extension needs plan_output to honour it — wave 3 re-adds the param wired.
   - {key: cmd, type: string, default: "-i {input} -c copy {output}", label: {en: Arguments, ru: Аргументы}}
-  - {key: out_ext, type: string, default: "mp4", label: {en: "Output extension", ru: "Расширение результата"}}
 engine: ffmpeg
 args: ["{cmd:split}"]
 output: {ext: mp4, suffix: custom}

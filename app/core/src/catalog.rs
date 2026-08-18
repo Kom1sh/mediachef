@@ -21,6 +21,45 @@ pub fn bundled() -> Vec<Recipe> {
 mod tests {
     use super::*;
     use crate::recipe::Engine;
+    use std::path::{Path, PathBuf};
+
+    /// The recipe the IPC golden file is cut from. `include_dir` sorts its
+    /// entries, so `bundled()[0]` is the alphabetically first YAML on every
+    /// platform — pinned by name here so a rename fails loudly, not silently.
+    const GOLDEN_RECIPE_ID: &str = "compress-video-crf";
+
+    fn golden_path() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/ipc-recipe.golden.json")
+    }
+
+    // The webview's `Recipe` interface (app/src/lib/types.ts) is a hand-written
+    // mirror of the Rust struct; nothing at build time links the two. This golden
+    // file is the contract: it pins the exact JSON `invoke("recipes")` returns —
+    // field names, lowercase enum spellings, `null` for absent options — and the
+    // matching vitest reads the same file back through the TS type.
+    // Regenerate deliberately: UPDATE_GOLDEN=1 cargo test -p mediachef-core.
+    #[test]
+    fn ipc_recipe_json_matches_golden() {
+        let all = bundled();
+        let first = &all[0];
+        assert_eq!(
+            first.id, GOLDEN_RECIPE_ID,
+            "bundled()[0] moved; repoint GOLDEN_RECIPE_ID and regenerate the golden"
+        );
+        let actual = serde_json::to_value(first).expect("Recipe must serialize to JSON");
+
+        if std::env::var_os("UPDATE_GOLDEN").is_some() {
+            let pretty = serde_json::to_string_pretty(&actual).unwrap();
+            std::fs::write(golden_path(), format!("{pretty}\n")).unwrap();
+        }
+
+        let raw = std::fs::read_to_string(golden_path()).expect("golden file missing");
+        let golden: serde_json::Value = serde_json::from_str(&raw).expect("golden is not JSON");
+        assert_eq!(
+            actual, golden,
+            "IPC shape changed — update app/src/lib/types.ts to match, then rerun with UPDATE_GOLDEN=1"
+        );
+    }
 
     #[test]
     fn all_bundled_recipes_valid() {

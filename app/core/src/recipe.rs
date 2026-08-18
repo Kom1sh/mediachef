@@ -13,13 +13,18 @@ pub enum RecipeError {
     },
 }
 
+// `deny_unknown_fields` everywhere is deliberate: a typo'd or hopeful key in a
+// recipe YAML (`out_ext`, `sufix`, …) must fail the load instead of being
+// silently ignored, which would leave a param that looks wired but does nothing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LocStr {
     pub en: String,
     pub ru: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LocList {
     pub en: Vec<String>,
     pub ru: Vec<String>,
@@ -35,7 +40,29 @@ pub enum MediaType {
     Any,
 }
 
+impl MediaType {
+    /// Lowercase wire name — the same spelling `serde(rename_all)` emits.
+    /// User-facing strings must use this, never `{:?}` (which would shout
+    /// "Video" at the user in a sentence).
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            MediaType::Video => "video",
+            MediaType::Audio => "audio",
+            MediaType::Image => "image",
+            MediaType::Subtitle => "subtitle",
+            MediaType::Any => "any",
+        }
+    }
+}
+
+impl std::fmt::Display for MediaType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct InputSpec {
     pub types: Vec<MediaType>,
 }
@@ -52,6 +79,7 @@ pub enum ParamType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Param {
     pub key: String,
     #[serde(rename = "type")]
@@ -91,6 +119,7 @@ pub enum Engine {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct OutputSpec {
     pub ext: String,
     #[serde(default)]
@@ -98,6 +127,7 @@ pub struct OutputSpec {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Seo {
     pub slug: String,
     #[serde(default)]
@@ -105,6 +135,7 @@ pub struct Seo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Recipe {
     pub id: String,
     pub category: String,
@@ -213,5 +244,74 @@ seo: {slug: video-to-mp3, priority: high}
         let y = SAMPLE.replace("default: \"192k\"", "default: 192");
         let r = Recipe::from_yaml(&y).unwrap();
         assert_eq!(r.params[0].default_str(), "192");
+    }
+
+    // An unknown key is a bug, not a comment: a param that reads as wired
+    // (`out_ext`) but is never consumed must not load. Covers the nested structs
+    // too, so a typo inside `output:`/`params:`/`seo:` fails just as loudly.
+    #[test]
+    fn unknown_fields_rejected() {
+        for (what, yaml) in [
+            (
+                "top level",
+                SAMPLE.replace("engine: ffmpeg", "engine: ffmpeg\nbogus: 1"),
+            ),
+            (
+                "output",
+                SAMPLE.replace("output: {ext: mp3}", "output: {ext: mp3, out_ext: mp4}"),
+            ),
+            (
+                "param",
+                SAMPLE.replace("    type: enum", "    type: enum\n    bogus: 1"),
+            ),
+            (
+                "seo",
+                SAMPLE.replace(
+                    "seo: {slug: video-to-mp3",
+                    "seo: {slug: video-to-mp3, bogus: 1",
+                ),
+            ),
+            (
+                "input",
+                SAMPLE.replace(
+                    "input: {types: [video]}",
+                    "input: {types: [video], kinds: [audio]}",
+                ),
+            ),
+            (
+                "title",
+                SAMPLE.replace(
+                    r#"ru: "Извлечь аудио в MP3"}"#,
+                    r#"ru: "Извлечь аудио в MP3", de: "x"}"#,
+                ),
+            ),
+        ] {
+            let e = Recipe::from_yaml(&yaml)
+                .expect_err(&format!("unknown {what} field must be rejected"));
+            assert!(
+                e.to_string().contains("unknown field"),
+                "unexpected {what} error: {e}"
+            );
+        }
+        // Sanity: the untouched sample still parses, so the cases above fail for
+        // the added key and not for a botched string replace.
+        assert!(Recipe::from_yaml(SAMPLE).is_ok());
+    }
+
+    // Ruling 21 follow-up: user-facing text renders media types lowercase, and
+    // the Display spelling must not drift from the serde wire spelling.
+    #[test]
+    fn media_type_display_matches_wire_name() {
+        for mt in [
+            MediaType::Video,
+            MediaType::Audio,
+            MediaType::Image,
+            MediaType::Subtitle,
+            MediaType::Any,
+        ] {
+            let wire = serde_json::to_string(&mt).unwrap();
+            assert_eq!(format!("\"{mt}\""), wire, "Display drifted from serde");
+            assert_eq!(mt.to_string(), mt.to_string().to_lowercase());
+        }
     }
 }

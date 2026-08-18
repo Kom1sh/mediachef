@@ -28,6 +28,9 @@ fn main() {
     std::fs::create_dir_all(&out_dir).unwrap();
 
     let mut failed = 0;
+    // A run that skipped every recipe (missing fixtures) used to print
+    // "all ffmpeg recipes passed" and exit 0 — a green CI proving nothing.
+    let mut ran = 0;
     for r in catalog::bundled() {
         if !matches!(r.engine, Engine::Ffmpeg) {
             continue;
@@ -57,6 +60,7 @@ fn main() {
             &runner::CancelToken::new(),
             |_| {},
         );
+        ran += 1;
         let ok = res.is_ok() && output.exists() && probe::probe(&ffprobe, &output).is_ok();
         println!(
             "{} {:<24} -> {}",
@@ -75,5 +79,9 @@ fn main() {
         eprintln!("{failed} recipe(s) failed");
         std::process::exit(1);
     }
-    println!("all ffmpeg recipes passed");
+    if ran == 0 {
+        eprintln!("no recipe ran — fixtures missing? run ./fixtures/make.sh first");
+        std::process::exit(1);
+    }
+    println!("all {ran} ffmpeg recipes passed");
 }
