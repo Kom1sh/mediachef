@@ -1,0 +1,15 @@
+id: custom-ffmpeg
+category: advanced
+title: {en: "Custom FFmpeg command", ru: "Своя команда FFmpeg"}
+aliases:
+  en: [custom command, raw ffmpeg, expert mode]
+  ru: [своя команда, ручной ffmpeg, экспертный режим]
+description: {en: "Run any FFmpeg arguments. {input} and {output} are substituted.", ru: "Любые аргументы FFmpeg. {input} и {output} подставляются."}
+input: {types: [any]}
+params:
+  - {key: cmd, type: string, default: "-i {input} -c copy {output}", label: {en: Arguments, ru: Аргументы}}
+  - {key: out_ext, type: string, default: "mp4", label: {en: "Output extension", ru: "Расширение результата"}}
+engine: ffmpeg
+args: ["{cmd:split}"]
+output: {ext: mp4, suffix: custom}
+seo: {slug: custom-ffmpeg-command, priority: low}

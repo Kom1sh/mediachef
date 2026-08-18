@@ -1,0 +1,13 @@
+id: remove-audio
+category: audio-in-video
+title: {en: "Remove audio from video", ru: "Убрать звук из видео"}
+aliases:
+  en: [mute video, strip audio, no sound]
+  ru: [видео без звука, удалить звук, заглушить видео]
+description: {en: "Copies the video stream, drops all audio.", ru: "Копирует видеопоток, удаляет все аудиодорожки."}
+input: {types: [video]}
+params: []
+engine: ffmpeg
+args: ["-i", "{input}", "-c:v", "copy", "-an", "{output}"]
+output: {ext: mp4, suffix: mute}
+seo: {slug: remove-audio-from-video, priority: medium}

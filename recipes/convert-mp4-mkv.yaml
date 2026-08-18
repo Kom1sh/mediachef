@@ -1,0 +1,13 @@
+id: convert-mp4-mkv
+category: convert-video
+title: {en: "Convert MP4 to MKV", ru: "Конвертировать MP4 в MKV"}
+aliases:
+  en: [mp4 to mkv, remux mp4]
+  ru: [мп4 в мкв, mp4 в mkv без потерь]
+description: {en: "Repackages MP4 into MKV without re-encoding.", ru: "Перепаковывает MP4 в MKV без перекодирования."}
+input: {types: [video]}
+params: []
+engine: ffmpeg
+args: ["-i", "{input}", "-c", "copy", "{output}"]
+output: {ext: mkv}
+seo: {slug: mp4-to-mkv, priority: high}

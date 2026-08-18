@@ -1,0 +1,15 @@
+id: video-to-gif
+category: gif
+title: {en: "Video to GIF", ru: "Видео в GIF"}
+aliases:
+  en: [make gif, convert to gif, gif from video]
+  ru: [сделать гифку, видео в гиф, гифка из видео]
+description: {en: "Converts a clip into an animated GIF.", ru: "Превращает ролик в анимированный GIF."}
+input: {types: [video]}
+params:
+  - {key: fps, type: enum, values: ["10", "15", "24"], default: "15", label: {en: FPS, ru: Кадров/с}}
+  - {key: width, type: enum, values: ["320", "480", "640"], default: "480", label: {en: Width, ru: Ширина}}
+engine: ffmpeg
+args: ["-i", "{input}", "-vf", "fps={fps},scale={width}:-1:flags=lanczos", "{output}"]
+output: {ext: gif}
+seo: {slug: video-to-gif, priority: high}

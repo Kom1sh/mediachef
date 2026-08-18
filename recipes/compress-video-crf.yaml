@@ -1,0 +1,14 @@
+id: compress-video-crf
+category: compress
+title: {en: "Compress video (quality preset)", ru: "Сжать видео (пресет качества)"}
+aliases:
+  en: [compress video, reduce video size, make video smaller]
+  ru: [сжать видео, уменьшить размер видео, видео весит меньше]
+description: {en: "Re-encodes with H.264 at a chosen quality level.", ru: "Перекодирует в H.264 с выбранным уровнем качества."}
+input: {types: [video]}
+params:
+  - {key: crf, type: enum, values: ["23", "28", "33"], default: "28", label: {en: "Quality (lower = better)", ru: "Качество (меньше = лучше)"}}
+engine: ffmpeg
+args: ["-i", "{input}", "-c:v", "libx264", "-crf", "{crf}", "-preset", "veryfast", "-c:a", "aac", "-b:a", "128k", "{output}"]
+output: {ext: mp4, suffix: compressed}
+seo: {slug: compress-video, priority: high}

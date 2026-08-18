@@ -1,0 +1,13 @@
+id: convert-mp3-wav
+category: convert-audio
+title: {en: "Convert MP3 to WAV", ru: "Конвертировать MP3 в WAV"}
+aliases:
+  en: [mp3 to wav, audio to wav]
+  ru: [мп3 в вав, mp3 в wav]
+description: {en: "Decodes MP3 into uncompressed WAV.", ru: "Разжимает MP3 в несжатый WAV."}
+input: {types: [audio]}
+params: []
+engine: ffmpeg
+args: ["-i", "{input}", "{output}"]
+output: {ext: wav}
+seo: {slug: mp3-to-wav, priority: high}

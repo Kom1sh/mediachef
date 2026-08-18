@@ -1,0 +1,14 @@
+id: extract-audio-mp3
+category: extract
+title: {en: "Extract audio to MP3", ru: "Извлечь аудио в MP3"}
+aliases:
+  en: [video to mp3, rip audio from video, get sound from video, mp4 to mp3]
+  ru: [видео в мп3, вытащить звук из видео, аудио из ролика, мп4 в мп3]
+description: {en: "Saves the audio track of a video as MP3.", ru: "Сохраняет звуковую дорожку видео в MP3."}
+input: {types: [video]}
+params:
+  - {key: bitrate, type: enum, values: ["128k", "192k", "320k"], default: "192k", label: {en: Bitrate, ru: Битрейт}}
+engine: ffmpeg
+args: ["-i", "{input}", "-vn", "-b:a", "{bitrate}", "{output}"]
+output: {ext: mp3, suffix: audio}
+seo: {slug: video-to-mp3, priority: high}

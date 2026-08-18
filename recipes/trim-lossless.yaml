@@ -1,0 +1,15 @@
+id: trim-lossless
+category: cut
+title: {en: "Trim video without re-encoding", ru: "Обрезать видео без перекодирования"}
+aliases:
+  en: [cut video, trim clip, lossless cut]
+  ru: [обрезать видео, вырезать кусок, обрезка без потерь]
+description: {en: "Keeps a fragment between two timestamps, stream copy.", ru: "Оставляет фрагмент между двумя метками, без перекодирования."}
+input: {types: [video, audio]}
+params:
+  - {key: start, type: string, default: "00:00:00", label: {en: "Start (HH:MM:SS)", ru: "Начало (ЧЧ:ММ:СС)"}}
+  - {key: end, type: string, default: "", label: {en: "End (empty = till the end)", ru: "Конец (пусто = до конца)"}, advanced: true}
+engine: ffmpeg
+args: ["-ss", "{start}", "-to", "{end}", "-i", "{input}", "-c", "copy", "{output}"]
+output: {ext: mp4, suffix: trim}
+seo: {slug: trim-video, priority: high}
