@@ -24,7 +24,7 @@ export interface Recipe {
   engine: "ffmpeg" | "whisper" | "pipeline";
   args: string[];
   output: { ext: string; suffix?: string | null };
-  seo?: { slug: string; priority?: string } | null;
+  seo?: { slug: string; priority?: string | null } | null;
 }
 
 export interface JobView {
