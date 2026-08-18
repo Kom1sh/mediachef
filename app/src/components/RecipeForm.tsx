@@ -68,7 +68,7 @@ export function RecipeForm({ recipe, input, onQueued, onClose }:
       </div>
       <pre className="mt-3 overflow-x-auto rounded bg-neutral-900 p-2 text-xs text-neutral-400">{error || cmd}</pre>
       <button
-        onClick={async () => { await enqueueJob(recipe.id, input, params); onQueued(); }}
+        onClick={() => { enqueueJob(recipe.id, input, params).then(onQueued).catch(e => setError(String(e))); }}
         disabled={!!error}
         className="mt-3 w-full rounded-lg bg-blue-600 p-2 text-sm font-medium disabled:opacity-50">
         Add to queue

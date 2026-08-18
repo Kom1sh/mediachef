@@ -17,12 +17,15 @@ export default function App() {
   const [info, setInfo] = useState<ProbeInfo | null>(null);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Recipe | null>(null);
+  const [probeError, setProbeError] = useState("");
 
   useEffect(() => { getRecipes().then(setRecipes); }, []);
 
   const onFile = useCallback((p: string) => {
-    setFile(p); setInfo(null); setSelected(null);
-    probeFile(p).then(setInfo).catch(() => setInfo(null));
+    setFile(p); setInfo(null); setSelected(null); setProbeError("");
+    probeFile(p)
+      .then(i => { setInfo(i); setProbeError(""); })
+      .catch(e => { setInfo(null); setProbeError(String(e)); });
   }, []);
 
   const index = useMemo(() => buildIndex(recipes), [recipes]);
@@ -35,6 +38,7 @@ export default function App() {
     <main className="grid h-screen grid-cols-[1fr_360px] gap-4 bg-neutral-950 p-4 text-neutral-100">
       <section className="flex min-h-0 flex-col gap-3 overflow-y-auto">
         {file ? <FileCard path={file} info={info} /> : null}
+        {probeError ? <p className="text-xs text-red-400">{probeError}</p> : null}
         <DropZone onFile={onFile} />
         <input
           value={query} onChange={e => setQuery(e.target.value)}
