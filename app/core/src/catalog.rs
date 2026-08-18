@@ -31,6 +31,26 @@ mod tests {
         }
     }
 
+    // Every bundled ffmpeg recipe must build a real argv from its own defaults.
+    // Catches a typo'd param placeholder or an enum default outside its `values`
+    // list — neither of which the placeholder grep above can see. No ffmpeg needed.
+    #[test]
+    fn all_recipes_resolve_to_argv() {
+        use crate::template::{build_argv, resolve_params};
+        use std::collections::HashMap;
+
+        for r in bundled() {
+            if !matches!(r.engine, Engine::Ffmpeg) {
+                continue;
+            }
+            let resolved = resolve_params(&r, &HashMap::new())
+                .unwrap_or_else(|e| panic!("{}: resolve_params failed: {e}", r.id));
+            let argv = build_argv(&r, "/tmp/in file.mp4", "/tmp/out.mp4", &resolved)
+                .unwrap_or_else(|e| panic!("{}: build_argv failed: {e}", r.id));
+            assert!(!argv.is_empty(), "{}: built an empty argv", r.id);
+        }
+    }
+
     // Two recipes with DISTINCT ids but the SAME seo.slug must be rejected —
     // pins the slug branch of load_all, which the id-duplicate test cannot reach.
     #[test]
