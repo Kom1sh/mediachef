@@ -50,4 +50,35 @@ mod tests {
         fs::write(&p1, b"x").unwrap();
         assert_eq!(dedupe(&base), d.path().join("o.audio (2).mp3"));
     }
+
+    const MIN_RECIPE: &str = r#"
+id: extract-audio-mp3
+category: extract
+title: {en: "Extract audio", ru: "Извлечь аудио"}
+aliases: {en: [], ru: []}
+description: {en: "d", ru: "д"}
+input: {types: [video]}
+engine: ffmpeg
+output: {OUTPUT}
+"#;
+
+    fn recipe_with_output(output: &str) -> Recipe {
+        Recipe::from_yaml(&MIN_RECIPE.replace("{OUTPUT}", output)).unwrap()
+    }
+
+    #[test]
+    fn plan_output_falls_back_to_recipe_id() {
+        let r = recipe_with_output("{ext: mp3}");
+        assert!(r.output.suffix.is_none());
+        let p = plan_output(&r, Path::new("/dir/in.mp4"));
+        assert_eq!(p.file_name().unwrap().to_string_lossy(), "in.extract-audio-mp3.mp3");
+    }
+
+    #[test]
+    fn plan_output_uses_output_suffix() {
+        let r = recipe_with_output("{ext: mp3, suffix: audio}");
+        assert_eq!(r.output.suffix.as_deref(), Some("audio"));
+        let p = plan_output(&r, Path::new("/dir/in.mp4"));
+        assert_eq!(p.file_name().unwrap().to_string_lossy(), "in.audio.mp3");
+    }
 }
