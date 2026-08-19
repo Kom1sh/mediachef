@@ -300,33 +300,50 @@ impl Queue {
     /// `cancelled`) are left exactly as they are: their row is the session's
     /// history, and rewriting it would tell the user a finished job was killed.
     ///
-    /// Returns how many of them were **running**, i.e. how many child processes
-    /// are being killed right now. That is the number the caller has to wait for
-    /// before the process may exit: a queued job owns nothing (it flips to
-    /// `cancelled` right here), while a running one only had its token tripped —
-    /// its worker settles the status once ffmpeg/whisper-cli is actually dead,
-    /// and `Drop`-ing the process out from under that thread is what orphans
-    /// children and leaks tempdirs.
-    pub fn cancel_all_active(&self) -> usize {
+    /// Returns whether anything was in flight at all, which is the caller's cue to
+    /// wait for the queue to drain `running` (see `lib.rs::shutdown`).
+    ///
+    /// Deliberately a yes/no and NOT a count of running children, which is the
+    /// obvious-looking thing to return and is wrong. Any count would be a snapshot
+    /// taken under the lock below, while the `cancel` calls happen after releasing
+    /// it — and a lane worker blocked in `take_next` gets the mutex in exactly that
+    /// window, flipping a job `queued`→`running` and spawning its child. A caller
+    /// keying its wait on "0 were running" would then skip the wait and exit on top
+    /// of a child that had just been born: the enqueue-then-quit window.
+    ///
+    /// With a yes/no the wait is entered whenever there was any work, and the wait
+    /// re-reads live status ([`Self::any_running`]), so it cannot miss that job:
+    /// a worker can only pick up a job that is still `queued`, i.e. strictly before
+    /// this call cancelled it, so the flip is already visible to the caller's first
+    /// live read — which happens strictly after every `cancel` here.
+    pub fn cancel_all_active(&self) -> bool {
         // Collect under the lock, cancel after releasing it: `cancel` takes the
-        // same mutex, so cancelling inside the iteration would deadlock. Nothing
-        // can appear in between that we would want to miss — the only way a new
-        // job arrives is an `enqueue` IPC call, and by the time this runs the
-        // event loop that serves them is on its way out.
-        let active: Vec<(u64, bool)> = {
+        // same mutex, so cancelling inside the iteration would deadlock.
+        let active: Vec<u64> = {
             let g = self.inner.lock().unwrap();
             g.jobs
                 .iter()
                 .filter(|j| matches!(j.view.status.as_str(), "queued" | "running"))
-                .map(|j| (j.view.id, j.view.status == "running"))
+                .map(|j| j.view.id)
                 .collect()
         };
-        for (id, _) in &active {
+        for id in &active {
             // Reused rather than reimplemented: `cancel` is the one place that
             // knows the status flip, the reservation release and the emit.
             self.cancel(*id);
         }
-        active.iter().filter(|(_, running)| *running).count()
+        !active.is_empty()
+    }
+
+    /// True while any job is `running`, i.e. while some worker still holds a live
+    /// child process. The quit path polls this; nothing else needs it.
+    pub fn any_running(&self) -> bool {
+        self.inner
+            .lock()
+            .unwrap()
+            .jobs
+            .iter()
+            .any(|j| j.view.status == "running")
     }
 
     pub fn view(&self, id: u64) -> Option<JobView> {
@@ -702,11 +719,8 @@ output: {ext: mp4, suffix: compressed}
         assert_eq!(taken.id, running);
         assert_eq!(q.view(running).unwrap().status, "running");
 
-        assert_eq!(
-            q.cancel_all_active(),
-            1,
-            "one child process to wait for, not the queued jobs"
-        );
+        assert!(q.cancel_all_active(), "work was in flight");
+        assert!(q.any_running(), "the taken job still holds a child");
 
         // Queued jobs are terminal immediately: nothing was ever spawned for them.
         assert_eq!(q.view(a).unwrap().status, "cancelled");
@@ -724,14 +738,37 @@ output: {ext: mp4, suffix: compressed}
         assert_eq!(q.view(failed).unwrap().error.unwrap(), "FFmpeg failed");
 
         // Safe to run twice, because both quit paths can reach it (ExitRequested
-        // then Exit). The second pass finds the queued jobs terminal and stops
-        // counting them, but still counts the running one — deliberately: if its
-        // child outlived the first wait, the second must wait for it again rather
-        // than wave the exit through.
-        assert_eq!(q.cancel_all_active(), 1);
+        // then Exit). The second pass sees the queued jobs terminal but the running
+        // one still in flight, so it still says "wait" — deliberately: if that
+        // child outlived the first wait, the second must wait again rather than
+        // wave the exit through.
+        assert!(q.cancel_all_active());
         // Once the worker has settled it, there is nothing left to wait for.
         q.finish(running, "cancelled", None, None);
-        assert_eq!(q.cancel_all_active(), 0);
+        assert!(!q.cancel_all_active());
+        assert!(!q.any_running());
+    }
+
+    // The window the return value must not miss (the enqueue-then-quit race): a
+    // lane worker blocked in `take_next` can flip a job `queued`→`running` and
+    // spawn its child in the gap between `cancel_all_active`'s snapshot and the
+    // cancels that follow it. A count of "how many were running" is stale by then
+    // and would read 0 for a queue that is about to hold a live child — so a queue
+    // whose only job is QUEUED must still answer "yes, wait", and the wait then
+    // re-reads live status.
+    #[test]
+    fn cancel_all_active_says_wait_even_when_nothing_is_running_yet() {
+        let (q, _rx) = Queue::new_for_test();
+        let id = q.push_test_job();
+        assert!(!q.any_running(), "nothing has been taken yet");
+        assert!(
+            q.cancel_all_active(),
+            "a queued job is work in flight: a worker may already be inside \
+             take_next, and skipping the wait would orphan the child it spawns"
+        );
+        assert_eq!(q.view(id).unwrap().status, "cancelled");
+        // An empty queue is the only case that may skip the wait.
+        assert!(!q.cancel_all_active());
     }
 
     // `unreserve` is the escape hatch for enqueue failing after planning (a bad

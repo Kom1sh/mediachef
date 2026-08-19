@@ -160,6 +160,9 @@ fn sweep_parts(dir: &Path, downloads: &Downloads) {
 struct ModelView {
     id: String,
     note_en: String,
+    /// Unused by the UI, which is English-only until wave 3 brings i18n; it rides
+    /// across IPC so that wave has nothing to add on this side (the panel renders
+    /// `note_en` and says the same).
     note_ru: String,
     approx_bytes: u64,
     installed: bool,
@@ -447,17 +450,20 @@ fn shutdown(queue: &Queue, downloads: &Downloads) {
     for cancel in downloads.lock().unwrap().values() {
         cancel.cancel();
     }
-    if queue.cancel_all_active() == 0 {
-        return; // no child was running: nothing to wait for
+    if !queue.cancel_all_active() {
+        return; // the queue held no work at all: there can be no child
     }
+    // Entered whenever there was ANY work, queued included — never on a count of
+    // running children, which is stale the moment `cancel_all_active` releases its
+    // lock (see its docs: a worker can flip a queued job to running, and spawn,
+    // inside that window). An idle-but-queued app still costs only the one check
+    // below.
     let deadline = std::time::Instant::now() + std::time::Duration::from_millis(SHUTDOWN_GRACE_MS);
     // A job leaves `running` only when its worker has returned from
     // `run_ffmpeg`/`run_whisper`, which happens after the child is dead and
-    // reaped. That is why this waits on the queue's own status rather than
+    // reaped. That is why this waits on the queue's own live status rather than
     // sleeping a fixed span: the queue already knows.
-    while queue.views().iter().any(|v| v.status == "running")
-        && std::time::Instant::now() < deadline
-    {
+    while queue.any_running() && std::time::Instant::now() < deadline {
         std::thread::sleep(std::time::Duration::from_millis(SHUTDOWN_POLL_MS));
     }
 }
@@ -585,6 +591,12 @@ pub fn run() {
             // starts the kill a moment earlier on the paths that have it, while the
             // event loop is still up. Running twice is free: `shutdown` finds
             // nothing left the second time.
+            //
+            // The `ExitRequested` arm assumes the exit is really going to happen —
+            // it does not consult `api`, and nothing here calls `prevent_exit`. A
+            // plugin that ever did would leave this having killed the user's jobs
+            // for an exit that never came, so that day this arm has to check the
+            // decision instead of front-running it.
             //
             // Neither arm can help against SIGKILL or macOS "Force Quit", and this
             // app installs no signal handler, so a plain `kill`/SIGTERM does not
