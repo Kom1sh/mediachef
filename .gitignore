@@ -9,3 +9,4 @@ fixtures/*.wav
 fixtures/*.aiff
 fixtures/smoke-out/
 .DS_Store
+dist-release/
