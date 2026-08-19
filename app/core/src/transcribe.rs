@@ -25,12 +25,23 @@ const STDERR_TAIL_LINES: usize = 60;
 /// colon is for the "Copy log" button.
 pub const NO_SPEECH: &str = "no_speech: nothing recognisable in the audio";
 
-/// How far into a produced transcript [`is_empty_transcript`] reads before it stops
-/// caring. Every no-speech file whisper writes is well under this — nothing at all
-/// for txt and srt, eight bytes of `WEBVTT` header for vtt — so a longer file has
-/// words in it and needs no reading. (json is the exception: it always carries the
-/// model metadata, so it is parsed instead.)
-const EMPTY_PROBE_BYTES: u64 = 64;
+/// How much of a produced transcript [`is_empty_transcript`] reads before it gives
+/// up and calls the file a transcript whatever is in it.
+///
+/// A read *cap*, not a size gate — and that distinction is a bug that shipped. The
+/// first version of this took a file longer than the window to have words in it by
+/// length alone, on the measurement that whisper's no-speech output is a handful of
+/// bytes. True for a tone, false for digital silence: there the model writes one
+/// ` [BLANK_AUDIO]` cue per chunk, which is 48 bytes of srt for five seconds of it
+/// and 288 for three minutes (both measured). Length therefore says nothing, and the
+/// head is classified instead — see [`line_has_words`].
+///
+/// 256KiB is sized by the least generous of the four formats. A blank json segment
+/// costs ~173 bytes, so the window holds ~1500 of them: about twelve hours of
+/// unbroken silence, against ~45h for srt/vtt (~48 B a cue) and ~156h for txt
+/// (14 B a line). Past the cap the answer is "not empty" like every other question
+/// this cannot settle — the file is kept, never deleted on a guess.
+const EMPTY_PROBE_BYTES: u64 = 256 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WhisperFormat {
@@ -113,21 +124,105 @@ fn part_path(output: &Path, format: WhisperFormat) -> PathBuf {
     output.with_extension(format!("{}.part", format.ext()))
 }
 
+/// At most [`EMPTY_PROBE_BYTES`] from the head of `path`.
+///
+/// `None` for a file that cannot be opened or read, and for one whose head is not
+/// UTF-8 — which includes the harmless case of the cap falling inside a multi-byte
+/// character. Every `None` reaches the caller as "not empty", so a cut in the middle
+/// of a Cyrillic word costs the user a delivered transcript rather than a deleted
+/// one.
+fn probe_head(path: &Path) -> Option<String> {
+    use std::io::Read;
+    let mut text = String::new();
+    std::fs::File::open(path)
+        .ok()?
+        .take(EMPTY_PROBE_BYTES)
+        .read_to_string(&mut text)
+        .ok()?;
+    Some(text)
+}
+
+/// `line` with every non-speech marker taken out of it: whisper writes those as a
+/// shouty bracketed token — ` [BLANK_AUDIO]` on silence, `[MUSIC]`, `[INAUDIBLE]` —
+/// and a line that is nothing but those is not a word the user asked for.
+///
+/// Only ALL-CAPS bodies count (letters, digits, `_`, spaces, hyphens, at least one
+/// letter), which is deliberately narrower than every annotation a whisper model can
+/// emit: a mixed-case `[Music]` is left standing and its file delivered. That is the
+/// safe half of the trade — the caller *deletes* what this helps call empty, so a
+/// marker table that is too eager loses somebody's transcript, while one that is too
+/// shy only delivers a file with a bracket in it.
+fn without_markers(line: &str) -> String {
+    fn is_marker_body(s: &str) -> bool {
+        !s.is_empty()
+            && s.chars().any(|c| c.is_ascii_uppercase())
+            && s.chars()
+                .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || " _-".contains(c))
+    }
+    let mut out = String::with_capacity(line.len());
+    let mut rest = line;
+    while let Some(open) = rest.find('[') {
+        let (before, from_open) = rest.split_at(open);
+        // An unclosed `[` is not a marker. `rest` is left as it was, so the tail —
+        // `before` included — goes out whole in the push below the loop.
+        let Some(close) = from_open[1..].find(']').map(|i| i + 1) else {
+            break;
+        };
+        out.push_str(before);
+        if !is_marker_body(&from_open[1..close]) {
+            out.push_str(&from_open[..=close]);
+        }
+        rest = &from_open[close + 1..];
+    }
+    out.push_str(rest);
+    out
+}
+
+/// Whether one line of a transcript carries anything the user would call speech.
+///
+/// Everything a format writes about *itself* is not content: a `WEBVTT` header, an
+/// srt cue index, a `-->` timestamp line, blank separators. Whisper's own non-speech
+/// markers are not content either ([`without_markers`]). What is left over is.
+fn line_has_words(line: &str, format: WhisperFormat) -> bool {
+    let line = line.trim();
+    if line.is_empty() {
+        return false;
+    }
+    if matches!(format, WhisperFormat::Srt | WhisperFormat::Vtt) {
+        // The cue scaffolding of both formats: `WEBVTT` (with or without the title
+        // the spec allows after it), the index, the timing line.
+        if line.starts_with("WEBVTT")
+            || line.contains("-->")
+            || line.chars().all(|c| c.is_ascii_digit())
+        {
+            return false;
+        }
+    }
+    !without_markers(line).trim().is_empty()
+}
+
 /// True when the transcript at `path` has no words in it — whisper's way of
 /// reporting that it heard no speech, which it does by exiting 0 like any other
 /// successful run.
 ///
-/// The format is a parameter because "nothing" looks different in each of them,
-/// measured against whisper.cpp on two seconds of a 440Hz sine:
+/// The format is a parameter because "nothing" looks different in each of them, and
+/// there are two shapes of it, both measured against whisper.cpp + `ggml-tiny`. On a
+/// 440Hz sine the model writes no segments at all:
 /// * `txt`, `srt` — zero bytes (and whitespace counts as the same nothing);
 /// * `vtt` — the eight bytes of its mandatory `WEBVTT` header, nothing under it;
 /// * `json` — ~700 bytes of model and system metadata with an empty
-///   `transcription` array, so only the segments answer the question.
+///   `transcription` array.
 ///
-/// Anything it cannot read or cannot parse is reported as **not** empty. The caller
-/// deletes what this calls empty and fails the job, so a guess in that direction
-/// would destroy a transcript; a guess in the other only delivers a file the user
-/// can look at.
+/// On digital silence (`anullsrc`) it writes a ` [BLANK_AUDIO]` segment per chunk
+/// instead, which is a *file with contents* — 14 bytes of txt, a 48-byte srt cue, a
+/// 54-byte vtt, a json segment whose `text` is ` [BLANK_AUDIO]` — and used to sail
+/// through as a transcript, delivering a green "done" over a file with no words in
+/// it. Hence the line-by-line reading rather than a whitespace test.
+///
+/// Anything it cannot read, cannot parse, or is too big to finish reading
+/// ([`EMPTY_PROBE_BYTES`]) is reported as **not** empty. The caller deletes what this
+/// calls empty and fails the job, so a guess in that direction would destroy a
+/// transcript; a guess in the other only delivers a file the user can look at.
 fn is_empty_transcript(path: &Path, format: WhisperFormat) -> bool {
     let Ok(meta) = std::fs::metadata(path) else {
         return false;
@@ -136,38 +231,43 @@ fn is_empty_transcript(path: &Path, format: WhisperFormat) -> bool {
         return true;
     }
     if matches!(format, WhisperFormat::Json) {
-        return json_has_no_segments(path);
+        return json_has_no_speech(path);
     }
-    // Past the probe window it is a transcript by length alone — see
-    // [`EMPTY_PROBE_BYTES`].
-    if meta.len() > EMPTY_PROBE_BYTES {
+    let Some(head) = probe_head(path) else {
+        return false; // unreadable, or not UTF-8: whisper did write something
+    };
+    if head.lines().any(|l| line_has_words(l, format)) {
         return false;
     }
-    let Ok(text) = std::fs::read_to_string(path) else {
-        return false; // not UTF-8: whisper did write something
-    };
-    let body = match format {
-        // The header is the format, not the content: a vtt without it would not be
-        // a vtt at all, so it cannot count as a word.
-        WhisperFormat::Vtt => text.trim_start().strip_prefix("WEBVTT").unwrap_or(&text),
-        _ => &text,
-    };
-    body.trim().is_empty()
+    // Nothing but scaffolding and markers in what was read — which is the whole file
+    // only when the whole file fits in the window. Past it this has read a head, not
+    // a file, and a tail it never saw may hold the speech (see EMPTY_PROBE_BYTES).
+    meta.len() <= EMPTY_PROBE_BYTES
 }
 
 /// The json half of [`is_empty_transcript`]: whisper always writes its metadata, so
-/// emptiness is `transcription: []`.
+/// emptiness lives in the `transcription` array — either it is empty, or every
+/// segment in it is nothing but non-speech markers.
 ///
 /// A file that does not parse, or whose shape this build has never seen (no
-/// `transcription` key), is not called empty — same reasoning as above.
-fn json_has_no_segments(path: &Path) -> bool {
-    let Ok(text) = std::fs::read_to_string(path) else {
+/// `transcription` key, a segment without a string `text`), is not called empty —
+/// same reasoning as above. A json past the read cap does not parse either, so it
+/// lands in the same place.
+fn json_has_no_speech(path: &Path) -> bool {
+    let Some(text) = probe_head(path) else {
         return false;
     };
     let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) else {
         return false;
     };
-    matches!(v.get("transcription"), Some(serde_json::Value::Array(s)) if s.is_empty())
+    let Some(serde_json::Value::Array(segments)) = v.get("transcription") else {
+        return false;
+    };
+    // `all` over an empty array is the sine case: no segments, nothing heard.
+    segments.iter().all(|s| match s.get("text") {
+        Some(serde_json::Value::String(t)) => without_markers(t).trim().is_empty(),
+        _ => false,
+    })
 }
 
 fn push_tail(tail: &mut Vec<String>, line: &str) {
@@ -496,7 +596,157 @@ mod tests {
         ));
     }
 
-    /// The two ways the detector must refuse to answer "empty", because the cost of
+    /// whisper's json for digital silence: one segment per chunk whose text is the
+    /// blank marker. Trimmed from a real `--output-json` of 5s of `anullsrc`
+    /// (855 bytes), where the metadata above `transcription` is the same skeleton as
+    /// [`EMPTY_JSON`]'s.
+    const BLANK_JSON: &str = r#"{
+    "systeminfo": "WHISPER : COREML = 0 | OPENVINO = 0 | METAL = 1",
+    "model": {"type": "tiny", "multilingual": true},
+    "result": {"language": "en"},
+    "transcription": [
+        {
+            "timestamps": {"from": "00:00:00,000", "to": "00:00:10,000"},
+            "offsets": {"from": 0, "to": 10000},
+            "text": " [BLANK_AUDIO]"
+        }
+    ]
+}"#;
+
+    /// The *other* nothing, and the one that shipped broken: on true digital silence
+    /// whisper does not write an empty file, it writes ` [BLANK_AUDIO]` — one segment
+    /// per 30s chunk, exit 0, all four formats. Every byte count below is measured
+    /// from whisper.cpp + `ggml-tiny` over `anullsrc` (5s, and 180s for the multi-cue
+    /// shapes), which is exactly what the old whitespace test called a transcript:
+    /// four green "done"s over files with no words in them.
+    #[test]
+    fn blank_audio_markers_are_no_speech_too() {
+        let d = tempfile::tempdir().unwrap();
+        let dir = d.path();
+        use WhisperFormat::*;
+
+        // 5s of silence, verbatim: txt is 14 bytes, srt one cue, vtt header + cue.
+        let txt = file(dir, "b.txt", b"[BLANK_AUDIO]\n");
+        assert_eq!(std::fs::metadata(&txt).unwrap().len(), 14);
+        assert!(is_empty_transcript(&txt, Txt));
+        assert!(is_empty_transcript(
+            &file(
+                dir,
+                "b.srt",
+                b"1\n00:00:00,000 --> 00:00:10,000\n [BLANK_AUDIO]\n\n"
+            ),
+            Srt
+        ));
+        assert!(is_empty_transcript(
+            &file(
+                dir,
+                "b.vtt",
+                b"WEBVTT\n\n00:00:00.000 --> 00:00:10.000\n [BLANK_AUDIO]\n\n"
+            ),
+            Vtt
+        ));
+        assert!(is_empty_transcript(
+            &file(dir, "b.json", BLANK_JSON.as_bytes()),
+            Json
+        ));
+
+        // Three minutes of it: six cues, 288 bytes of srt — four times the 64-byte
+        // window the first version of this stopped reading at, which is the specific
+        // way a long silent file used to ship as done.
+        let cue = |i: u32| format!("{i}\n00:0{i}:00,000 --> 00:0{i}:10,000\n [BLANK_AUDIO]\n\n");
+        let long_srt: String = (1..=6).map(cue).collect();
+        assert!(
+            long_srt.len() > 64,
+            "the fixture must outgrow the old window"
+        );
+        assert!(is_empty_transcript(
+            &file(dir, "long.srt", long_srt.as_bytes()),
+            Srt
+        ));
+        assert!(is_empty_transcript(
+            &file(dir, "long.txt", &b"[BLANK_AUDIO]\n".repeat(6)),
+            Txt
+        ));
+
+        // The other markers a whisper model reaches for on non-speech audio.
+        assert!(is_empty_transcript(
+            &file(dir, "m.txt", b"[MUSIC]\n [SOUND]\n[INAUDIBLE]\n"),
+            Txt
+        ));
+
+        // …and the line that matters most: a marker beside real words is a
+        // transcript, in every format. Deleting one of these would lose the speech
+        // that follows a silent opening.
+        assert!(!is_empty_transcript(
+            &file(dir, "mix.txt", b"[BLANK_AUDIO]\n Hello world.\n"),
+            Txt
+        ));
+        assert!(!is_empty_transcript(
+            &file(
+                dir,
+                "mix.srt",
+                b"1\n00:00:00,000 --> 00:00:10,000\n [BLANK_AUDIO]\n\n\
+                  2\n00:00:30,000 --> 00:00:33,000\n Hello world.\n\n"
+            ),
+            Srt
+        ));
+        assert!(!is_empty_transcript(
+            &file(
+                dir,
+                "mix.vtt",
+                b"WEBVTT\n\n00:00:00.000 --> 00:00:10.000\n [BLANK_AUDIO]\n\n\
+                  00:00:30.000 --> 00:00:33.000\n Hello world.\n\n"
+            ),
+            Vtt
+        ));
+        assert!(!is_empty_transcript(
+            &file(
+                dir,
+                "mix.json",
+                br#"{"transcription": [{"text": " [BLANK_AUDIO]"}, {"text": " Hello world."}]}"#
+            ),
+            Json
+        ));
+        // A bracket around ordinary words is not a marker: only the shouty form is,
+        // and the doubtful case has to keep the file. Same for a mixed-case
+        // annotation, which this deliberately does not claim to know.
+        assert!(!is_empty_transcript(
+            &file(dir, "bracket.txt", b"[the tape ends here]\n"),
+            Txt
+        ));
+        assert!(!is_empty_transcript(
+            &file(dir, "mc.txt", b"[Music]\n"),
+            Txt
+        ));
+    }
+
+    /// The marker stripper on its own, where the awkward inputs are cheap to state.
+    /// It runs on every line of every transcript the app produces, so it must not
+    /// rewrite prose — and an unclosed bracket must not eat the words before it.
+    #[test]
+    fn without_markers_takes_only_shouty_brackets() {
+        assert_eq!(without_markers(" [BLANK_AUDIO]").trim(), "");
+        assert_eq!(without_markers("[MUSIC] [NO SPEECH] [SFX-2]").trim(), "");
+        // Prose survives, markers around it do not.
+        assert_eq!(
+            without_markers("[BLANK_AUDIO] Hello [MUSIC] world.").trim(),
+            "Hello  world."
+        );
+        // Not markers: mixed case, lowercase, no letters at all.
+        assert_eq!(without_markers("[Music]"), "[Music]");
+        assert_eq!(without_markers("[music]"), "[music]");
+        assert_eq!(without_markers("[123]"), "[123]");
+        // An unclosed bracket keeps everything, the words before it included.
+        assert_eq!(without_markers("Hello [BLANK"), "Hello [BLANK");
+        assert_eq!(without_markers("[MUSIC] Hello [BLANK"), " Hello [BLANK");
+        // Nothing to do is the common case: a plain line comes back identical.
+        assert_eq!(without_markers(" Just words."), " Just words.");
+        // Multi-byte text is sliced on char boundaries or not at all.
+        assert_eq!(without_markers("[MUSIC] Привет").trim(), "Привет");
+        assert_eq!(without_markers("Привет [и ещё]"), "Привет [и ещё]");
+    }
+
+    /// The ways the detector must refuse to answer "empty", because the cost of
     /// being wrong is a deleted transcript and a failed job.
     #[test]
     fn empty_transcript_errs_towards_keeping_the_file() {
@@ -509,13 +759,22 @@ mod tests {
             WhisperFormat::Txt
         ));
 
-        // Only the head is read: past the probe window the file is a transcript by
-        // length alone. Every no-speech file whisper writes is under it (0, 8 or
-        // ~700 bytes), and scanning a two-hour transcript to learn nothing is not a
-        // trade worth making.
+        // A word past a great deal of whitespace is still a word: the head is read
+        // and classified line by line, not measured.
         let padded: Vec<u8> = b" ".repeat(80).into_iter().chain(*b"words").collect();
         assert!(!is_empty_transcript(
             &file(dir, "padded.txt", &padded),
+            WhisperFormat::Txt
+        ));
+
+        // The documented bound: only the first EMPTY_PROBE_BYTES are read, so a file
+        // of nothing but markers that outgrows the window is *kept*. Twelve hours of
+        // silence to get here (the json bound; ~156h in txt), and the tail this never
+        // saw could hold the speech.
+        let past_the_cap = b"[BLANK_AUDIO]\n".repeat(EMPTY_PROBE_BYTES as usize / 14 + 2);
+        assert!(past_the_cap.len() as u64 > EMPTY_PROBE_BYTES);
+        assert!(!is_empty_transcript(
+            &file(dir, "endless.txt", &past_the_cap),
             WhisperFormat::Txt
         ));
 
@@ -527,6 +786,11 @@ mod tests {
         ));
         assert!(!is_empty_transcript(
             &file(dir, "broken.json", b"{not json at all"),
+            WhisperFormat::Json
+        ));
+        // A segment shape it has never seen either: no string `text` to judge.
+        assert!(!is_empty_transcript(
+            &file(dir, "shape.json", br#"{"transcription": [{"words": []}]}"#),
             WhisperFormat::Json
         ));
     }
@@ -587,19 +851,24 @@ mod tests {
         );
     }
 
-    /// The no-speech path end to end, in every format. `fixtures/tiny.mp4` is two
-    /// seconds of a 440Hz sine over a test pattern, so whisper hears no words at
-    /// all — and each format lies about that differently (empty txt, empty srt, a
-    /// bare `WEBVTT` header, a json skeleton), which is why all four run.
+    /// The no-speech path end to end, over both audio that whisper hears nothing in —
+    /// and it hears nothing in two different ways, which is the whole point of running
+    /// both:
+    /// * `fixtures/tiny.mp4` is two seconds of a 440Hz sine over a test pattern, and
+    ///   the model writes no segments at all (empty txt, empty srt, a bare `WEBVTT`
+    ///   header, a json skeleton);
+    /// * five seconds of `anullsrc` is *digital silence*, and the model writes a
+    ///   ` [BLANK_AUDIO]` segment per chunk — a file with contents, which the first
+    ///   version of the detector delivered with a green "done" in all four formats.
     ///
-    /// What must hold: the run fails with the marker, and the output path is left
-    /// untouched. A delivered empty file with a green "done" is the bug this exists
-    /// to prevent.
+    /// Both fail identically in all four formats or the fix is not a fix, hence the
+    /// 2×4 loop. What must hold: the run fails with the marker, and the output path is
+    /// left untouched.
     ///
     /// Ignored for the same reason as its neighbours: needs whisper-cli + tiny.
     #[test]
     #[ignore]
-    fn sine_yields_no_speech() {
+    fn sine_and_silence_yield_no_speech() {
         let ffmpeg = crate::locate::ffmpeg().expect("ffmpeg");
         let whisper = crate::locate::whisper().expect("whisper-cli (brew install whisper-cpp)");
         let models_dir = std::env::var("MEDIACHEF_MODELS_DIR")
@@ -609,44 +878,67 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let sine = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/tiny.mp4");
 
-        for format in [
-            WhisperFormat::Txt,
-            WhisperFormat::Srt,
-            WhisperFormat::Vtt,
-            WhisperFormat::Json,
-        ] {
-            let out = dir.path().join(format!("sine.transcript.{}", format.ext()));
-            let job = WhisperJob {
-                input: sine.clone(),
-                output: out.clone(),
-                model: model.clone(),
-                language: "auto".into(),
-                translate: false,
-                format,
-            };
-            let e = run_whisper(
-                &ffmpeg,
-                &whisper,
-                &job,
-                &crate::process::CancelToken::new(),
-                |_| {},
-            )
-            .expect_err(&format!(
-                "a sine wave produced a .{} transcript",
-                format.ext()
-            ));
-            assert!(
-                e.message.contains("no_speech"),
-                ".{}: got {}",
-                format.ext(),
-                e.message
-            );
-            assert!(
-                !out.exists(),
-                ".{}: an empty transcript was delivered to {}",
-                format.ext(),
-                out.display()
-            );
+        // Not a checked-in fixture: silence is one ffmpeg call, and `fixtures/make.sh`
+        // would have to grow a file whose only reader is this test.
+        let silence = dir.path().join("silence.wav");
+        let made = std::process::Command::new(&ffmpeg)
+            .args([
+                "-v",
+                "error",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "anullsrc=r=16000:cl=mono",
+                "-t",
+                "5",
+                "-c:a",
+                "pcm_s16le",
+            ])
+            .arg(&silence)
+            .status()
+            .unwrap();
+        assert!(made.success(), "could not build the silent input");
+
+        for (name, input) in [("sine", &sine), ("silence", &silence)] {
+            for format in [
+                WhisperFormat::Txt,
+                WhisperFormat::Srt,
+                WhisperFormat::Vtt,
+                WhisperFormat::Json,
+            ] {
+                let out = dir
+                    .path()
+                    .join(format!("{name}.transcript.{}", format.ext()));
+                let job = WhisperJob {
+                    input: input.clone(),
+                    output: out.clone(),
+                    model: model.clone(),
+                    language: "auto".into(),
+                    translate: false,
+                    format,
+                };
+                let e = run_whisper(
+                    &ffmpeg,
+                    &whisper,
+                    &job,
+                    &crate::process::CancelToken::new(),
+                    |_| {},
+                )
+                .expect_err(&format!("{name} produced a .{} transcript", format.ext()));
+                assert!(
+                    e.message.contains("no_speech"),
+                    "{name} .{}: got {}",
+                    format.ext(),
+                    e.message
+                );
+                assert!(
+                    !out.exists(),
+                    "{name} .{}: an empty transcript was delivered to {}",
+                    format.ext(),
+                    out.display()
+                );
+            }
         }
     }
 }
