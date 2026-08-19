@@ -1,7 +1,7 @@
 //! ffmpeg-specific layer over [`crate::process`]: the fixed argv prefix, the
 //! progress parse, the stderr tail and the partial-output cleanup.
 
-use crate::process::{run_streaming, Pipe};
+use crate::process::{run_streaming, Pipe, StreamError};
 use crate::progress::ProgressParser;
 use std::path::Path;
 
@@ -65,13 +65,19 @@ pub fn run_ffmpeg(
             let _ = std::fs::remove_file(p);
         }
     };
+    let tail_text = || tail.join("\n");
 
     match exit {
-        Err(message) => {
+        // Nothing ran, so nothing at the output path is ours to delete.
+        Err(StreamError::Spawn(message)) => Err(RunError {
+            message,
+            stderr_tail: tail_text(),
+        }),
+        Err(StreamError::Wait(message)) => {
             cleanup(&output_path);
             Err(RunError {
                 message,
-                stderr_tail: tail.join("\n"),
+                stderr_tail: tail_text(),
             })
         }
         Ok(e) if e.cancelled => {
@@ -82,11 +88,14 @@ pub fn run_ffmpeg(
             on_progress(100.0);
             Ok(Outcome::Done)
         }
-        Ok(_) => {
+        Ok(e) => {
             cleanup(&output_path);
             Err(RunError {
-                message: "ffmpeg exited with error".into(),
-                stderr_tail: tail.join("\n"),
+                message: match e.code {
+                    Some(c) => format!("ffmpeg exited with code {c}"),
+                    None => "ffmpeg exited on a signal".to_string(),
+                },
+                stderr_tail: tail_text(),
             })
         }
     }
