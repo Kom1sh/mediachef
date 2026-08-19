@@ -1,0 +1,73 @@
+name: release
+# Собирает поставки под все три ОС на родных раннерах и прикладывает их
+# к GitHub Release тега. Запуск: push тега v* или вручную (workflow_dispatch).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm, cache-dependency-path: app/package-lock.json }
+      - run: cd app && npm ci
+      - run: cd app && npm run tauri build -- --bundles app
+      - name: package zip + dmg (инструкция внутри)
+        run: |
+          VER=$(python3 -c "import json;print(json.load(open('app/src-tauri/tauri.conf.json'))['version'])")
+          mkdir -p out/dmg-stage
+          cp -R target/release/bundle/macos/MediaChef.app out/dmg-stage/
+          cp docs/КАК_ОТКРЫТЬ.txt out/dmg-stage/
+          ln -s /Applications out/dmg-stage/Applications
+          hdiutil create -volname "MediaChef ${VER}" -srcfolder out/dmg-stage -ov -format UDZO "out/MediaChef_${VER}_aarch64.dmg"
+          cp -R target/release/bundle/macos/MediaChef.app out/ && cp docs/КАК_ОТКРЫТЬ.txt out/
+          (cd out && zip -qry "MediaChef-${VER}-macos-arm64.zip" MediaChef.app КАК_ОТКРЫТЬ.txt)
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            out/*.dmg
+            out/*.zip
+            docs/КАК_ОТКРЫТЬ.txt
+
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm, cache-dependency-path: app/package-lock.json }
+      - name: system deps (tauri v2)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libfuse2 patchelf
+      - run: cd app && npm ci
+      - run: cd app && npm run tauri build -- --bundles deb,appimage
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/release/bundle/deb/*.deb
+            target/release/bundle/appimage/*.AppImage
+            docs/КАК_ЗАПУСТИТЬ_LINUX.txt
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm, cache-dependency-path: app/package-lock.json }
+      - run: cd app && npm ci
+      - run: cd app && npm run tauri build -- --bundles nsis
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/release/bundle/nsis/*.exe
+            docs/КАК_ЗАПУСТИТЬ_WINDOWS.txt

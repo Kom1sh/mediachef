@@ -1,0 +1,32 @@
+MediaChef 0.3.0 (Windows x64)
+=============================
+
+УСТАНОВКА
+---------
+1. Запусти MediaChef_0.3.0_x64-setup.exe.
+2. SmartScreen может предупредить (установщик пока не подписан):
+   «Подробнее» → «Выполнить в любом случае».
+3. WebView2 (движок интерфейса) установщик подтянет сам, если его нет.
+
+ЗАВИСИМОСТИ
+-----------
+Конвертация требует ffmpeg в PATH:
+    winget install Gyan.FFmpeg
+(или ffmpeg.org → добавить папку bin в PATH; после установки перезапусти MediaChef).
+
+Транскрибация (Whisper) на Windows требует whisper-cli.exe:
+    скачай whisper-bin-x64.zip со страницы релизов github.com/ggerganov/whisper.cpp,
+    распакуй и добавь папку в PATH (либо задай переменную окружения MEDIACHEF_WHISPER
+    с полным путём к whisper-cli.exe). Модели скачиваются в самом приложении.
+
+---
+
+INSTALL (EN)
+------------
+1. Run MediaChef_0.3.0_x64-setup.exe.
+2. SmartScreen may warn (unsigned yet): "More info" → "Run anyway".
+3. WebView2 is bootstrapped automatically if missing.
+
+ffmpeg required for conversion:  winget install Gyan.FFmpeg
+whisper-cli required for transcription: whisper-bin-x64.zip from
+github.com/ggerganov/whisper.cpp releases → add to PATH (or set MEDIACHEF_WHISPER).
