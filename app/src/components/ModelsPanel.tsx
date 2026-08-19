@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { BrainCircuit, CircleAlert } from "lucide-react";
 import { loc, useLocale, useT } from "../lib/i18n";
 import { cancelModelDownload, deleteModel, downloadModel, getModels, onModelProgress } from "../lib/ipc";
 import type { ModelView } from "../lib/types";
@@ -82,49 +83,73 @@ export function ModelsPanel() {
   };
 
   return (
-    <section className="mx-auto w-full max-w-xl space-y-2 overflow-y-auto p-2">
-      <h2 className="text-sm font-medium text-neutral-300">{t("modelsTitle")}</h2>
-      <p className="text-xs text-neutral-500">{t("modelsBlurb")}</p>
-      {models.map(m => {
-        // `downloading` covers the remount case: switching to Convert and back
-        // unmounts this panel, and the map in Rust is what still knows.
-        const pct = progress[m.id] ?? (m.downloading ? 0 : undefined);
-        return (
-          <div key={m.id} className="flex items-center justify-between gap-3 rounded-lg border border-neutral-700 p-3">
-            <div className="min-w-0">
-              <div className="text-sm font-medium">{m.id} <span className="text-xs text-neutral-500">{size(m.approx_bytes, t("unitGB"), t("unitMB"))}</span></div>
-              {/* The note is written on the Rust side in both languages. Through
-                  `loc` rather than a ternary, so a model shipped without a Russian
-                  note reads English instead of reading blank. */}
-              <div className="text-xs text-neutral-400">{loc({ en: m.note_en, ru: m.note_ru }, locale)}</div>
-            </div>
-            {pct !== undefined ? (
-              <div className="flex shrink-0 items-center gap-2">
-                <div className="h-1.5 w-24 rounded bg-neutral-800">
-                  <div className="h-1.5 rounded bg-blue-500" style={{ width: `${pct}%` }} />
+    <section className="min-h-0 overflow-y-auto p-4">
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-3">
+        <div>
+          <h1 className="text-base font-bold text-ink">{t("modelsTitle")}</h1>
+          <p className="mt-1 text-xs text-ink-2">{t("modelsBlurb")}</p>
+        </div>
+        {models.map(m => {
+          // `downloading` covers the remount case: switching to Convert and back
+          // unmounts this panel, and the map in Rust is what still knows.
+          const pct = progress[m.id] ?? (m.downloading ? 0 : undefined);
+          return (
+            <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-card p-3">
+              <div className="flex min-w-0 items-center gap-3">
+                {/* The tile turns basil once the model is on disk: "installed" is
+                    otherwise only readable from which button the row is offering,
+                    and that is the last thing a user looks at. */}
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-card-2">
+                  <BrainCircuit className={`size-5 ${m.installed ? "text-basil" : "text-ink-2"}`} aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-ink">{m.id}</span>
+                    <span className="shrink-0 rounded-full bg-card-2 px-2 py-0.5 text-xs text-ink-2 tabular-nums">
+                      {size(m.approx_bytes, t("unitGB"), t("unitMB"))}
+                    </span>
+                  </div>
+                  {/* The note is written on the Rust side in both languages. Through
+                      `loc` rather than a ternary, so a model shipped without a Russian
+                      note reads English instead of reading blank. */}
+                  <p className="text-xs text-ink-2">{loc({ en: m.note_en, ru: m.note_ru }, locale)}</p>
                 </div>
-                <span className="w-8 text-right text-xs text-neutral-500">{Math.round(pct)}%</span>
-                {cancelling[m.id] ? (
-                  <span className="text-xs text-neutral-500" title={t("cancelHint")}>{t("cancelling")}</span>
-                ) : (
-                  // `title` alone, as before: with no other labelling it is both the
-                  // tooltip and the accessible name, and adding an `aria-label` of the
-                  // same words would only make a screen reader say them twice.
-                  <button onClick={() => cancel(m.id)} title={t("cancelDownload")}
-                    className="text-xs text-neutral-500 hover:text-red-400">✕</button>
-                )}
               </div>
-            ) : m.installed ? (
-              <button onClick={() => { setError(""); deleteModel(m.id).then(refresh).catch(e => setError(String(e))); }}
-                className="shrink-0 text-xs text-neutral-500 hover:text-red-400">{t("deleteModel")}</button>
-            ) : (
-              <button onClick={() => download(m.id)}
-                className="shrink-0 rounded bg-blue-600 px-3 py-1 text-xs font-medium">{t("download")}</button>
-            )}
-          </div>
-        );
-      })}
-      {error ? <p className="break-words text-xs text-red-400">{error}</p> : null}
+              {pct !== undefined ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="h-2 w-24 overflow-hidden rounded-full bg-card-2">
+                    <div className="h-full rounded-full bg-amber" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="w-9 text-right text-xs text-ink-2 tabular-nums">{Math.round(pct)}%</span>
+                  {cancelling[m.id] ? (
+                    <span className="text-xs text-ink-2 italic" title={t("cancelHint")}>{t("cancelling")}</span>
+                  ) : (
+                    // `title` alone, as before: with no other labelling it is both the
+                    // tooltip and the accessible name, and adding an `aria-label` of the
+                    // same words would only make a screen reader say them twice.
+                    <button onClick={() => cancel(m.id)} title={t("cancelDownload")}
+                      className="text-xs text-ink-2 transition hover:text-tomato">✕</button>
+                  )}
+                </div>
+              ) : m.installed ? (
+                <button onClick={() => { setError(""); deleteModel(m.id).then(refresh).catch(e => setError(String(e))); }}
+                  className="shrink-0 text-xs font-medium text-ink-2 transition hover:text-tomato">{t("deleteModel")}</button>
+              ) : (
+                <button onClick={() => download(m.id)}
+                  className="shrink-0 rounded-lg bg-basil px-3 py-1.5 text-xs font-semibold text-basil-ink transition hover:opacity-95">
+                  {t("download")}
+                </button>
+              )}
+            </div>
+          );
+        })}
+        {error ? (
+          <p className="flex items-start gap-1.5 break-words text-xs text-tomato">
+            <CircleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
+            <span className="min-w-0">{error}</span>
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 }

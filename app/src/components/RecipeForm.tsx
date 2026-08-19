@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CircleAlert, Copy, LoaderCircle } from "lucide-react";
+import { categoryIcon, categoryTint } from "../lib/icons";
 import { loc, useLocale, useT } from "../lib/i18n";
 import { enqueueJob, getModels, previewCmd } from "../lib/ipc";
 import type { Param, Recipe } from "../lib/types";
@@ -9,8 +11,20 @@ import type { Param, Recipe } from "../lib/types";
 // engine through a recipe default: `language` params pass through Rust untouched.
 const LANGS = ["auto", "ru", "en", "de", "es", "fr", "it", "pt", "uk", "kk"];
 
-/** Shared by every text-ish control in the form (selects and inputs alike). */
-const FIELD_CLASS = "mt-1 w-full rounded border border-neutral-600 bg-transparent p-1.5 text-sm";
+/** Shared by every text-ish control in the form (selects and inputs alike). No
+ *  focus style of its own: the global `:focus-visible` rule in index.css draws
+ *  the ring on every control in the app, and a second one on top of it would
+ *  paint two indicators around one field. */
+const FIELD_CLASS = "mt-1 w-full rounded-lg border border-line bg-card px-2.5 py-1.5 text-sm text-ink";
+
+/** The label above a control — the same size and weight for every field type, so
+ *  a form reads as one column rather than as a pile of controls. */
+const LABEL_CLASS = "text-xs font-medium text-ink-2";
+
+/** A button that is not the form's main action: the way out of a dead-end model
+ *  field ("no model downloaded yet") and the way to the screen that can fix it. */
+const SECONDARY_CLASS =
+  "mt-1 w-full rounded-lg border border-basil px-2.5 py-1.5 text-sm font-semibold text-basil transition hover:bg-basil/10";
 
 function Field({ p, value, onChange }: { p: Param; value: string; onChange: (v: string) => void }) {
   // Parameter labels ride in the recipe as an { en, ru } pair, like its title.
@@ -18,7 +32,7 @@ function Field({ p, value, onChange }: { p: Param; value: string; onChange: (v: 
   // which are the same in both languages.
   const locale = useLocale();
   const name = loc(p.label, locale);
-  const label = <span className="text-xs text-neutral-400">{name}{p.unit ? ` (${p.unit})` : ""}</span>;
+  const label = <span className={LABEL_CLASS}>{name}{p.unit ? ` (${p.unit})` : ""}</span>;
   if (p.type === "language") {
     return (
       <label className="block">{label}
@@ -42,7 +56,11 @@ function Field({ p, value, onChange }: { p: Param; value: string; onChange: (v: 
   if (p.type === "bool") {
     return (
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={value === "true"} onChange={e => onChange(String(e.target.checked))} />
+        {/* `accent-basil` rather than a hand-built box: the native checkbox keeps
+            its keyboard and screen-reader behaviour, and the accent token is what
+            makes it agree with the palette in both themes. */}
+        <input type="checkbox" checked={value === "true"} onChange={e => onChange(String(e.target.checked))}
+          className="size-4 accent-basil" />
         {name}
       </label>
     );
@@ -101,9 +119,17 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
   // and a flag cannot say which of them is the one working.
   const [running, setRunning] = useState<string[] | null>(null);
   const busy = running !== null;
+  // Which preview attempt the form is currently interested in. The debounce's
+  // cleanup can only cancel a `setTimeout` that has not fired yet — an `invoke`
+  // already crossing the bridge resolves regardless, and out of order at that
+  // (Rust is free to answer a cheap preview before an expensive one). Without this
+  // counter a stale answer overwrites `cmd` with the command for parameters the
+  // user has already changed, or clears an `error` that is still true.
+  const previewGen = useRef(0);
 
   const modelParam = useMemo(() => recipe.params.find(p => p.type === "model"), [recipe]);
   const isWhisper = recipe.engine === "whisper";
+  const Icon = categoryIcon(recipe.category);
 
   // Only whisper recipes carry a model param, so an ffmpeg form never pays for
   // this call. The list is read once per mount — which is also how a model
@@ -129,6 +155,11 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
   }, [modelParam, installed]);
 
   useEffect(() => {
+    // Bumped before the early return, not after it: the invariant this counter
+    // buys is "an answer counts only while nothing has changed since it was
+    // asked for", and a dependency change that skips the preview entirely is
+    // still a change.
+    const gen = ++previewGen.current;
     // Hold the first preview of a model-bearing recipe until the installed list
     // has answered. The recipes ship `small` as their default, so previewing
     // before auto-pick has rewritten `params` asks Rust about a model the user
@@ -147,10 +178,17 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
         // `build_argv`, which today includes `Engine::Pipeline` (it runs on the
         // ffmpeg lane, T6 note 6). Testing for the exception rather than for
         // `=== "ffmpeg"` keeps the prefix correct when that engine grows recipes.
-        .then(argv => { setError(""); setHint(""); setCmd((isWhisper ? "" : "ffmpeg ") + argv.map(a => (/\s/.test(a) ? `"${a}"` : a)).join(" ")); })
-        .catch(e => setError(String(e)));
+        .then(argv => {
+          if (gen !== previewGen.current) return;
+          setError(""); setHint("");
+          setCmd((isWhisper ? "" : "ffmpeg ") + argv.map(a => (/\s/.test(a) ? `"${a}"` : a)).join(" "));
+        })
+        .catch(e => { if (gen === previewGen.current) setError(String(e)); });
     }, 150);
-    return () => clearTimeout(timer);
+    // The bump is what makes an unmount count as a change too — the timer is
+    // cleared, but an `invoke` already in flight would otherwise still resolve
+    // into a component that is gone.
+    return () => { clearTimeout(timer); previewGen.current++; };
   }, [recipe.id, input, params, isWhisper, modelParam, installed, modelsError]);
 
   // Both buttons and Retry go through here: an attempt is a list of inputs, and a
@@ -215,28 +253,25 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
     // click the one button there is to click.
     return (
       <label key={p.key} className="block">
-        <span className="text-xs text-neutral-400">{loc(p.label, locale)}</span>
+        <span className={LABEL_CLASS}>{loc(p.label, locale)}</span>
         {modelsError
           // The error alone is a dead end: the field has no select to offer and
           // no button either, and the Models screen is where a stuck model list
           // can actually be looked at. Same escape hatch as the empty state.
           ? <>
-              <p className="mt-1 break-words text-xs text-red-400">{modelsError}</p>
-              <button onClick={onOpenModels}
-                className="mt-1 w-full rounded border border-blue-600 p-1.5 text-sm text-blue-400 hover:bg-blue-600/10">
-                {t("openModels")}
-              </button>
+              <p className="mt-1 flex items-start gap-1 break-words text-xs text-tomato">
+                <CircleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
+                <span className="min-w-0">{modelsError}</span>
+              </p>
+              <button onClick={onOpenModels} className={SECONDARY_CLASS}>{t("openModels")}</button>
             </>
           : installed === null
-            ? <p className="mt-1 text-xs text-neutral-500">{t("loadingModels")}</p>
+            ? <p className="mt-1 text-xs text-ink-2">{t("loadingModels")}</p>
             : installed.length === 0
               // No select to offer, and no honest default either — the preview
               // pane says the same thing in the engine's words and keeps "Add to
               // queue" disabled. This is the way out of that dead end.
-              ? <button onClick={onOpenModels}
-                  className="mt-1 w-full rounded border border-blue-600 p-1.5 text-sm text-blue-400 hover:bg-blue-600/10">
-                  {t("downloadModelPrompt")}
-                </button>
+              ? <button onClick={onOpenModels} className={SECONDARY_CLASS}>{t("downloadModelPrompt")}</button>
               : <select value={params[p.key] ?? ""} onChange={e => onChange(e.target.value)} className={FIELD_CLASS}>
                   {installed.map(id => <option key={id} value={id}>{id}</option>)}
                 </select>}
@@ -245,44 +280,81 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
   };
 
   return (
-    <div className="rounded-xl border border-neutral-700 p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-medium">{loc(recipe.title, locale)}</h2>
+    <div className="shrink-0 rounded-xl border border-line bg-card p-4">
+      <div className="flex items-start justify-between gap-3">
+        {/* The same tile the recipe card wore on the board, in the same tint: the
+            form is that card opened, not a new place the user was taken to. */}
+        <div className="flex min-w-0 items-center gap-3">
+          <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${categoryTint(recipe.category)}`}>
+            <Icon className="size-5" aria-hidden />
+          </span>
+          <h2 className="min-w-0 text-sm font-semibold text-ink">{loc(recipe.title, locale)}</h2>
+        </div>
         {/* The glyph is not a name: without `aria-label` this button announces
             itself as "✕" or as nothing at all, depending on the screen reader. No
             `title` next to it — same text twice is announced twice. */}
         <button onClick={onClose} aria-label={t("close")}
-          className="text-neutral-500 hover:text-neutral-300">✕</button>
+          className="shrink-0 text-ink-2 transition hover:text-tomato">✕</button>
       </div>
       <div className="mt-3 space-y-3">
         {main.map(field)}
         {advanced.length > 0 && (
-          <details><summary className="cursor-pointer text-xs text-neutral-500">{t("advanced")}</summary>
+          <details><summary className="cursor-pointer text-xs font-medium text-ink-2">{t("advanced")}</summary>
             <div className="mt-2 space-y-3">
               {advanced.map(field)}
             </div>
           </details>
         )}
       </div>
-      {/* The marker line is a child of the <pre>, not part of `cmd`: click-to-copy
-          copies the state, so the note never lands in the user's clipboard. */}
-      <pre onClick={copyCmd}
-        title={cmd ? t(isWhisper ? "clickToCopyPreview" : "clickToCopy") : undefined}
-        className="mt-3 overflow-x-auto rounded bg-neutral-900 p-2 text-xs text-neutral-400 [&:not(:empty)]:cursor-pointer">{error || cmd}
-        {cmd && isWhisper
-          ? <span className="mt-1 block text-neutral-600">{t("previewOnly")}</span>
-          : null}</pre>
-      {hint ? <p className="mt-1 text-xs text-neutral-500">{hint}</p> : null}
+      {/* One of the two, never both. A preview *and* a red line beside it used to
+          be reachable — the pane showed `error || cmd`, so the last good command
+          stayed on screen under a failure it no longer described. The command that
+          cannot be built is not a command, so while `error` stands there is
+          nothing to show but the reason. */}
+      {error ? (
+        <p className="mt-3 flex items-start gap-1.5 text-xs text-tomato">
+          <CircleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
+          <span className="min-w-0 break-words">{error}</span>
+        </p>
+      ) : cmd ? (
+        <div className="mt-3 rounded-lg bg-card-2 p-3">
+          <div className="flex items-start gap-2">
+            <pre className="min-w-0 flex-1 overflow-x-auto font-mono text-xs text-ink-2">{cmd}</pre>
+            {/* `title` alone is both the tooltip and the accessible name of an
+                icon-only button — an `aria-label` of the same words would only
+                make a screen reader say them twice. The whisper wording carries
+                the caveat to the one gesture that takes the command away with
+                it. */}
+            <button onClick={copyCmd} title={t(isWhisper ? "clickToCopyPreview" : "clickToCopy")}
+              className="shrink-0 rounded-md p-1 text-ink-2 transition hover:bg-card hover:text-ink">
+              <Copy className="size-3.5" aria-hidden />
+            </button>
+          </div>
+          {/* The caveat is a badge of its own rather than a line of the command:
+              the copy button copies `cmd`, so this can never land in the user's
+              clipboard, and in mono on the card the leading `#` still reads as
+              the shell comment it is written as. */}
+          {isWhisper ? (
+            <p className="mt-2 rounded-md bg-card px-2 py-1 font-mono text-[11px] leading-snug text-ink">
+              {t("previewOnly")}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      {hint ? <p className="mt-1.5 text-xs text-ink-2">{hint}</p> : null}
       {enqueueError ? (
-        <div className="mt-2 flex items-center justify-between gap-2 rounded border border-red-900 bg-red-950/40 p-2">
-          {/* `whitespace-pre-wrap`: a batch reports one line per failed file. */}
-          <span className="whitespace-pre-wrap break-words text-xs text-red-400">{enqueueError}</span>
+        <div className="mt-2 flex items-start justify-between gap-2 rounded-lg border border-tomato/30 bg-tomato/10 p-2">
+          <p className="flex min-w-0 items-start gap-1.5 text-xs text-tomato">
+            <CircleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
+            {/* `whitespace-pre-wrap`: a batch reports one line per failed file. */}
+            <span className="min-w-0 whitespace-pre-wrap break-words">{enqueueError}</span>
+          </p>
           {/* Also disabled on a preview error: the command can no longer be built, so
               there is nothing left to re-send. Reachable without a parameter edit —
               which would have cleared this block — when the active card changes under
               an open form, or when the model the params name leaves the disk. */}
           <button onClick={() => run(failed)} disabled={busy || !!error}
-            className="shrink-0 rounded bg-red-600 px-2 py-1 text-xs disabled:opacity-50">
+            className="shrink-0 rounded-md border border-tomato bg-card px-2 py-1 text-xs font-semibold text-tomato transition hover:bg-tomato/10 disabled:opacity-50">
             {failed.length > 1 ? t("retryN", { n: failed.length }) : t("retryOne")}
           </button>
         </div>
@@ -290,7 +362,14 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
       <button
         onClick={() => run([input])}
         disabled={!!error || busy}
-        className="mt-3 w-full rounded-lg bg-blue-600 p-2 text-sm font-medium disabled:opacity-50">
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-basil py-2.5 text-sm font-semibold text-basil-ink transition hover:opacity-95 disabled:opacity-50">
+        {/* The spinner is the only thing on screen that says the press landed —
+            not gated on `motion-safe`, because a still ring next to "Adding…" is
+            still the indication, and hiding it would leave the button silent. On
+            the button that is actually working, though: during a batch both
+            buttons are disabled, and a spinner here would claim the press that
+            the one below owns. */}
+        {running?.length === 1 ? <LoaderCircle className="size-4 shrink-0 animate-spin" aria-hidden /> : null}
         {running?.length === 1 ? t("adding") : t("addToQueue")}
       </button>
       {batch && batch.length > 1 ? (
@@ -300,7 +379,8 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
         <button
           onClick={() => run(batch)}
           disabled={!!error || busy}
-          className="mt-2 w-full rounded-lg border border-blue-600 p-2 text-sm font-medium text-blue-400 hover:bg-blue-600/10 disabled:opacity-50">
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-basil py-2.5 text-sm font-semibold text-basil transition hover:bg-basil/10 disabled:opacity-50">
+          {running && running.length > 1 ? <LoaderCircle className="size-4 shrink-0 animate-spin" aria-hidden /> : null}
           {running && running.length > 1
             ? t("addingN", { n: running.length })
             : t("addAllN", { n: batch.length })}

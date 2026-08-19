@@ -25,6 +25,7 @@ import {
   ImagePlay,
   Languages,
   LoaderCircle,
+  Mic,
   PackageOpen,
   Scissors,
   ScrollText,
@@ -32,6 +33,7 @@ import {
   Sparkles,
   SquareTerminal,
   Volume2,
+  Wand2,
   type LucideIcon,
 } from "lucide-react";
 import type { JobView, MediaType } from "./types";
@@ -137,4 +139,23 @@ export const STATUS_TINT: Record<JobView["status"], string> = {
   done: "text-basil",
   error: "text-tomato",
   cancelled: "text-ink-2",
+};
+
+/** Which worker lane a job ran on. The two lanes drain independently, so a queue
+ *  showing a running conversion *and* a running transcription is correct rather
+ *  than a bug — the badge is what says so at a glance. Exhaustive by type: a lane
+ *  added on the Rust side cannot reach a card without a glyph here. */
+export const KIND_ICON: Record<JobView["kind"], LucideIcon> = {
+  ffmpeg: Wand2,
+  whisper: Mic,
+};
+
+/** The word beside that glyph. Not in the dictionary and not meant to be: these
+ *  are the two tools' own names, the same in both languages (i18n.tsx rule 1
+ *  exempts brand, format and codec names) — and keeping them here rather than
+ *  inline in the card is what makes that exemption a decision instead of a
+ *  literal someone forgot to translate. */
+export const KIND_LABEL: Record<JobView["kind"], string> = {
+  ffmpeg: "ffmpeg",
+  whisper: "Whisper",
 };

@@ -85,6 +85,9 @@ const EN = {
 
   // ── Queue ────────────────────────────────────────────────────────────────
   queue: "Queue",
+  // The header counter's own name. The badge itself is a bare numeral — this is
+  // what it says on hover, and what a screen reader reads instead of "2".
+  activeN: "{n} active",
   queueEmpty: "Jobs will appear here.",
   st_queued: "queued",
   st_running: "running",
@@ -206,6 +209,9 @@ const RU: Record<TKey, string> = {
   downloadModelPrompt: "Скачать модель → «Модели»",
 
   queue: "Очередь",
+  // «Активных: 2», not «2 активных» — the counted noun stays out of agreement
+  // position, so one form works for 1, 2 and 5 (i18n rule 3).
+  activeN: "Активных: {n}",
   queueEmpty: "Здесь появятся задачи.",
   st_queued: "в очереди",
   st_running: "выполняется",
