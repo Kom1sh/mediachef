@@ -1,56 +1,14 @@
+//! ffmpeg-specific layer over [`crate::process`]: the fixed argv prefix, the
+//! progress parse, the stderr tail and the partial-output cleanup.
+
+use crate::process::{run_streaming, Pipe};
 use crate::progress::ProgressParser;
-use std::collections::VecDeque;
-use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
-use std::process::{Command, ExitStatus, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+
+pub use crate::process::CancelToken;
 
 /// How many trailing stderr lines are kept for `RunError::stderr_tail`.
 const STDERR_TAIL_LINES: usize = 60;
-/// Poll interval of the child-exit loop. Must never block under the child mutex.
-const WAIT_POLL_MS: u64 = 50;
-/// Poll interval of the cancel watchdog.
-const CANCEL_POLL_MS: u64 = 150;
-
-/// Reads `r` line by line, tolerating invalid UTF-8 (lossy conversion).
-///
-/// Unlike `lines().map_while(Result::ok)` this never stops on a decode error:
-/// the drain ends only at real EOF, so the pipe cannot stay full and wedge the
-/// child, and the stderr tail cannot be silently truncated mid-run.
-fn drain_lines<R: Read>(r: R, mut on_line: impl FnMut(&str)) {
-    let mut reader = BufReader::new(r);
-    let mut buf = Vec::new();
-    loop {
-        buf.clear();
-        match reader.read_until(b'\n', &mut buf) {
-            Ok(0) => break,
-            Ok(_) => {
-                while matches!(buf.last().copied(), Some(b'\n' | b'\r')) {
-                    buf.pop();
-                }
-                on_line(&String::from_utf8_lossy(&buf));
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
-            Err(_) => break,
-        }
-    }
-}
-
-#[derive(Clone, Default)]
-pub struct CancelToken(Arc<AtomicBool>);
-
-impl CancelToken {
-    pub fn new() -> Self {
-        Self::default()
-    }
-    pub fn cancel(&self) {
-        self.0.store(true, Ordering::SeqCst);
-    }
-    pub fn is_cancelled(&self) -> bool {
-        self.0.load(Ordering::SeqCst)
-    }
-}
 
 #[derive(Debug)]
 pub enum Outcome {
@@ -72,8 +30,7 @@ pub fn run_ffmpeg(
     mut on_progress: impl FnMut(f32),
 ) -> Result<Outcome, RunError> {
     let output_path = argv.last().cloned();
-    let mut cmd = Command::new(bin);
-    cmd.args([
+    let mut full: Vec<String> = [
         "-hide_banner",
         "-nostats",
         "-v",
@@ -81,107 +38,57 @@ pub fn run_ffmpeg(
         "-progress",
         "pipe:1",
         "-y",
-    ])
-    .args(argv)
-    .stdout(Stdio::piped())
-    .stderr(Stdio::piped())
-    .stdin(Stdio::null());
-    let mut child = cmd.spawn().map_err(|e| RunError {
-        message: format!("spawn: {e}"),
-        stderr_tail: String::new(),
-    })?;
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
+    full.extend_from_slice(argv);
 
-    let stderr = child.stderr.take().unwrap();
-    let tail: Arc<Mutex<VecDeque<String>>> = Arc::new(Mutex::new(VecDeque::new()));
-    let tail2 = tail.clone();
-    let stderr_thread = std::thread::spawn(move || {
-        drain_lines(stderr, |line| {
-            let mut t = tail2.lock().unwrap();
-            if t.len() >= STDERR_TAIL_LINES {
-                t.pop_front();
-            }
-            t.push_back(line.to_string());
-        });
-    });
-
-    let child_arc = Arc::new(Mutex::new(child));
-    let watch_cancel = cancel.clone();
-    let watch_child = child_arc.clone();
-    // Kills the child on cancel. Everything that touches the child mutex must
-    // release it between polls, or this kill could never land.
-    let watchdog = std::thread::spawn(move || loop {
-        if watch_cancel.is_cancelled() {
-            let _ = watch_child.lock().unwrap().kill();
-            break;
-        }
-        let polled = watch_child.lock().unwrap().try_wait();
-        match polled {
-            Ok(Some(_)) | Err(_) => break,
-            Ok(None) => std::thread::sleep(std::time::Duration::from_millis(CANCEL_POLL_MS)),
-        }
-    });
-
-    let stdout = child_arc.lock().unwrap().stdout.take().unwrap();
     let parser = ProgressParser::new(total_s);
-    drain_lines(stdout, |line| {
-        if let Some(p) = parser.parse_line(line) {
-            on_progress(p);
+    let mut tail: Vec<String> = Vec::new();
+    let exit = run_streaming(bin, &full, cancel, |pipe, line| match pipe {
+        Pipe::Stdout => {
+            if let Some(p) = parser.parse_line(line) {
+                on_progress(p);
+            }
+        }
+        Pipe::Stderr => {
+            if tail.len() >= STDERR_TAIL_LINES {
+                tail.remove(0);
+            }
+            tail.push(line.to_string());
         }
     });
-
-    // Non-blocking wait: `wait()` would hold the mutex for its whole blocking
-    // span and starve the watchdog, so cancel would be dead from the moment the
-    // stdout drain ends until the child exits on its own.
-    let waited: Result<ExitStatus, std::io::Error> = loop {
-        let polled = child_arc.lock().unwrap().try_wait();
-        match polled {
-            Ok(Some(s)) => break Ok(s),
-            Err(e) => break Err(e),
-            Ok(None) => std::thread::sleep(std::time::Duration::from_millis(WAIT_POLL_MS)),
-        }
-    };
-
-    let _ = watchdog.join();
-    let _ = stderr_thread.join();
 
     let cleanup = |p: &Option<String>| {
         if let Some(p) = p {
             let _ = std::fs::remove_file(p);
         }
     };
-    let stderr_tail = || {
-        tail.lock()
-            .unwrap()
-            .iter()
-            .cloned()
-            .collect::<Vec<_>>()
-            .join("\n")
-    };
 
-    let status = match waited {
-        Ok(s) => s,
-        Err(e) => {
+    match exit {
+        Err(message) => {
             cleanup(&output_path);
-            return Err(RunError {
-                message: e.to_string(),
-                stderr_tail: stderr_tail(),
-            });
+            Err(RunError {
+                message,
+                stderr_tail: tail.join("\n"),
+            })
         }
-    };
-
-    if cancel.is_cancelled() {
-        cleanup(&output_path);
-        return Ok(Outcome::Cancelled);
-    }
-    if status.success() {
-        on_progress(100.0);
-        Ok(Outcome::Done)
-    } else {
-        cleanup(&output_path);
-        Err(RunError {
-            message: format!("ffmpeg exited with {status}"),
-            stderr_tail: stderr_tail(),
-        })
+        Ok(e) if e.cancelled => {
+            cleanup(&output_path);
+            Ok(Outcome::Cancelled)
+        }
+        Ok(e) if e.success => {
+            on_progress(100.0);
+            Ok(Outcome::Done)
+        }
+        Ok(_) => {
+            cleanup(&output_path);
+            Err(RunError {
+                message: "ffmpeg exited with error".into(),
+                stderr_tail: tail.join("\n"),
+            })
+        }
     }
 }
 

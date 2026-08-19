@@ -4,6 +4,7 @@ pub mod errors;
 pub mod locate;
 pub mod naming;
 pub mod probe;
+pub mod process;
 pub mod progress;
 pub mod recipe;
 pub mod runner;
