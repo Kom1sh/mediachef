@@ -47,7 +47,10 @@ export function RecipeForm({ recipe, input, onQueued, onClose }:
   useEffect(() => {
     const t = setTimeout(() => {
       previewCmd(recipe.id, input, params)
-        .then(argv => { setError(""); setHint(""); setCmd("ffmpeg " + argv.map(a => (/\s/.test(a) ? `"${a}"` : a)).join(" ")); })
+        // A whisper preview already carries its own binary as argv[0] (the queue
+        // assembles that command, not the recipe) — prefixing "ffmpeg" would name
+        // the wrong tool.
+        .then(argv => { setError(""); setHint(""); setCmd((recipe.engine === "ffmpeg" ? "ffmpeg " : "") + argv.map(a => (/\s/.test(a) ? `"${a}"` : a)).join(" ")); })
         .catch(e => setError(String(e)));
     }, 150);
     return () => clearTimeout(t);

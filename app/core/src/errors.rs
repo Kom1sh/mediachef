@@ -18,6 +18,11 @@ pub fn humanize(stderr_tail: &str) -> Option<String> {
         "FFmpeg binary not found — install it (brew install ffmpeg on macOS)."
     } else if s.contains("no such file") {
         "Input file not found (moved or renamed?)."
+    // Not an ffmpeg failure at all: the whisper enqueue refuses a job whose model
+    // is not on disk. The raw text names the model id, which is no help without
+    // the one place that can fix it.
+    } else if s.contains("is not downloaded") {
+        "The Whisper model is not downloaded yet — open the Models screen."
     } else {
         return None;
     };
@@ -57,5 +62,15 @@ mod tests {
         assert!(humanize("i.mp4: No such file or directory")
             .unwrap()
             .contains("Input file"));
+    }
+
+    // The whisper lane's one enqueue-time refusal: the app cannot start a
+    // transcription whose model has never been downloaded. The humanized text has
+    // to point at the screen that fixes it, not repeat the model id.
+    #[test]
+    fn maps_missing_whisper_model() {
+        let m = humanize("model small is not downloaded — open Models").unwrap();
+        assert!(m.contains("Models"), "got: {m}");
+        assert!(m.contains("not downloaded"), "got: {m}");
     }
 }

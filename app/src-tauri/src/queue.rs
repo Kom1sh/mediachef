@@ -7,6 +7,7 @@
 use mediachef_core::naming;
 use mediachef_core::recipe::{MediaType, Recipe};
 use mediachef_core::runner::CancelToken;
+use mediachef_core::transcribe::{WhisperFormat, WhisperJob};
 use serde::Serialize;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -14,11 +15,13 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 
 /// The payload the frontend sees, both from `jobs()` and from `job:update`.
-/// `status` ∈ `queued|running|done|error|cancelled`.
+/// `status` ∈ `queued|running|done|error|cancelled`, `kind` ∈ `ffmpeg|whisper`
+/// (mirrored in `types.ts`).
 #[derive(Debug, Clone, Serialize)]
 pub struct JobView {
     pub id: u64,
     pub recipe_id: String,
+    pub kind: String,
     pub input: String,
     pub output: String,
     pub status: String,
@@ -27,23 +30,78 @@ pub struct JobView {
     pub error_detail: Option<String>,
 }
 
+/// What a job actually runs. The lane follows from the variant, so a whisper job
+/// can never be handed to the ffmpeg worker (nor the reverse) — the workers match
+/// on it and the lane filter in `take_next` is derived from the same source.
+#[derive(Debug, Clone)]
+pub enum JobSpec {
+    Ffmpeg {
+        argv: Vec<String>,
+        duration_s: Option<f64>,
+    },
+    Whisper {
+        job: WhisperJob,
+    },
+}
+
+impl JobSpec {
+    /// The wire name in [`JobView::kind`].
+    pub fn kind(&self) -> &'static str {
+        match self {
+            JobSpec::Ffmpeg { .. } => "ffmpeg",
+            JobSpec::Whisper { .. } => "whisper",
+        }
+    }
+
+    pub fn lane(&self) -> Lane {
+        match self {
+            JobSpec::Ffmpeg { .. } => Lane::Ffmpeg,
+            JobSpec::Whisper { .. } => Lane::Whisper,
+        }
+    }
+}
+
+/// One worker's slice of the queue. Two lanes, one worker each: a transcription
+/// runs for minutes, and the whole point of separating them is that the ffmpeg
+/// queue keeps draining while it does.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Lane {
+    Ffmpeg,
+    Whisper,
+}
+
+impl Lane {
+    /// Last-resort error text when [`mediachef_core::errors::humanize`] has
+    /// nothing to say about a failure. Per-lane, so a failed transcription never
+    /// reads as "FFmpeg failed" (whisper's own exits are not in the table).
+    fn failure_fallback(self) -> &'static str {
+        match self {
+            Lane::Ffmpeg => "FFmpeg failed",
+            Lane::Whisper => "Transcription failed",
+        }
+    }
+}
+
 pub struct Job {
     pub view: JobView,
-    pub argv: Vec<String>,
-    pub duration_s: Option<f64>,
+    pub spec: JobSpec,
     pub cancel: CancelToken,
 }
 
 /// What a successful runner reports back. The runner cannot distinguish a
-/// cancelled run from a finished one on its own — `run_next` re-reads the
+/// cancelled run from a finished one on its own — `run_next_lane` re-reads the
 /// cancel token to pick the final status.
 pub enum TestOutcome {
     Done,
 }
 
-/// Everything `run_next` hands a runner: job id, argv, media duration (for
-/// progress percentages) and the job's cancel token.
-pub type RunSpec = (u64, Vec<String>, Option<f64>, CancelToken);
+/// Everything `run_next_lane` hands a runner: the job id, what to run, and the
+/// job's cancel token.
+pub struct RunSpec {
+    pub id: u64,
+    pub spec: JobSpec,
+    pub cancel: CancelToken,
+}
 
 /// True when `mt` satisfies a recipe's `input.types` list. `any` in the list
 /// waves every media type through (Ruling 20 / spec §8).
@@ -134,13 +192,12 @@ impl Queue {
         self.inner.lock().unwrap().reserved.remove(output);
     }
 
-    pub fn push(
+    pub fn push_spec(
         &self,
         recipe_id: String,
         input: String,
         output: String,
-        argv: Vec<String>,
-        duration_s: Option<f64>,
+        spec: JobSpec,
     ) -> u64 {
         let mut g = self.inner.lock().unwrap();
         let id = g.next_id;
@@ -151,6 +208,7 @@ impl Queue {
         let view = JobView {
             id,
             recipe_id,
+            kind: spec.kind().into(),
             input,
             output,
             status: "queued".into(),
@@ -164,18 +222,58 @@ impl Queue {
         self.emit(view.clone());
         g.jobs.push(Job {
             view,
-            argv,
-            duration_s,
+            spec,
             cancel: CancelToken::new(),
         });
         id
     }
 
-    pub fn push_test_job(&self) -> u64 {
+    /// ffmpeg-flavoured [`Self::push_spec`]: argv plus the media duration the
+    /// progress parser needs.
+    pub fn push(
+        &self,
+        recipe_id: String,
+        input: String,
+        output: String,
+        argv: Vec<String>,
+        duration_s: Option<f64>,
+    ) -> u64 {
+        self.push_spec(
+            recipe_id,
+            input,
+            output,
+            JobSpec::Ffmpeg { argv, duration_s },
+        )
+    }
+
+    /// Test fixture: a job of the given lane with a stub spec (nothing here is
+    /// ever executed — the tests pass their own runner).
+    pub fn push_test_job_kind(&self, kind: &str) -> u64 {
         // Distinct output per job, so the reservation invariant (one path is held
         // by at most one non-terminal job) holds in tests as it does in the app.
         let n = self.inner.lock().unwrap().next_id;
-        self.push("t".into(), "i".into(), format!("o{n}"), vec![], Some(1.0))
+        let spec = match kind {
+            "ffmpeg" => JobSpec::Ffmpeg {
+                argv: vec![],
+                duration_s: Some(1.0),
+            },
+            "whisper" => JobSpec::Whisper {
+                job: WhisperJob {
+                    input: PathBuf::from("i"),
+                    output: PathBuf::from(format!("o{n}")),
+                    model: PathBuf::from("m"),
+                    language: "auto".into(),
+                    translate: false,
+                    format: WhisperFormat::Txt,
+                },
+            },
+            other => panic!("unknown test job kind {other}"),
+        };
+        self.push_spec("t".into(), "i".into(), format!("o{n}"), spec)
+    }
+
+    pub fn push_test_job(&self) -> u64 {
+        self.push_test_job_kind("ffmpeg")
     }
 
     /// Cancellable in any status: a queued job flips to `cancelled` right here,
@@ -217,11 +315,20 @@ impl Queue {
             .collect()
     }
 
-    fn take_next(&self) -> Option<RunSpec> {
+    /// Oldest queued job **of this lane**. A job of the other lane is invisible
+    /// here, so a long transcription cannot hold up the ffmpeg queue.
+    fn take_next(&self, lane: Lane) -> Option<RunSpec> {
         let mut g = self.inner.lock().unwrap();
-        let j = g.jobs.iter_mut().find(|j| j.view.status == "queued")?;
+        let j = g
+            .jobs
+            .iter_mut()
+            .find(|j| j.view.status == "queued" && j.spec.lane() == lane)?;
         j.view.status = "running".into();
-        let out = (j.view.id, j.argv.clone(), j.duration_s, j.cancel.clone());
+        let out = RunSpec {
+            id: j.view.id,
+            spec: j.spec.clone(),
+            cancel: j.cancel.clone(),
+        };
         let v = j.view.clone();
         drop(g);
         self.emit(v);
@@ -259,17 +366,19 @@ impl Queue {
         }
     }
 
-    /// Выполнить следующую queued-задачу переданным раннером (тестируемо).
-    /// Returns false when nothing was queued, so the worker thread knows to idle.
-    pub fn run_next(
+    /// Выполнить следующую queued-задачу этой полосы переданным раннером
+    /// (тестируемо). Returns false when the lane had nothing queued, so the
+    /// worker thread knows to idle.
+    pub fn run_next_lane(
         &self,
+        lane: Lane,
         runner: impl FnOnce(&RunSpec, &mut dyn FnMut(f32)) -> Result<TestOutcome, String>,
     ) -> bool {
-        let Some(job) = self.take_next() else {
+        let Some(job) = self.take_next(lane) else {
             return false;
         };
-        let id = job.0;
-        let cancel = job.3.clone();
+        let id = job.id;
+        let cancel = job.cancel.clone();
         let mut on_p = |p: f32| self.set_progress(id, p);
         match runner(&job, &mut on_p) {
             Ok(TestOutcome::Done) => {
@@ -284,12 +393,22 @@ impl Queue {
                 self.finish(
                     id,
                     "error",
-                    Some(human.unwrap_or_else(|| "FFmpeg failed".into())),
+                    Some(human.unwrap_or_else(|| lane.failure_fallback().into())),
                     Some(e),
                 );
             }
         }
         true
+    }
+
+    /// ffmpeg-lane shorthand for the queue's own tests, whose bodies predate
+    /// lanes. Not compiled into the app: production callers name their lane.
+    #[cfg(test)]
+    fn run_next(
+        &self,
+        runner: impl FnOnce(&RunSpec, &mut dyn FnMut(f32)) -> Result<TestOutcome, String>,
+    ) -> bool {
+        self.run_next_lane(Lane::Ffmpeg, runner)
     }
 }
 
@@ -477,6 +596,53 @@ output: {ext: mp4, suffix: compressed}
         q.cancel(id);
         assert_eq!(q.view(id).unwrap().status, "cancelled");
         assert_eq!(q.plan_unique(&r, &input), a);
+    }
+
+    // Полосы независимы: транскрибация занимает свой воркер минутами, и всё это
+    // время ffmpeg-полоса должна разбирать свою очередь — воркер не имеет права
+    // взять задачу чужой полосы.
+    #[test]
+    fn lanes_are_independent() {
+        let (q, _rx) = Queue::new_for_test();
+        let f = q.push_test_job_kind("ffmpeg");
+        let w = q.push_test_job_kind("whisper");
+        // whisper-полоса не видит ffmpeg-задачу
+        assert!(q.run_next_lane(Lane::Whisper, |_j, _p| Ok(TestOutcome::Done)));
+        assert_eq!(q.view(w).unwrap().status, "done");
+        assert_eq!(q.view(f).unwrap().status, "queued");
+        assert!(q.run_next_lane(Lane::Ffmpeg, |_j, _p| Ok(TestOutcome::Done)));
+        assert_eq!(q.view(f).unwrap().status, "done");
+    }
+
+    // Whisper's own exits ("whisper exited with code 1") are not in the
+    // humanizer's ffmpeg-shaped table, so they land on the fallback — which must
+    // be the lane's. A failed transcription telling the user "FFmpeg failed"
+    // sends them looking in the wrong place.
+    #[test]
+    fn error_fallback_follows_the_lane() {
+        let (q, _rx) = Queue::new_for_test();
+        let w = q.push_test_job_kind("whisper");
+        let f = q.push_test_job_kind("ffmpeg");
+        q.run_next_lane(Lane::Whisper, |_j, _p| {
+            Err("whisper exited with code 1".to_string())
+        });
+        q.run_next_lane(Lane::Ffmpeg, |_j, _p| Err("boom".to_string()));
+        assert_eq!(q.view(w).unwrap().error.unwrap(), "Transcription failed");
+        assert_eq!(q.view(f).unwrap().error.unwrap(), "FFmpeg failed");
+        // The raw text is still there for the "Copy log" button.
+        assert_eq!(
+            q.view(w).unwrap().error_detail.unwrap(),
+            "whisper exited with code 1"
+        );
+    }
+
+    // `kind` — это то, по чему UI отличает транскрибацию от конвертации; поле
+    // обязано доехать до вьюхи (и до `types.ts`, где оно продублировано).
+    #[test]
+    fn kind_serialized_in_view() {
+        let (q, _rx) = Queue::new_for_test();
+        let id = q.push_test_job_kind("whisper");
+        assert_eq!(q.view(id).unwrap().kind, "whisper");
     }
 
     // `unreserve` is the escape hatch for enqueue failing after planning (a bad

@@ -34,6 +34,9 @@ export interface Recipe {
 export interface JobView {
   id: number;
   recipe_id: string;
+  // Which worker lane ran the job — the two drain independently, so a queued
+  // transcription is not waiting on a running conversion.
+  kind: "ffmpeg" | "whisper";
   input: string;
   output: string;
   status: "queued" | "running" | "done" | "error" | "cancelled";
