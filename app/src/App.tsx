@@ -63,7 +63,8 @@ export default function App() {
             className="w-full rounded-lg border border-neutral-700 bg-transparent p-2 text-sm"
           />
           {selected && file
-            ? <RecipeForm recipe={selected} input={file} onQueued={() => setSelected(null)} onClose={() => setSelected(null)} />
+            ? <RecipeForm recipe={selected} input={file} onQueued={() => setSelected(null)} onClose={() => setSelected(null)}
+                onOpenModels={() => setTab("models")} />
             : <RecipeList recipes={results} onPick={r => setSelected(r)} />}
           {!file && <p className="text-xs text-neutral-500">Drop a file to filter recipes by type.</p>}
         </section>
