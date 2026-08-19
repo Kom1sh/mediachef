@@ -184,8 +184,8 @@ fn main() {
         };
         match verdict {
             Verdict::Fail => failed += 1,
-            // Attempts, not passes — but the summary that reads these counters is
-            // only reached with zero failures, where the two are the same number.
+            // Both counters count passes, one per lane. So `ran` also covers the
+            // case where nothing failed because nothing ffmpeg-shaped ever ran.
             Verdict::Pass if matches!(r.engine, Engine::Whisper) => whisper_ran += 1,
             Verdict::Pass => ran += 1,
             Verdict::Skip => {}

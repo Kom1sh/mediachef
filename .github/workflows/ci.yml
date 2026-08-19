@@ -26,9 +26,13 @@ jobs:
   # and `say` gives us the voice fixture the ubuntu job cannot produce.
   rust-tauri:
     runs-on: macos-latest
-    env:
-      MEDIACHEF_MODELS_DIR: ${{ runner.temp }}/whisper-models
     steps:
+      # Set here rather than in a job-level `env:`, where the `runner` context is
+      # not available (only github/needs/strategy/matrix/vars/secrets/inputs are).
+      # $RUNNER_TEMP is a plain runner variable and always present; it is the same
+      # directory `runner.temp` names in the cache step's `path` below. Outside the
+      # checkout on purpose, so a 78MB model never sits in the working tree.
+      - run: echo "MEDIACHEF_MODELS_DIR=$RUNNER_TEMP/whisper-models" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with: { components: "clippy" }
@@ -54,7 +58,17 @@ jobs:
       # smoke run below have real speech to work on.
       - run: ./fixtures/make.sh
       - run: cargo test -p mediachef-core transcribe -- --ignored
-      - run: cargo run -p mediachef-core --bin smoke
+      # A degraded whisper lane — renamed binary, empty cache dir, a `say` that
+      # produced no fixture — prints 8 SKIP rows and still exits 0, which would be
+      # green for nothing. So assert the counter instead of trusting the exit code.
+      # The count is pinned deliberately: adding a whisper recipe must bump it here.
+      # `shell: bash` adds `-o pipefail` so `tee` cannot swallow a non-zero smoke
+      # exit either (belt and braces — smoke prints that line only when it passes).
+      - name: Smoke, asserting the whisper lane really ran
+        shell: bash
+        run: |
+          cargo run -p mediachef-core --bin smoke | tee "$RUNNER_TEMP/smoke.log"
+          grep -qF "; 8 whisper recipe(s) ran" "$RUNNER_TEMP/smoke.log"
 
   web:
     runs-on: ubuntu-latest
