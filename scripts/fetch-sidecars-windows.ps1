@@ -87,6 +87,11 @@ if ($env:OS -ne 'Windows_NT' -or $env:PROCESSOR_ARCHITECTURE -ne 'AMD64') {
 foreach ($tool in 'curl.exe', 'git', 'cmake') {
   if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) { throw "нужен $tool" }
 }
+# Именно этот tar, а не любой из PATH: bsdtar из System32 читает zip, GNU tar из
+# Git for Windows — нет. Есть в Windows начиная с 10/1803 и во всех образах
+# windows-latest.
+$BsdTar = Join-Path $env:SystemRoot 'System32/tar.exe'
+if (-not (Test-Path $BsdTar)) { throw "нет $BsdTar (bsdtar) — им распаковывается zip с ffmpeg" }
 
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 $Work = Join-Path ([IO.Path]::GetTempPath()) 'mediachef-sidecars'
@@ -151,6 +156,9 @@ function Install-FfmpegPair {
   } else {
     Write-Host "==> качаю ffmpeg $FfmpegVersion (BtbN $BtbnTag, win64-gpl)"
     curl.exe -fSL --retry 3 --connect-timeout 20 -o "$archive.part" $FfmpegArchiveUrl
+    # Код возврата проверяется руками у каждой native-команды: в pwsh 7.4+
+    # ненулевой код и сам бросил бы исключение ($PSNativeCommandUseErrorAction-
+    # Preference), но на 7.2/7.3 — нет, а сообщение здесь понятнее в любом случае.
     if ($LASTEXITCODE -ne 0) { throw "curl не смог скачать $FfmpegArchiveUrl (код $LASTEXITCODE)" }
     Move-Item -Force "$archive.part" $archive
     $got = Sha256Of $archive
@@ -159,11 +167,19 @@ function Install-FfmpegPair {
     }
   }
 
-  # Внутри архива всё лежит в каталоге с именем сборки.
+  # Внутри архива всё лежит в каталоге с именем сборки. Достаём ровно два файла
+  # из трёх (ffplay не нужен): Expand-Archive распаковал бы все 435МБ чистым
+  # .NET-ом ради тех же двух. tar.exe из System32 — это bsdtar, он читает zip и
+  # умеет отбор членов, тот же приём, что в linux-скрипте. Путь абсолютный
+  # СОЗНАТЕЛЬНО: на раннере в PATH есть ещё GNU tar из Git for Windows, а он zip
+  # не открывает вовсе.
   $un = Join-Path $Work 'unzip-win-ffmpeg'
   if (Test-Path $un) { Remove-Item -Recurse -Force $un }
-  Expand-Archive -Path $archive -DestinationPath $un -Force
+  New-Item -ItemType Directory -Force -Path $un | Out-Null
   $root = [IO.Path]::GetFileNameWithoutExtension($FfmpegArchive)
+  # --strip-components=2 снимает каталог сборки и bin/, оставляя два .exe.
+  & $BsdTar -xf $archive -C $un --strip-components=2 "$root/bin/ffmpeg.exe" "$root/bin/ffprobe.exe"
+  if ($LASTEXITCODE -ne 0) { throw "$BsdTar не распаковал $FfmpegArchive (код $LASTEXITCODE)" }
 
   # Список — из хэштаблиц, а не из вложенных массивов: массив массивов PowerShell
   # норовит расплющить, а хэштаблица остаётся одним элементом при любом раскладе.
@@ -172,7 +188,7 @@ function Install-FfmpegPair {
     @{ Name = 'ffprobe'; Sha = $FfprobeBinSha; Dest = $destFfprobe }
   )
   foreach ($tool in $tools) {
-    $src = Join-Path $un "$root/bin/$($tool.Name).exe"
+    $src = Join-Path $un "$($tool.Name).exe"
     if (-not (Test-Path $src)) { throw "в $FfmpegArchive нет bin/$($tool.Name).exe" }
     $got = Sha256Of $src
     if ($got -ne $tool.Sha) { throw "$($tool.Name).exe (из архива): sha256 не совпала! ждали $($tool.Sha), вышло $got" }

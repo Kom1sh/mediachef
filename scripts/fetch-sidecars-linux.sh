@@ -78,28 +78,37 @@ SUMMARY=()   # строки таблицы: имя|версия|состояни
 sha_of() { sha256sum "$1" | awk '{print $1}'; }
 
 # Сайдкар обязан быть самодостаточным: рядом с ним в бандле лежат только два
-# других наших бинарника и ни одной .so. Всё, что слинковано вне базового
-# системного набора, на чужой машине не найдётся — libwhisper/libggml от
+# других наших бинарника и ни одной .so. Всё, что тянется не из системных
+# каталогов дистрибутива, на чужой машине не найдётся — libwhisper/libggml от
 # нестатической сборки, libgomp от OpenMP, что угодно ещё. Пусть падает здесь, а
 # не у юзера. Аналог assert_self_contained из маковского скрипта (там otool).
-LINUX_SYSTEM_SONAMES='^(linux-vdso\.so\.[0-9]+|ld-linux-x86-64\.so\.[0-9]+|libc\.so\.[0-9]+|libm\.so\.[0-9]+|libpthread\.so\.[0-9]+|libdl\.so\.[0-9]+|librt\.so\.[0-9]+|libstdc\+\+\.so\.[0-9]+|libgcc_s\.so\.[0-9]+)$'
+#
+# Смотрим не на ИМЕНА библиотек, а на то, КУДА их разрешил ldd. Перечислять
+# sonames — заведомо проигрышная игра: сборки ffmpeg от BtbN, помимо
+# libc/libm/libpthread/libdl/librt, линкуются ещё с libmvec.so.1 (векторная
+# математика, тот же пакет libc6), и такой список приходилось бы править под
+# каждую новую glibc. «Разрешилось в системный каталог» — ровно та же мысль, что
+# «/usr/lib и /System» в маковском скрипте, и она переживает смену sonames.
+LINUX_SYSTEM_PATHS='^(/lib/x86_64-linux-gnu/|/usr/lib/x86_64-linux-gnu/|/lib64/|/usr/lib64/)'
 assert_self_contained() {
-  local bin="$1" magic out deps bad
-  # ldd на не-ELF пишет «not a dynamic executable» и на статическом ELF пишет то
-  # же самое — то есть пустой список зависимостей сам по себе ещё не «всё
-  # чисто». Поэтому сначала убеждаемся, что это вообще ELF (ffmpeg от BtbN —
-  # статический ELF, у него зависимостей и правда нет).
+  local bin="$1" magic out bad
+  # ldd на не-ELF пишет «not a dynamic executable» — то же самое, что на
+  # полностью статическом ELF. Поэтому сначала убеждаемся, что это вообще ELF:
+  # иначе пустая заглушка проехала бы проверку как «статический бинарник».
   magic="$(head -c 4 "$bin" | od -An -tx1 | tr -d ' \n')" || magic=""
   [ "$magic" = "7f454c46" ] || {
     echo "$bin: не ELF-бинарник (пустая заглушка? обрезанная скачка?)" >&2
     exit 1
   }
   out="$(ldd "$bin" 2>&1)" || true
+  # Полностью статический ELF — законный случай (зависимостей нет вовсе), но
+  # сегодня у нас таких нет: и ffmpeg/ffprobe от BtbN, и наш whisper-cli
+  # линкуются с glibc динамически. Ветка на случай, если поставка когда-нибудь
+  # переедет на статику.
   if printf '%s\n' "$out" | grep -qE 'not a dynamic executable|statically linked'; then
     return 0
   fi
-  deps="$(printf '%s\n' "$out" | awk 'NF {print $1}')"
-  [ -n "$deps" ] || {
+  [ -n "$(printf '%s\n' "$out" | awk 'NF')" ] || {
     echo "$bin: ldd не дал ни строчки, но и статическим бинарник не назвал:" >&2
     printf '%s\n' "$out" >&2
     exit 1
@@ -111,9 +120,34 @@ assert_self_contained() {
     printf '%s\n' "$out" | grep 'not found' >&2
     exit 1
   fi
-  bad="$(printf '%s\n' "$deps" | xargs -n1 basename | grep -vE "$LINUX_SYSTEM_SONAMES" || true)"
+  # Отдельное жёсткое правило, ДО проверки путей: libwhisper/libggml (наши же, от
+  # сборки без BUILD_SHARED_LIBS=OFF) и libgomp (OpenMP) недопустимы, даже если
+  # лежат в системном каталоге. Первые рядом с exe в бандле просто не окажутся;
+  # libgomp — пакет libgomp1, которого на минимальной системе у пользователя
+  # может не быть, а мы обещаем «работает из коробки». Заодно это страховка на
+  # флаги: если GGML_OPENMP=OFF или BUILD_SHARED_LIBS=OFF потеряются, джоба
+  # покраснеет здесь.
+  if printf '%s\n' "$out" | grep -qE 'lib(whisper|ggml|gomp)'; then
+    echo "$bin тянет библиотеки, которых у пользователя может не быть (libwhisper/libggml от нестатической сборки или libgomp от OpenMP):" >&2
+    printf '%s\n' "$out" | grep -E 'lib(whisper|ggml|gomp)' >&2
+    echo "проверьте флаги BUILD_SHARED_LIBS=OFF и GGML_OPENMP=OFF" >&2
+    exit 1
+  fi
+  bad="$(printf '%s\n' "$out" | awk -v ok="$LINUX_SYSTEM_PATHS" '
+    NF == 0 { next }
+    # vDSO — не файл, а страница от ядра: разрешать её нечему, пути в строке нет
+    # ни в одной из форм («linux-vdso.so.1 (0x…)», на старых glibc
+    # «linux-gate.so.1 => (0x…)»).
+    $1 ~ /^linux-(vdso|gate)\.so/ { next }
+    {
+      # Три формы строк ldd: «soname => путь (адрес)», «путь (адрес)» — это
+      # интерпретатор ld-linux, и «soname (адрес)».
+      res = ($2 == "=>") ? $3 : $1
+      if (res ~ ok) next
+      print
+    }')"
   [ -n "$bad" ] || return 0
-  echo "$bin слинкован не только с системными библиотеками — сайдкар не самодостаточен:" >&2
+  echo "$bin слинкован не только с системными каталогами — сайдкар не самодостаточен:" >&2
   while IFS= read -r lib; do echo "  $lib" >&2; done <<<"$bad"
   exit 1
 }

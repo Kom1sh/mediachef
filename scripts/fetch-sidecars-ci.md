@@ -121,11 +121,21 @@ cache): the pinned shas of the installed ffmpeg/ffprobe, `ffmpeg -version`,
 `ffprobe -version`, `whisper-cli --help`, and a linkage check —
 
 - macOS: `otool -L` must show nothing outside `/usr/lib` and `/System`;
-- Linux: `ldd` must show nothing outside `libc/libm/libpthread/libdl/librt/
-  libstdc++/libgcc_s/ld-linux/linux-vdso` (no libgomp — OpenMP is off; BtbN's
-  ffmpeg is a fully static ELF and legitimately has no dependencies at all), plus
-  an ELF-magic check so a placeholder cannot pass as "statically linked", and any
-  `=> not found` is a failure;
+- Linux: every dependency `ldd` reports must **resolve into** a distribution
+  directory — `/lib/x86_64-linux-gnu/`, `/usr/lib/x86_64-linux-gnu/`, `/lib64/`
+  or `/usr/lib64/` — which is the same idea as macOS's `/usr/lib` + `/System`.
+  The check deliberately looks at resolved paths rather than at a list of
+  allowed sonames: BtbN's ffmpeg/ffprobe are **not** static, their `DT_NEEDED`
+  is `libm, libdl, librt, libpthread, libmvec.so.1, libc, ld-linux-x86-64,
+  libgcc_s` with a `PT_INTERP` present, and an soname list would have to be
+  amended for `libmvec` today and for whatever glibc adds next. On top of the
+  path rule: `=> not found` is always a failure; `libwhisper`/`libggml`/`libgomp`
+  are failures wherever they resolve (the first two mean
+  `BUILD_SHARED_LIBS=OFF` was lost, the third means `GGML_OPENMP=OFF` was, and
+  `libgomp1` is not guaranteed on a minimal user system); the vDSO is skipped
+  explicitly, since it is a kernel page with no file to resolve; and an
+  ELF-magic check runs first so a placeholder cannot slip through as
+  "statically linked" (`ldd` says exactly that about a text file);
 - Windows: there is no cheap `dumpbin` without a Developer Command Prompt, so
   the check reads the PE and looks for the import names `VCRUNTIME140`,
   `MSVCP140` and `VCOMP140` — a dynamically linked CRT (or OpenMP) cannot hide,

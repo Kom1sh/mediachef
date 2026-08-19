@@ -217,8 +217,14 @@ jobs:
           & (Join-Path $dir 'whisper-cli.exe') --help > $null
           if ($LASTEXITCODE -ne 0) { throw "whisper-cli --help exited $LASTEXITCODE" }
           Write-Host "  whisper-cli: --help ok"
-      - run: mkdir out; copy docs\КАК_ЗАПУСТИТЬ_WINDOWS.txt out\HOW_TO_RUN_windows.txt
-        shell: cmd
+      # bash, not cmd: in cmd `;` is a token separator, so `mkdir out; copy a b`
+      # parsed as a single mkdir with four operands — it failed on the existing
+      # path (red step) and the copy never ran, leaving the upload glob below
+      # matching nothing. Git bash also passes the Cyrillic filename through as
+      # UTF-8 instead of the console's OEM codepage, and it makes this step read
+      # exactly like its macOS and Linux counterparts.
+      - run: mkdir -p out && cp docs/КАК_ЗАПУСТИТЬ_WINDOWS.txt out/HOW_TO_RUN_windows.txt
+        shell: bash
       - uses: softprops/action-gh-release@v2
         with:
           files: |
