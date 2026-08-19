@@ -1,6 +1,6 @@
 /**
- * The two quantities the UI prints in more than one place: a byte count and a
- * length of time.
+ * The two quantities the UI prints in more than one place — a byte count and a
+ * length of time — and the one *string* it does: a file's own name out of a path.
  *
  * Both used to exist twice over. A file card spelled sizes in megabytes only
  * ("4096.0 MB" for a four-gigabyte film) while the Models screen already had a
@@ -54,4 +54,24 @@ export function duration(seconds: number): string {
   const mm = Math.floor(total / 60) % 60;
   const hh = Math.floor(total / 3600);
   return hh > 0 ? `${hh}:${String(mm).padStart(2, "0")}:${ss}` : `${String(mm).padStart(2, "0")}:${ss}`;
+}
+
+/**
+ * The last segment of a path — the name the UI shows where the whole path would not
+ * fit: a queue card, a file card, a desktop notification, a per-file error line.
+ *
+ * Both separators are honoured, and that is the point of the function existing. Every
+ * one of those five places spelled it `path.split("/").pop()`, which on Windows finds
+ * no `/` at all and hands back `C:\Users\me\Videos\holiday.mp4` whole — a card that
+ * has room for a name, filled with a path instead. Paths reach the UI from Rust
+ * (`JobView.input`, the drop's own paths), so they arrive in the platform's own
+ * spelling and neither separator can be assumed away.
+ *
+ * A path *ending* in a separator answers with the empty string, exactly as the
+ * `split` it replaces did: it is a directory, and none of the five callers can be
+ * handed one.
+ */
+export function basename(path: string): string {
+  const cut = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+  return cut < 0 ? path : path.slice(cut + 1);
 }

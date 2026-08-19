@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { ChefHat, CircleAlert, Copy, FolderOpen } from "lucide-react";
-import { duration } from "../lib/format";
+import { basename, duration } from "../lib/format";
 import { KIND_ICON, KIND_LABEL, STATUS_ICON, STATUS_TINT } from "../lib/icons";
 import { loc, useLocale, useT, type TKey } from "../lib/i18n";
 import { cancelJob, listJobs, onJobUpdate, revealFile } from "../lib/ipc";
@@ -21,10 +21,10 @@ const STATUS_KEY: Record<JobView["status"], TKey> = {
 /** The one Rust-side failure the card says in the user's own language (Ruling
  *  W3-4 — every error gets a marker in wave 4; until then the rest stay English).
  *
- *  `run_whisper` fails a transcription with no words in it as `no_speech: …`, which
- *  `errors::humanize` turns into an English sentence for `error` while the marker
- *  itself leads `error_detail` — so both fields are tested, and either one carrying
- *  it means the same thing.
+ *  `run_whisper` fails a transcription with no words in it as `no_speech: …`, and
+ *  `error_detail` is where that marker survives: `errors::humanize` has already
+ *  turned `error` into the English sentence, so testing that field too was testing
+ *  a string that by construction never carries the marker.
  *
  *  The marker has to be at the *head* of the text, not merely somewhere in it:
  *  `error_detail` ends in engine output that quotes the user's file name, and a
@@ -33,12 +33,137 @@ const STATUS_KEY: Record<JobView["status"], TKey> = {
  *
  *  Only the summary line is swapped: the status word stays "error" (nothing was
  *  produced) and the raw log stays one click away underneath. */
-const isNoSpeech = (j: JobView) =>
-  [j.error, j.error_detail].some(s => (s ?? "").startsWith("no_speech:"));
+const isNoSpeech = (j: JobView) => (j.error_detail ?? "").startsWith("no_speech:");
 
 /** Waiting or working — the two states a card can still leave on its own, and what
  *  the header counter counts. */
 const isActive = (j: JobView) => j.status === "queued" || j.status === "running";
+
+/**
+ * One queue card. Everything it needs arrives as a prop — the recipe's translated
+ * title, the ETA string, and the three things a click on it does — so the card is a
+ * pure function of one `JobView` and can be rendered on its own. Which is the point:
+ * the panel around it only ever fills itself from an `invoke` inside an effect, and a
+ * static render runs no effects, so the states that matter most (a failure the user
+ * has to read, a bar a screen reader has to announce) would have no test at all.
+ */
+export function JobCard({
+  job: j,
+  title,
+  eta,
+  onCancel,
+  onReveal,
+  onCopyLog,
+}: {
+  job: JobView;
+  /** The recipe's name in the user's language, or its id — the panel owns the
+   *  catalog and the fallback. */
+  title: string;
+  /** Already formatted, because the clock it is measured from lives in the panel. */
+  eta: string;
+  onCancel: () => void;
+  onReveal: () => void;
+  onCopyLog: () => void;
+}) {
+  const t = useT();
+  const Status = STATUS_ICON[j.status];
+  const Kind = KIND_ICON[j.kind];
+  // Both waiting states show the bar, and `done` keeps it: a full basil
+  // track is the difference between "finished" and "the card stopped
+  // updating". `error` and `cancelled` have no bar to be honest about —
+  // the run stopped somewhere the percentage does not describe.
+  const bar = isActive(j) || j.status === "done";
+  return (
+    <div className="rounded-xl border border-line bg-card p-3">
+      <div className="flex items-start gap-2">
+        {/* The icon *is* the status word: amber ring for running (spinning,
+            and still spinning — slower — under `prefers-reduced-motion`,
+            where `.spin-indicator` is index.css's one exception, because a
+            frozen ring beside a live progress bar would be the wrong
+            story), basil tick for done, tomato circle for a failure.
+            `role="img"` + the word as its label is what keeps that legible
+            to a screen reader. */}
+        <Status role="img" aria-label={t(STATUS_KEY[j.status])}
+          className={`mt-px size-4 shrink-0 ${STATUS_TINT[j.status]} ${j.status === "running" ? "spin-indicator" : ""}`} />
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{title}</span>
+        {/* Which lane ran it. The lanes drain independently, so a queued
+            transcription beside a running conversion is the queue working
+            as designed — and this badge is the only place that says so.
+            `text-ink` rather than `ink-2`, because at 10px the quieter
+            pair is not enough: `ink-2` on `card-2` measures 4.25:1 in the
+            light theme, under the 4.5 floor, while `ink` clears 13:1. */}
+        <span className="flex shrink-0 items-center gap-1 rounded-full bg-card-2 px-2 py-0.5 text-[10px] font-medium text-ink">
+          <Kind className="size-3 shrink-0 text-ink-2" aria-hidden />
+          {KIND_LABEL[j.kind]}
+        </span>
+      </div>
+      {/* Which file, until there is a result to name instead. */}
+      {j.status === "done" ? null : (
+        <p className="mt-1 truncate text-xs text-ink-2" title={j.input}>{basename(j.input)}</p>
+      )}
+      {bar && (
+        // The gauge is the track, not the fill: the track is the element
+        // that spans 0–100, and `aria-valuenow` is read against its
+        // `min`/`max`. Both bounds are spelled out even though 0 and 100 are
+        // the ARIA defaults — a progressbar missing them is a common enough
+        // bug that readers differ on what they assume, and the pair costs
+        // two attributes.
+        <div role="progressbar" aria-valuenow={j.percent} aria-valuemin={0} aria-valuemax={100}
+          aria-label={t("jobProgressNamed", { name: title })}
+          className="mt-2 h-2 w-full overflow-hidden rounded-full bg-card-2">
+          {/* `percent` is 100 on done (queue.rs `finish`), so the width is
+              the job's own number in every state the bar is shown in.
+              `aria-hidden` is not needed and not wanted: the fill has no
+              text, and a progressbar's own children are not read. */}
+          <div className={`h-full rounded-full ${j.status === "done" ? "bg-basil" : "bg-amber"}`}
+            style={{ width: `${j.percent}%` }} />
+        </div>
+      )}
+      {isActive(j) && (
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <button onClick={onCancel}
+            className="text-xs font-medium text-ink-2 transition hover:text-tomato">{t("cancel")}</button>
+          {/* tabular numerals: the estimate counts down in place, and
+              proportional digits would jiggle the whole line every tick. */}
+          {j.status === "running" ? <span className="text-xs text-ink-2 tabular-nums">{eta}</span> : null}
+        </div>
+      )}
+      {j.status === "done" && (
+        <div className="mt-1.5 flex items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-xs text-ink-2" title={j.output}>
+            {basename(j.output)}
+          </span>
+          {/* `title` alone: on an icon-only button it is both the tooltip
+              and the accessible name. */}
+          <button onClick={onReveal} title={t("showInFinder")}
+            className="shrink-0 rounded-md p-1 text-ink-2 transition hover:bg-card-2 hover:text-ink">
+            <FolderOpen className="size-4" aria-hidden />
+          </button>
+        </div>
+      )}
+      {/* The status word, printed only here. Every other state has a line
+          of its own that says what happened; a cancelled job has nothing
+          left to show but the fact. */}
+      {j.status === "cancelled" && <p className="mt-1.5 text-xs text-ink-2">{t("st_cancelled")}</p>}
+      {j.status === "error" && (
+        <details className="mt-1.5">
+          <summary className="cursor-pointer text-xs font-medium text-tomato">
+            {isNoSpeech(j) ? t("noSpeech") : (j.error ?? t("failed"))}
+          </summary>
+          {/* The engine's own words, in mono because they are output and
+              not prose — `text-ink` at 11px on `card-2`, the smallest
+              size that pair carries. */}
+          <pre className="mt-1.5 max-h-32 overflow-auto rounded-lg bg-card-2 p-2 font-mono text-[11px] whitespace-pre-wrap text-ink">{j.error_detail}</pre>
+          <button onClick={onCopyLog}
+            className="mt-1.5 flex items-center gap-1 text-xs text-ink-2 transition hover:text-ink">
+            <Copy className="size-3 shrink-0" aria-hidden />
+            {t("copyLog")}
+          </button>
+        </details>
+      )}
+    </div>
+  );
+}
 
 export function QueuePanel({
   recipes,
@@ -87,7 +212,7 @@ export function QueuePanel({
           if (ok) {
             sendNotification({
               title: translate.current("appName"),
-              body: translate.current("notifyDone", { name: j.output.split("/").pop() ?? "" }),
+              body: translate.current("notifyDone", { name: basename(j.output) }),
             });
           }
         }).catch(() => {});
@@ -162,105 +287,14 @@ export function QueuePanel({
             <p className="text-xs text-ink-2">{t("queueEmpty")}</p>
           </div>
         )}
-        {list.map(j => {
-          const Status = STATUS_ICON[j.status];
-          const Kind = KIND_ICON[j.kind];
-          // Both waiting states show the bar, and `done` keeps it: a full basil
-          // track is the difference between "finished" and "the card stopped
-          // updating". `error` and `cancelled` have no bar to be honest about —
-          // the run stopped somewhere the percentage does not describe.
-          const bar = isActive(j) || j.status === "done";
-          return (
-            <div key={j.id} className="rounded-xl border border-line bg-card p-3">
-              <div className="flex items-start gap-2">
-                {/* The icon *is* the status word: amber ring for running (spinning,
-                    and still spinning — slower — under `prefers-reduced-motion`,
-                    where `.spin-indicator` is index.css's one exception, because a
-                    frozen ring beside a live progress bar would be the wrong
-                    story), basil tick for done, tomato circle for a failure.
-                    `role="img"` + the word as its label is what keeps that legible
-                    to a screen reader. */}
-                <Status role="img" aria-label={t(STATUS_KEY[j.status])}
-                  className={`mt-px size-4 shrink-0 ${STATUS_TINT[j.status]} ${j.status === "running" ? "spin-indicator" : ""}`} />
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{title(j.recipe_id)}</span>
-                {/* Which lane ran it. The lanes drain independently, so a queued
-                    transcription beside a running conversion is the queue working
-                    as designed — and this badge is the only place that says so.
-                    `text-ink` rather than `ink-2`, because at 10px the quieter
-                    pair is not enough: `ink-2` on `card-2` measures 4.25:1 in the
-                    light theme, under the 4.5 floor, while `ink` clears 13:1. */}
-                <span className="flex shrink-0 items-center gap-1 rounded-full bg-card-2 px-2 py-0.5 text-[10px] font-medium text-ink">
-                  <Kind className="size-3 shrink-0 text-ink-2" aria-hidden />
-                  {KIND_LABEL[j.kind]}
-                </span>
-              </div>
-              {/* Which file, until there is a result to name instead. */}
-              {j.status === "done" ? null : (
-                <p className="mt-1 truncate text-xs text-ink-2" title={j.input}>{j.input.split("/").pop()}</p>
-              )}
-              {bar && (
-                // The gauge is the track, not the fill: the track is the element
-                // that spans 0–100, and `aria-valuenow` is read against its
-                // `min`/`max`. Both bounds are spelled out even though 0 and 100 are
-                // the ARIA defaults — a progressbar missing them is a common enough
-                // bug that readers differ on what they assume, and the pair costs
-                // two attributes.
-                <div role="progressbar" aria-valuenow={j.percent} aria-valuemin={0} aria-valuemax={100}
-                  aria-label={t("jobProgressNamed", { name: title(j.recipe_id) })}
-                  className="mt-2 h-2 w-full overflow-hidden rounded-full bg-card-2">
-                  {/* `percent` is 100 on done (queue.rs `finish`), so the width is
-                      the job's own number in every state the bar is shown in.
-                      `aria-hidden` is not needed and not wanted: the fill has no
-                      text, and a progressbar's own children are not read. */}
-                  <div className={`h-full rounded-full ${j.status === "done" ? "bg-basil" : "bg-amber"}`}
-                    style={{ width: `${j.percent}%` }} />
-                </div>
-              )}
-              {isActive(j) && (
-                <div className="mt-1.5 flex items-center justify-between gap-2">
-                  <button onClick={() => cancelJob(j.id)}
-                    className="text-xs font-medium text-ink-2 transition hover:text-tomato">{t("cancel")}</button>
-                  {/* tabular numerals: the estimate counts down in place, and
-                      proportional digits would jiggle the whole line every tick. */}
-                  {j.status === "running" ? <span className="text-xs text-ink-2 tabular-nums">{eta(j)}</span> : null}
-                </div>
-              )}
-              {j.status === "done" && (
-                <div className="mt-1.5 flex items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate text-xs text-ink-2" title={j.output}>
-                    {j.output.split("/").pop()}
-                  </span>
-                  {/* `title` alone: on an icon-only button it is both the tooltip
-                      and the accessible name. */}
-                  <button onClick={() => attempt(revealFile(j.output))} title={t("showInFinder")}
-                    className="shrink-0 rounded-md p-1 text-ink-2 transition hover:bg-card-2 hover:text-ink">
-                    <FolderOpen className="size-4" aria-hidden />
-                  </button>
-                </div>
-              )}
-              {/* The status word, printed only here. Every other state has a line
-                  of its own that says what happened; a cancelled job has nothing
-                  left to show but the fact. */}
-              {j.status === "cancelled" && <p className="mt-1.5 text-xs text-ink-2">{t("st_cancelled")}</p>}
-              {j.status === "error" && (
-                <details className="mt-1.5">
-                  <summary className="cursor-pointer text-xs font-medium text-tomato">
-                    {isNoSpeech(j) ? t("noSpeech") : (j.error ?? t("failed"))}
-                  </summary>
-                  {/* The engine's own words, in mono because they are output and
-                      not prose — `text-ink` at 11px on `card-2`, the smallest
-                      size that pair carries. */}
-                  <pre className="mt-1.5 max-h-32 overflow-auto rounded-lg bg-card-2 p-2 font-mono text-[11px] whitespace-pre-wrap text-ink">{j.error_detail}</pre>
-                  <button onClick={() => attempt(navigator.clipboard.writeText(j.error_detail ?? ""))}
-                    className="mt-1.5 flex items-center gap-1 text-xs text-ink-2 transition hover:text-ink">
-                    <Copy className="size-3 shrink-0" aria-hidden />
-                    {t("copyLog")}
-                  </button>
-                </details>
-              )}
-            </div>
-          );
-        })}
+        {list.map(j => (
+          <JobCard
+            key={j.id} job={j} title={title(j.recipe_id)} eta={eta(j)}
+            onCancel={() => cancelJob(j.id)}
+            onReveal={() => attempt(revealFile(j.output))}
+            onCopyLog={() => attempt(navigator.clipboard.writeText(j.error_detail ?? ""))}
+          />
+        ))}
       </div>
       {actionError ? (
         <p className="mt-2 flex shrink-0 items-start gap-1.5 text-xs text-tomato">

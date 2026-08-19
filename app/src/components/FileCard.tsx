@@ -1,5 +1,5 @@
 import { CircleAlert } from "lucide-react";
-import { duration, size } from "../lib/format";
+import { basename, duration, size } from "../lib/format";
 import { MEDIA_ICON } from "../lib/icons";
 import { useT, type TKey } from "../lib/i18n";
 import type { MediaType, ProbeInfo } from "../lib/types";
@@ -22,7 +22,7 @@ export function FileCard({ path, info, probeError, active, onSelect, onClear }: 
   onClear: () => void;
 }) {
   const t = useT();
-  const name = path.split("/").pop();
+  const name = basename(path);
   // Unknown until ffprobe answers — and if it never does, the generic sheet is the
   // honest glyph: the card has no idea what it is holding.
   const Icon = MEDIA_ICON[info?.media_type ?? "any"];
@@ -100,7 +100,7 @@ export function FileCard({ path, info, probeError, active, onSelect, onClear }: 
             file" was finishing a job or restarting the app. No `title` beside the
             `aria-label`: title is demoted to the description and announced after
             the name, so the button said "Убрать отпуск.mp4, Убрать файл". */}
-        <button onClick={onClear} aria-label={t("clearNamed", { name: name ?? "" })}
+        <button onClick={onClear} aria-label={t("clearNamed", { name })}
           className="shrink-0 text-ink-2 transition hover:text-tomato">✕</button>
       </div>
     </div>

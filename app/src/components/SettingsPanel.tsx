@@ -45,7 +45,11 @@ function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className="flex flex-wrap gap-1 rounded-lg border border-line bg-card-2 p-1"
+      // `line-strong` because this box is the control: at `line`'s 1.13:1 against
+      // its own `card-2` well the group had no visible edge at all until something
+      // inside it was focused (WCAG 1.4.11 wants 3:1; this pair measures 3.21 light
+      // / 3.33 dark). The Row card around it stays on `line`.
+      className="flex flex-wrap gap-1 rounded-lg border border-line-strong bg-card-2 p-1"
     >
       {choices.map(c => {
         const on = c.value === value;
@@ -83,8 +87,11 @@ function Switch({ label, on, onToggle }: { label: string; on: boolean; onToggle:
   return (
     <button
       type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onToggle(!on)}
+      // Off is the state that needs the stronger border: on, the basil fill is the
+      // whole shape, while off the track is `card-2` on a `card` row and the outline
+      // is all there is of it (`line` measured 1.13:1 there, `line-strong` 3.21).
       className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${
-        on ? "border-basil bg-basil" : "border-line bg-card-2"
+        on ? "border-basil bg-basil" : "border-line-strong bg-card-2"
       }`}
     >
       {/* The knob takes `basil-ink` when on — the token that exists precisely to
@@ -225,7 +232,7 @@ export function SettingsPanel({
                 </span>
                 <button
                   type="button" onClick={() => void choose()}
-                  className="shrink-0 rounded-md border border-line bg-card-2 px-2 py-1 text-xs font-semibold text-ink hover:bg-paper"
+                  className="shrink-0 rounded-md border border-line-strong bg-card-2 px-2 py-1 text-xs font-semibold text-ink hover:bg-paper"
                 >
                   {t("change")}
                 </button>

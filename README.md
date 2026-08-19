@@ -85,7 +85,9 @@ Then:
 cargo test -p mediachef-core                        # core: recipes, template, runner, probe
 cargo test --manifest-path app/src-tauri/Cargo.toml # queue state machine (no ffmpeg needed)
 cargo run -p mediachef-core --bin smoke             # every ffmpeg recipe (+ whisper, see above)
-cd app && npm test                                  # search + IPC contract (vitest)
+cd app && npm test                                  # vitest: 56 tests in 4 files —
+                                                    # search + IPC golden, i18n,
+                                                    # formatting, component render
 cd app && npm run typecheck                         # tsc on the browser, test and node programs
 ```
 

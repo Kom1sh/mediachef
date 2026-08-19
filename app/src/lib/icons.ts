@@ -156,6 +156,11 @@ export const KIND_ICON: Record<JobView["kind"], LucideIcon> = {
  *  inline in the card is what makes that exemption a decision instead of a
  *  literal someone forgot to translate. */
 export const KIND_LABEL: Record<JobView["kind"], string> = {
-  ffmpeg: "ffmpeg",
+  // Capitalised the way the project writes it in prose (README, the humanized
+  // errors: "FFmpeg failed"). The lowercase `ffmpeg` is the *binary*, which is what
+  // the command preview and the docs' install lines spell — a badge naming the tool
+  // is the other thing, and it sat next to a capitalised "Whisper" looking like a
+  // typo.
+  ffmpeg: "FFmpeg",
   whisper: "Whisper",
 };

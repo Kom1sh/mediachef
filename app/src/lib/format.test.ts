@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { duration, size } from "./format";
+import { basename, duration, size } from "./format";
 
 const EN = { kb: "KB", mb: "MB", gb: "GB" };
 const RU = { kb: "КБ", mb: "МБ", gb: "ГБ" };
@@ -64,5 +64,37 @@ describe("duration", () => {
   // An ETA is extrapolated, so a stale clock can go negative between two ticks.
   it("clamps a negative clock to zero", () => {
     expect(duration(-7)).toBe("00:00");
+  });
+});
+
+describe("basename", () => {
+  it("takes the last segment of a unix path", () => {
+    expect(basename("/Users/me/Videos/holiday.mp4")).toBe("holiday.mp4");
+    expect(basename("/holiday.mp4")).toBe("holiday.mp4");
+  });
+
+  // The reason this function exists: five call sites spelled it `split("/")`, which
+  // on Windows finds no separator and hands the card an entire path.
+  it("takes the last segment of a windows path", () => {
+    expect(basename("C:\\Users\\me\\Videos\\holiday.mp4")).toBe("holiday.mp4");
+    // Mixed separators are legal on Windows and do turn up in hand-typed paths.
+    expect(basename("C:/Users/me\\holiday.mp4")).toBe("holiday.mp4");
+    expect(basename("\\\\server\\share\\clip.mkv")).toBe("clip.mkv");
+  });
+
+  it("leaves a bare name alone", () => {
+    expect(basename("holiday.mp4")).toBe("holiday.mp4");
+    expect(basename("")).toBe("");
+  });
+
+  // A directory rather than a file, which none of the callers can be handed — pinned
+  // because it is the one input where "the last segment" has two defensible answers,
+  // and this is the one the `split` it replaced gave.
+  it("answers empty for a path that ends in a separator", () => {
+    expect(basename("/Users/me/Videos/")).toBe("");
+  });
+
+  it("keeps a name with spaces, dots and non-latin letters whole", () => {
+    expect(basename("/Users/me/Мои видео/отпуск 2026.final.mp4")).toBe("отпуск 2026.final.mp4");
   });
 });

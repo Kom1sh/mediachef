@@ -18,6 +18,22 @@
 
   --paper: #FAF7F1; --card: #FFFFFF; --card-2: #F3EEE5;
   --ink: #2A231C; --ink-2: #7A6F61; --line: #E8E0D2;
+  /* The border of a control you are meant to *type in or open*, and the only
+     reason it is a second line token: `--line` is a hairline that separates
+     surfaces (1.31:1 on `card`, 1.13 on `card-2`), which is right for a card edge
+     and wrong for the edge that tells a text field from the card behind it. WCAG
+     1.4.11 asks a UI component's boundary for 3:1, and a field whose outline is
+     invisible until it is focused fails it — «where do I click» is exactly the
+     question this answers.
+
+     Measured against both surfaces a control can sit on, plus the page: light
+     #93826D is 3.71 on `card`, 3.21 on `card-2`, 3.47 on `paper`; dark #8A7C69 is
+     3.76 / 3.33 / 4.19. Held down deliberately from `--ink-2` (4.91 / 4.25), which
+     clears the floor but reads as a heavy hand-drawn box around every field.
+
+     Cards, dividers and the rail keep `--line`: they are edges between surfaces,
+     not controls, and 1.4.11 does not ask them for anything. */
+  --line-strong: #93826D;
   --basil: #3D7A46; --basil-ink: #FFFFFF;
   /* Light `--amber` is darker than a designer's amber would be, and the reason is
      that it is never decoration: it draws the running-status ring and the progress
@@ -52,6 +68,7 @@
      scopes below map them onto the tokens above. */
   --dark-paper: #211B15; --dark-card: #2B241D; --dark-card-2: #352D24;
   --dark-ink: #F2EBE1; --dark-ink-2: #A99C8B; --dark-line: #3E352A;
+  --dark-line-strong: #8A7C69;
   --dark-basil: #5FA96B; --dark-basil-ink: #1C2B1F;
   --dark-amber: #E8A13D; --dark-tomato: #D97862; --dark-focus: #5FA96B;
 
@@ -67,6 +84,7 @@
 
   --paper: var(--dark-paper); --card: var(--dark-card); --card-2: var(--dark-card-2);
   --ink: var(--dark-ink); --ink-2: var(--dark-ink-2); --line: var(--dark-line);
+  --line-strong: var(--dark-line-strong);
   --basil: var(--dark-basil); --basil-ink: var(--dark-basil-ink);
   --amber: var(--dark-amber); --tomato: var(--dark-tomato); --focus: var(--dark-focus);
 
@@ -83,6 +101,7 @@
 
     --paper: var(--dark-paper); --card: var(--dark-card); --card-2: var(--dark-card-2);
     --ink: var(--dark-ink); --ink-2: var(--dark-ink-2); --line: var(--dark-line);
+    --line-strong: var(--dark-line-strong);
     --basil: var(--dark-basil); --basil-ink: var(--dark-basil-ink);
     --amber: var(--dark-amber); --tomato: var(--dark-tomato); --focus: var(--dark-focus);
 
@@ -98,6 +117,7 @@
 @theme inline {
   --color-paper: var(--paper); --color-card: var(--card); --color-card-2: var(--card-2);
   --color-ink: var(--ink); --color-ink-2: var(--ink-2); --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-basil: var(--basil); --color-basil-ink: var(--basil-ink);
   --color-amber: var(--amber); --color-tomato: var(--tomato);
   /* Exposed as a colour too, so a component that draws its own ring

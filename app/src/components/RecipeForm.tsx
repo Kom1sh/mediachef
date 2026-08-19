@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CircleAlert, Copy, LoaderCircle } from "lucide-react";
+import { basename } from "../lib/format";
 import { categoryIcon, categoryTint } from "../lib/icons";
 import { loc, useLocale, useT } from "../lib/i18n";
 import { enqueueJob, getModels, previewCmd } from "../lib/ipc";
@@ -14,8 +15,14 @@ const LANGS = ["auto", "ru", "en", "de", "es", "fr", "it", "pt", "uk", "kk"];
 /** Shared by every text-ish control in the form (selects and inputs alike). No
  *  focus style of its own: the global `:focus-visible` rule in index.css draws
  *  the ring on every control in the app, and a second one on top of it would
- *  paint two indicators around one field. */
-const FIELD_CLASS = "mt-1 w-full rounded-lg border border-line bg-card px-2.5 py-1.5 text-sm text-ink";
+ *  paint two indicators around one field.
+ *
+ *  `line-strong`, not `line`: a field on `card` is the same colour as the card it
+ *  sits on, so its border is the only thing that says "type here" — and `line`
+ *  measures 1.31:1 against `card`, under the 3:1 WCAG 1.4.11 asks of a control's
+ *  boundary. The card around the form keeps `line`; that one is an edge between
+ *  surfaces, not a control. */
+const FIELD_CLASS = "mt-1 w-full rounded-lg border border-line-strong bg-card px-2.5 py-1.5 text-sm text-ink";
 
 /** The label above a control — the same size and weight for every field type, so
  *  a form reads as one column rather than as a pile of controls. */
@@ -216,7 +223,7 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
         bad.push(p);
         // One line per failure, named when there is more than one file in play:
         // "the input has moved" says nothing useful without saying which input.
-        errs.push(paths.length > 1 ? `${p.split("/").pop()}: ${String(e)}` : String(e));
+        errs.push(paths.length > 1 ? `${basename(p)}: ${String(e)}` : String(e));
       }
     }
     setRunning(null);

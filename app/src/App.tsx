@@ -70,15 +70,35 @@ export default function App() {
     getSettings().then(adopt).catch(e => setSettingsError(String(e)));
   }, [adopt]);
 
+  // Which save the screen is currently interested in — the same guard `previewGen`
+  // keeps in RecipeForm, for the same reason. Two clicks in Settings are two
+  // `invoke`s in flight, each one a disk write, and nothing makes Rust answer them
+  // in the order they were sent.
+  const saveGen = useRef(0);
+
   // Optimistic, then authoritative: the click lands in the UI at once (a theme
   // must not wait on a disk write), and the saved value — clamped by `sanitize` —
   // replaces it a moment later. A failed save re-reads the file, so the screen
   // ends up showing what is really stored rather than what was attempted.
+  //
+  // Only the newest attempt may speak. An older save's answer arriving second would
+  // otherwise put its value back into the controls and through `applyTheme` — the
+  // theme flipping back to light a beat after the user chose dark, with the file on
+  // disk (whose last writer wins under one lock, see `store_settings`) saying dark.
+  // The optimistic `adopt` is not gated: it belongs to the click that is happening
+  // now, which is by definition the newest one.
   const changeSettings = useCallback((next: AppSettings) => {
+    const gen = ++saveGen.current;
     adopt(next);
-    saveSettings(next).then(saved => { adopt(saved); setSettingsError(""); }).catch(e => {
+    saveSettings(next).then(saved => {
+      if (gen !== saveGen.current) return;
+      adopt(saved); setSettingsError("");
+    }).catch(e => {
+      if (gen !== saveGen.current) return;
       setSettingsError(String(e));
-      getSettings().then(adopt).catch(() => {});
+      // Gated again on arrival: the re-read is a second round trip, and a click
+      // during it owns the screen more than this recovery does.
+      getSettings().then(s => { if (gen === saveGen.current) adopt(s); }).catch(() => {});
     });
   }, [adopt]);
 
@@ -217,8 +237,15 @@ export default function App() {
     <LocaleProvider locale={locale}>
       {/* Rail · board · queue. `minmax(0, …)` on the row and the middle column, not
           plain `1fr`: the scrolling children below need a track that is allowed to be
-          smaller than its content. */}
-      <main className="grid h-screen grid-cols-[88px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
+          smaller than its content.
+
+          The rail's own breakpoint is the other half of Sidebar's `max-[800px]:hidden`
+          labels: hiding the words without narrowing the column left 88px of rail
+          holding a 20px icon, i.e. the whole point of hiding them unclaimed. 56px is
+          the icon plus the same 4px focus ring the wide rail is drawn for. At a 760px
+          window the board goes from 312px to 344px — the width of one more chip on a
+          file card's row. */}
+      <main className="grid h-screen grid-cols-[88px_minmax(0,1fr)_360px] max-[800px]:grid-cols-[56px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
         <Sidebar tab={tab} onTab={setTab} />
         {tab === "models" ? <ModelsPanel /> : tab === "settings" ? (
           settings
@@ -276,10 +303,14 @@ export default function App() {
                       reads elements rather than pseudo-elements. The token clears it
                       at 4.91 / 5.69, and this text is the only hint of what the box
                       searches. */}
+                  {/* `border-line-strong`, the token for a control's own edge: this
+                      box is `card` on a `paper` section, so at `line`'s 1.31:1 the
+                      only thing marking it as a field was the magnifier glyph inside
+                      it. 3.71:1 light / 3.76 dark, past the 3:1 of WCAG 1.4.11. */}
                   <input
                     value={query} onChange={e => setQuery(e.target.value)}
                     placeholder={t("searchPlaceholder")}
-                    className="w-full rounded-xl border border-line bg-card py-2 pr-3 pl-9 text-sm placeholder:text-ink-2"
+                    className="w-full rounded-xl border border-line-strong bg-card py-2 pr-3 pl-9 text-sm placeholder:text-ink-2"
                   />
                 </div>
                 {/* `key` on the recipe id: the form seeds its params from the recipe once,

@@ -1,0 +1,177 @@
+/**
+ * What the components actually put in the document, rendered rather than reasoned
+ * about: `renderToStaticMarkup` is the whole test harness (no DOM, no jsdom, no
+ * dependency this app did not already ship), the same way `i18n.test.ts` renders a
+ * provider to prove the locale reaches a hook.
+ *
+ * A static render runs no effects, which decides what is testable here and shapes the
+ * components accordingly: `JobCard` takes the one `JobView` it draws as a prop —
+ * QueuePanel fills itself from an `invoke` no static render will make — so the states
+ * that matter most to somebody who cannot see the screen (a failure they have to read,
+ * a bar a reader has to announce) can be held still and checked.
+ */
+import { describe, expect, it } from "vitest";
+import { createElement, type ReactElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { FileCard } from "./FileCard";
+import { JobCard } from "./QueuePanel";
+import { SettingsPanel } from "./SettingsPanel";
+import { DICTS, LocaleProvider, type Locale } from "../lib/i18n";
+import type { AppSettings, JobView } from "../lib/types";
+
+/** The component under the locale the app would give it. */
+const render = (locale: Locale, node: ReactElement) =>
+  renderToStaticMarkup(createElement(LocaleProvider, { locale, children: node }));
+
+/** A finished-looking job, for tests to bend into the state they care about. */
+const job = (over: Partial<JobView> = {}): JobView => ({
+  id: 7,
+  recipe_id: "transcribe-txt",
+  kind: "whisper",
+  input: "/Users/me/Videos/holiday.mp4",
+  output: "/Users/me/Videos/holiday.transcript.txt",
+  status: "running",
+  percent: 40,
+  ...over,
+});
+
+const card = (over: Partial<JobView> = {}, locale: Locale = "en") =>
+  render(
+    locale,
+    createElement(JobCard, {
+      job: job(over),
+      title: "Transcribe",
+      eta: "~00:30 left",
+      onCancel: () => {},
+      onReveal: () => {},
+      onCopyLog: () => {},
+    }),
+  );
+
+describe("JobCard", () => {
+  /* Ruling W3-4's whole point: whisper heard nothing, and the person reading the card
+     is told so in their own language. Rust answers with an English sentence plus a
+     `no_speech:` marker, and the card is the only thing that can localize it — so this
+     asserts the Russian words are on screen and the English ones are not. */
+  it("says «no speech» in the reader's own language", () => {
+    const failed = {
+      status: "error" as const,
+      error: "No speech detected in the file.",
+      error_detail: "no_speech: nothing recognisable in the audio\nprogress = 100%",
+    };
+    const ru = card(failed, "ru");
+    expect(ru).toContain(DICTS.ru.noSpeech);
+    expect(ru).not.toContain("No speech detected in the file.");
+    // …and the English UI gets the dictionary's sentence, not Rust's, so the two
+    // locales are the same feature rather than a fallback.
+    expect(card(failed, "en")).toContain(DICTS.en.noSpeech);
+  });
+
+  /* The marker has to *lead* the detail. `error_detail` ends in engine output that
+     quotes the user's file name, so a clip called `no_speech.mp4` that failed to
+     decode must keep its own error — this is the assertion that pins the anchor. */
+  it("keeps the engine's own summary when the marker only appears inside the log", () => {
+    const markup = card(
+      {
+        status: "error",
+        error: "The file looks corrupted or is not a media file.",
+        error_detail: "ffmpeg exited with code 1\n/x/no_speech.mp4: Invalid data found",
+      },
+      "ru",
+    );
+    expect(markup).toContain("The file looks corrupted or is not a media file.");
+    expect(markup).not.toContain(DICTS.ru.noSpeech);
+  });
+
+  /* A progress bar that a screen reader can read out: the gauge is the track, its
+     `aria-valuenow` is the job's own percent, and both bounds are spelled out. The
+     states without a bar are the other half of the contract — a stopped run has no
+     percentage that would be honest. */
+  it("draws a progressbar a reader can announce, and only where there is progress", () => {
+    const running = card({ status: "running", percent: 40 });
+    expect(running).toContain('role="progressbar"');
+    expect(running).toContain('aria-valuenow="40"');
+    expect(running).toContain('aria-valuemin="0"');
+    expect(running).toContain('aria-valuemax="100"');
+    // The fill is the number too, or the bar and its label would disagree.
+    expect(running).toContain("width:40%");
+    // Named, because several cards can be in flight at once.
+    expect(running).toContain("Job progress: Transcribe");
+
+    expect(card({ status: "queued", percent: 0 })).toContain('role="progressbar"');
+    expect(card({ status: "done", percent: 100 })).toContain('aria-valuenow="100"');
+    for (const status of ["error", "cancelled"] as const) {
+      expect(card({ status }), status).not.toContain('role="progressbar"');
+    }
+  });
+
+  /* The card has room for a name, not for a path — and the badge names the lane in
+     the spelling the rest of the project uses. */
+  it("shows the file's own name and the lane that ran it", () => {
+    const windows = card({ input: "C:\\Users\\me\\Videos\\holiday.mp4" });
+    expect(windows).toContain(">holiday.mp4<");
+    expect(windows).not.toContain(">C:\\Users");
+    expect(card({ kind: "ffmpeg" })).toContain("FFmpeg");
+  });
+});
+
+describe("SettingsPanel", () => {
+  /* Every control shows what is actually stored. The screen owns no state of its own,
+     so a control bound to the wrong field (or to nothing) would show a choice the user
+     never made and then save it on the next click.
+     The other half — that `onChange` is handed a *whole* `AppSettings` rather than the
+     one field that changed — is a type, not a runtime question: the prop's signature
+     admits nothing else, and `npm run typecheck` is a gate. */
+  it("binds every control to the settings it was handed", () => {
+    const settings: AppSettings = {
+      language: "ru",
+      theme: "dark",
+      output_mode: "fixed",
+      output_dir: "/Users/me/Готовое",
+      notifications: false,
+      ffmpeg_workers: 3,
+    };
+    const markup = render(
+      "ru",
+      createElement(SettingsPanel, { settings, onChange: () => {}, error: "" }),
+    );
+    // One radio group per stored choice, each with the stored value checked.
+    for (const [name, value] of [
+      ["mc-language", "ru"],
+      ["mc-theme", "dark"],
+      ["mc-output", "fixed"],
+      ["mc-workers", "3"],
+    ]) {
+      const radio = markup.match(new RegExp(`<input[^>]*name="${name}"[^>]*value="${value}"[^>]*>`));
+      expect(radio, name).not.toBeNull();
+      expect(radio?.[0], name).toContain('checked=""');
+    }
+    // The switch is a button, so its state is an attribute rather than a `checked`.
+    expect(markup).toContain('role="switch" aria-checked="false"');
+    // And the fixed folder is printed, because a path the app will write into is not
+    // something to keep behind a dialog.
+    expect(markup).toContain("/Users/me/Готовое");
+  });
+});
+
+describe("FileCard", () => {
+  /* `basename` handles both separators; this is the test that says why it has to.
+     The name is also the ✕ button's accessible name, so a path would be read out
+     whole to somebody who cannot see the card. */
+  it("names a windows path by its file, in the label and in the button", () => {
+    const markup = render(
+      "ru",
+      createElement(FileCard, {
+        path: "C:\\Users\\me\\Videos\\отпуск.mp4",
+        info: null,
+        probeError: "",
+        active: false,
+        onSelect: () => {},
+        onClear: () => {},
+      }),
+    );
+    expect(markup).toContain(">отпуск.mp4<");
+    expect(markup).toContain('aria-label="Убрать отпуск.mp4"');
+    expect(markup).not.toContain("C:\\Users");
+  });
+});

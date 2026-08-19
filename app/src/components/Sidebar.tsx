@@ -10,7 +10,8 @@ const ORDER: readonly Tab[] = ["main", "models", "settings"];
 const LABEL: Record<Tab, TKey> = { main: "navConvert", models: "navModels", settings: "navSettings" };
 
 /**
- * The 88px rail. Icons carry the navigation; the labels under them are a
+ * The rail: 88px with its labels, 56px without (App owns the grid column, this owns
+ * the button inside it). Icons carry the navigation; the labels under them are a
  * courtesy that gets out of the way below 800px, where a rail and a word are
  * competing for the same pixels — so every button states its name in
  * `aria-label` unconditionally: a `display:none` span contributes nothing to the
@@ -59,7 +60,12 @@ export function Sidebar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
           <button
             key={id} type="button" onClick={() => onTab(id)} aria-label={label}
             aria-current={on ? "page" : undefined}
-            className={`flex w-20 flex-col items-center gap-1 rounded-lg px-1 py-2 text-center text-[10px] font-medium leading-tight ${
+            // `w-12` below 800px, where the label under the icon is hidden: an 80px
+            // button in a 56px rail would simply overflow it. 48px is the widest that
+            // still leaves the focus ring its room in the 55px content box (the rail
+            // spends 1px on its `border-r`) — the same near-flush half pixel the wide
+            // rail has, and measured the same way.
+            className={`flex w-20 max-[800px]:w-12 flex-col items-center gap-1 rounded-lg px-1 py-2 text-center text-[10px] font-medium leading-tight ${
               on ? "bg-card-2 text-ink" : "text-ink-2 hover:bg-card-2 hover:text-ink"
             }`}
           >
