@@ -47,3 +47,22 @@ pub fn ffmpeg() -> Option<PathBuf> {
 pub fn ffprobe() -> Option<PathBuf> {
     find("ffprobe", "MEDIACHEF_FFPROBE")
 }
+/// whisper.cpp's CLI, shipped as `whisper-cli` (the old name was `main`).
+pub fn whisper() -> Option<PathBuf> {
+    find("whisper-cli", "MEDIACHEF_WHISPER")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn whisper_resolves_from_env() {
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("whisper-cli");
+        std::fs::write(&fake, b"#!/bin/sh\n").unwrap();
+        std::env::set_var("MEDIACHEF_WHISPER", &fake);
+        assert_eq!(whisper(), Some(fake));
+        std::env::remove_var("MEDIACHEF_WHISPER");
+    }
+}
