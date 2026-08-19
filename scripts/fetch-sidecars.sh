@@ -10,7 +10,8 @@
 # пиненому sha256 (и архив, и распакованный бинарник). whisper-cli собирается
 # из исходников по пиненому тегу: готовых сборок с Metal нет.
 # Скрипт идемпотентен: уже разложенное с верной sha не перекачивается, whisper
-# не пересобирается, пока пин не изменился.
+# не пересобирается, пока не изменились его тег или флаги сборки. Самопроверка
+# (запуск + линковка) прогоняется на каждом вызове, даже на пустом.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -36,7 +37,9 @@ FFPROBE_BIN_SHA="7abc49fb2bdf2204f018e76dc6e0a8ae7643313bae09a9fa43e7eb12442271b
 # развалится. Metal-шейдеры вкомпилированы в бинарник, отдельного
 # ggml-metal.metal рядом не нужно (проверено запуском из бандла).
 WHISPER_TAG="v1.7.6"
-WHISPER_REPO="https://github.com/ggerganov/whisper.cpp.git"
+# Канонический адрес репозитория: ggerganov/whisper.cpp жив только редиректом
+# GitHub на организацию, а пин не должен зависеть от редиректа.
+WHISPER_REPO="https://github.com/ggml-org/whisper.cpp.git"
 WHISPER_CMAKE_FLAGS=(-DGGML_METAL=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF)
 # ------------------------------------------------------------------------------
 
@@ -55,6 +58,31 @@ SUMMARY=()   # строки таблицы: имя|версия|состояни
 
 sha_of() { shasum -a 256 "$1" | awk '{print $1}'; }
 
+# Сайдкар обязан быть самодостаточным: в бандле рядом с ним лежат только два
+# других наших бинарника и ни одной dylib. Всё, что слинковано вне /usr/lib и
+# /System, на чужой машине не найдётся — libwhisper/libggml от нестатической
+# сборки, brew-зависимости, что угодно. Пусть падает здесь, а не у юзера.
+# Строки зависимостей у otool начинаются с табуляции; заголовки (в том числе
+# «(architecture ...)» у fat-бинарника) — нет, поэтому фильтр по ^\t.
+assert_self_contained() {
+  local bin="$1" libs deps bad
+  # otool отдельно от фильтра: его ошибку (файла нет) нельзя терять в пайпе.
+  libs="$(otool -L "$bin")" || { echo "otool -L $bin не сработал — это вообще бинарник?" >&2; exit 1; }
+  deps="$(printf '%s\n' "$libs" | awk '/^\t/ {print $1}')"
+  # Пустой список — не «всё чисто»: на не-Mach-O файле otool пишет «is not an
+  # object file» и выходит с нулём, так что пустая заглушка иначе прошла бы
+  # проверку. Живой бинарник всегда линкует хотя бы libSystem.
+  [ -n "$deps" ] || {
+    echo "$bin: otool не увидел ни одной зависимости — это не бинарник (пустая заглушка?)" >&2
+    exit 1
+  }
+  bad="$(printf '%s\n' "$deps" | grep -vE '^(/usr/lib/|/System/)' || true)"
+  [ -n "$bad" ] || return 0
+  echo "$bin слинкован не только с системными библиотеками — сайдкар не самодостаточен:" >&2
+  while IFS= read -r lib; do echo "  $lib" >&2; done <<<"$bad"
+  exit 1
+}
+
 # Скачать <name>.zip с пиненого базового URL, проверить sha архива, распаковать
 # единственный бинарник внутри, проверить и его sha, положить в $OUT.
 fetch_ffmpeg_tool() {
@@ -66,19 +94,23 @@ fetch_ffmpeg_tool() {
     return
   fi
 
-  local zip="$WORK/$name-$FFMPEG_VERSION.zip"
-  if [ ! -f "$zip" ] || [ "$(sha_of "$zip")" != "$zip_sha" ]; then
+  # Состояние для таблицы считаем по факту: архив с прошлого запуска с верной
+  # sha распаковываем молча, но и не выдаём за скачанный.
+  local zip="$WORK/$name-$FFMPEG_VERSION.zip" state="скачан" got
+  if [ -f "$zip" ] && [ "$(sha_of "$zip")" = "$zip_sha" ]; then
+    state="из кэша архивов"
+  else
     echo "==> качаю $name $FFMPEG_VERSION"
     curl -fSL --retry 3 --connect-timeout 20 -o "$zip.part" "$FFMPEG_BASE_URL/$name.zip"
     mv "$zip.part" "$zip"
+    got="$(sha_of "$zip")"
+    [ "$got" = "$zip_sha" ] || {
+      echo "$name.zip: sha256 не совпала!" >&2
+      echo "  ждали $zip_sha" >&2
+      echo "  вышло $got" >&2
+      exit 1
+    }
   fi
-  local got; got="$(sha_of "$zip")"
-  [ "$got" = "$zip_sha" ] || {
-    echo "$name.zip: sha256 не совпала!" >&2
-    echo "  ждали $zip_sha" >&2
-    echo "  вышло $got" >&2
-    exit 1
-  }
 
   rm -rf "$WORK/unzip-$name" && mkdir -p "$WORK/unzip-$name"
   unzip -qo "$zip" -d "$WORK/unzip-$name"
@@ -90,17 +122,22 @@ fetch_ffmpeg_tool() {
   }
   mv "$WORK/unzip-$name/$name" "$dest"
   chmod +x "$dest"
-  SUMMARY+=("$name|$FFMPEG_VERSION|sha OK (скачан)")
+  SUMMARY+=("$name|$FFMPEG_VERSION|sha OK ($state)")
 }
 
-# Собрать whisper-cli из пиненого тега. Идемпотентность — по метке с тегом
-# рядом с бинарником: sha собранного локально не предскажешь, а тег — пин.
+# Собрать whisper-cli из пиненого тега. Идемпотентность — по метке рядом с
+# бинарником: sha собранного локально не предскажешь, а вот вход сборки —
+# вполне. В метке лежит тег И хэш флагов cmake: сменили -DGGML_METAL или
+# -DBUILD_SHARED_LIBS на том же теге — старый бинарник обязан пересобраться,
+# иначе «поправил флаги, перезапустил, ничего не изменилось».
 build_whisper_cli() {
   local dest="$OUT/whisper-cli-$TRIPLE"
-  local stamp="$OUT/.whisper-cli-$TRIPLE.tag"
+  local stamp="$OUT/.whisper-cli-$TRIPLE.stamp"
+  local want
+  want="$WHISPER_TAG $(printf '%s\n' "${WHISPER_CMAKE_FLAGS[@]}" | shasum -a 256 | awk '{print $1}')"
 
-  if [ -f "$dest" ] && [ -f "$stamp" ] && [ "$(cat "$stamp")" = "$WHISPER_TAG" ]; then
-    SUMMARY+=("whisper-cli|whisper.cpp $WHISPER_TAG|собран ранее (тег совпал)")
+  if [ -f "$dest" ] && [ -f "$stamp" ] && [ "$(cat "$stamp")" = "$want" ]; then
+    SUMMARY+=("whisper-cli|whisper.cpp $WHISPER_TAG|собран ранее (тег и флаги совпали)")
     return
   fi
 
@@ -124,16 +161,13 @@ build_whisper_cli() {
     { tail -30 "$WORK/cmake-build.log" >&2; echo "сборка упала (лог: $WORK/cmake-build.log)" >&2; exit 1; }
 
   [ -f "$src/build/bin/whisper-cli" ] || { echo "сборка не оставила build/bin/whisper-cli" >&2; exit 1; }
-  # Сайдкар обязан быть самодостаточным: в бандле рядом с ним лежат только два
-  # ffmpeg-бинарника, никаких наших dylib. Пусть падает здесь, а не у юзера.
-  if otool -L "$src/build/bin/whisper-cli" | grep -qE 'lib(whisper|ggml)'; then
-    echo "whisper-cli слинкован с libwhisper/libggml — сайдкар не самодостаточен" >&2
-    otool -L "$src/build/bin/whisper-cli" >&2
-    exit 1
-  fi
+  # Проверяем ДО установки: битую сборку не за чем класть в $OUT и помечать
+  # меткой. То же самое ниже прогоняется на установленных файлах — на каждом
+  # запуске, включая тот, где ничего не собиралось.
+  assert_self_contained "$src/build/bin/whisper-cli"
   cp "$src/build/bin/whisper-cli" "$dest"
   chmod +x "$dest"
-  printf '%s' "$WHISPER_TAG" >"$stamp"
+  printf '%s' "$want" >"$stamp"
   SUMMARY+=("whisper-cli|whisper.cpp $WHISPER_TAG|собран (static, Metal)")
 }
 
@@ -141,12 +175,16 @@ fetch_ffmpeg_tool ffmpeg "$FFMPEG_ZIP_SHA" "$FFMPEG_BIN_SHA"
 fetch_ffmpeg_tool ffprobe "$FFPROBE_ZIP_SHA" "$FFPROBE_BIN_SHA"
 build_whisper_cli
 
-# Самопроверка: каждый бинарник должен запускаться. Три разных ответа на
-# «ты живой?»: ffmpeg/ffprobe умеют -version, whisper-cli — только --help.
+# Самопроверка: каждый бинарник должен запускаться и не тянуть за собой чужих
+# библиотек. Три разных ответа на «ты живой?»: ffmpeg/ffprobe умеют -version,
+# whisper-cli — только --help. Линковку проверяем именно здесь и на том, что
+# реально лежит в $OUT: файлы могли не собираться и не качаться, а приехать из
+# кэша (в CI $OUT восстанавливает actions/cache) — проверка обязана быть и там.
 echo
 "$OUT/ffmpeg-$TRIPLE" -version >/dev/null
 "$OUT/ffprobe-$TRIPLE" -version >/dev/null
 "$OUT/whisper-cli-$TRIPLE" --help >/dev/null 2>&1
+for b in ffmpeg ffprobe whisper-cli; do assert_self_contained "$OUT/$b-$TRIPLE"; done
 # Заголовки латиницей не из вредности: printf выравнивает по БАЙТАМ, и кириллица
 # в первых двух колонках разъезжается. Русский текст — только в последней.
 printf '%-12s %-24s %s\n' "BINARY" "VERSION" "STATE"

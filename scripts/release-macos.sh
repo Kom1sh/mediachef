@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # MediaChef: собрать macOS-поставку и выложить на GitHub.
 # Использование: ./scripts/release-macos.sh            (версия берётся из tauri.conf.json)
+# Перед первым запуском: ./scripts/fetch-sidecars.sh — без движков сборка .app
+# не проходит вообще (проверка ниже).
 # Что делает: tauri build → zip (.app + КАК_ОТКРЫТЬ.txt) → публикация:
 #   - если установлен и авторизован gh: GitHub Release v<версия> (канонично)
 #   - иначе: коммит zip в orphan-ветку builds (прямые ссылки, без gh)
@@ -10,21 +12,41 @@ source "$HOME/.cargo/env" 2>/dev/null || true
 
 VER=$(python3 -c "import json;print(json.load(open('app/src-tauri/tauri.conf.json'))['version'])")
 ZIP="MediaChef-${VER}-macos-arm64.zip"
+APP="target/release/bundle/macos/MediaChef.app"
+
+# Сайдкары — условие СБОРКИ, а не упаковки: tauri копирует externalBin из
+# build.rs и падает, если файла нет. Проверяем заранее, чтобы получить
+# человеческий текст вместо «resource path ... doesn't exist».
+missing=""
+for b in ffmpeg ffprobe whisper-cli; do
+  [ -f "app/src-tauri/binaries/$b-aarch64-apple-darwin" ] || missing="$missing $b"
+done
+[ -z "$missing" ] || {
+  echo "нет сайдкаров:$missing" >&2
+  echo "сначала ./scripts/fetch-sidecars.sh (движки внутрь .app, ~130 МБ)" >&2
+  exit 1
+}
 
 echo "==> building v${VER}"
-( cd app && npm run tauri build ) || true   # dmg-этап падает без GUI-сессии; .app важнее
-test -d target/release/bundle/macos/MediaChef.app || { echo ".app not built"; exit 1; }
+# Прошлый бандл сносим до сборки: иначе упавшая сборка оставила бы старый .app,
+# и в релиз молча уехала бы прошлая версия.
+rm -rf "$APP"
+# --bundles app вместо «|| true»: терпели мы только dmg-этап tauri, который без
+# GUI-сессии не проходит, а он и не нужен — dmg ниже собирает hdiutil. Теперь
+# упала сборка — упал скрипт (так же, как в .github/workflows/release.yml).
+( cd app && npm run tauri build -- --bundles app )
+test -d "$APP" || { echo ".app not built"; exit 1; }
 
 echo "==> packaging ${ZIP}"
 rm -rf dist-release && mkdir -p dist-release
 cp docs/КАК_ОТКРЫТЬ.txt dist-release/ 2>/dev/null || cp scripts/КАК_ОТКРЫТЬ.txt dist-release/
-cp -R target/release/bundle/macos/MediaChef.app dist-release/
+cp -R "$APP" dist-release/
 ( cd dist-release && zip -qry "$ZIP" MediaChef.app КАК_ОТКРЫТЬ.txt )
 
 DMG="MediaChef_${VER}_aarch64.dmg"
 echo "==> packaging ${DMG} (hdiutil — без GUI-зависимого оформления, с инструкцией внутри)"
 rm -rf dist-release/dmg-stage && mkdir -p dist-release/dmg-stage
-cp -R target/release/bundle/macos/MediaChef.app dist-release/dmg-stage/
+cp -R "$APP" dist-release/dmg-stage/
 cp dist-release/КАК_ОТКРЫТЬ.txt dist-release/dmg-stage/
 ln -s /Applications dist-release/dmg-stage/Applications
 hdiutil create -volname "MediaChef ${VER}" -srcfolder dist-release/dmg-stage -ov -format UDZO "dist-release/${DMG}" >/dev/null
@@ -32,7 +54,7 @@ hdiutil create -volname "MediaChef ${VER}" -srcfolder dist-release/dmg-stage -ov
 if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
   echo "==> gh release v${VER}"
   gh release create "v${VER}" "dist-release/${ZIP}" "dist-release/${DMG}" --title "MediaChef ${VER}" \
-    --notes "macOS (Apple Silicon). Первый запуск: правый клик → Открыть, либо xattr -cr. Требует brew install ffmpeg whisper-cpp. Инструкция внутри архива."
+    --notes "macOS (Apple Silicon). Первый запуск: правый клик → Открыть, либо xattr -cr. FFmpeg и Whisper уже внутри — ничего доустанавливать не нужно. Инструкция внутри архива."
 else
   echo "==> gh отсутствует — публикую в ветку builds"
   WT=.builds-wt; rm -rf "$WT"

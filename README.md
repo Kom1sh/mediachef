@@ -5,15 +5,29 @@ FFmpeg for humans + local transcription. Open-core, GPL-3.0, fully offline.
 ## Dev setup (macOS)
 
 ```bash
-brew install ffmpeg          # the app shells out to ffmpeg/ffprobe on PATH
+brew install ffmpeg          # for fixtures/make.sh and the core tests, which take PATH
+./scripts/fetch-sidecars.sh  # engines that ship inside the app → app/src-tauri/binaries/
 cd app && npm i && npm run tauri dev
 ```
 
-FFmpeg is a runtime requirement, not a bundled dependency: without `ffmpeg` and
-`ffprobe` on `PATH` the app still starts, but probing a file and running a job
-both fail with "FFmpeg binary not found". Override the lookup with
-`MEDIACHEF_FFMPEG` / `MEDIACHEF_FFPROBE` (absolute paths to the binaries) — the
-env vars win over `PATH`, then `bin/<arch>-<os>/`, then `PATH`.
+The sidecars are a **build** prerequisite, not just a packaging one:
+`bundle.externalBin` in `tauri.conf.json` makes tauri's build script copy
+`app/src-tauri/binaries/<bin>-<triple>` next to the compiled executable, and it
+hard-errors when a file is missing. So anything touching the `mediachef` crate —
+`npm run tauri dev|build`, `cargo build|test|check|clippy` on `app/src-tauri` —
+needs `./scripts/fetch-sidecars.sh` (~130MB, macOS/arm64, pinned versions) run
+once first. `mediachef-core` on its own has no such dependency.
+
+Those copies land in `target/debug/` and `target/release/`, and the lookup checks
+the directory of the running executable *before* `PATH`, so in a dev tree too
+anything built into the target dir root — the smoke runner, the `tauri dev` app —
+runs the pinned engines rather than Homebrew's. That is deliberate (dev exercises
+what ships); test binaries live one level down in `target/debug/deps/` and still
+take `PATH`. Full order: `MEDIACHEF_FFMPEG` / `MEDIACHEF_FFPROBE` /
+`MEDIACHEF_WHISPER` (absolute paths, and the escape hatch when you need a
+specific binary) → next to the executable → `bin/<arch>-<os>/` → `PATH` →
+Homebrew prefixes. With none of them resolving, the app still starts, but probing
+a file and running a job both fail with "FFmpeg binary not found".
 
 ## Transcription (whisper)
 
@@ -83,7 +97,9 @@ Then:
 
 ```bash
 cargo test -p mediachef-core                        # core: recipes, template, runner, probe
-cargo test --manifest-path app/src-tauri/Cargo.toml # queue state machine (no ffmpeg needed)
+cargo test --manifest-path app/src-tauri/Cargo.toml # queue state machine; the app crate
+                                                    # only *builds* with the sidecars in
+                                                    # place, see Dev setup
 cargo run -p mediachef-core --bin smoke             # every ffmpeg recipe (+ whisper, see above)
 cd app && npm test                                  # vitest: 56 tests in 4 files —
                                                     # search + IPC golden, i18n,

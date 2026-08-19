@@ -28,7 +28,10 @@ fn find(bin: &str, env_key: &str) -> Option<PathBuf> {
     // plain names — the host-triple suffix that the source `binaries/` dir
     // requires is stripped on the way in. This step sits above the dev chain on
     // purpose: a bundle must run the ffmpeg it was tested with rather than
-    // whatever the machine happens to have on PATH or in Homebrew.
+    // whatever the machine happens to have on PATH or in Homebrew. In a dev tree
+    // the same copies land in `target/{debug,release}/`, so binaries built there
+    // (the smoke runner, `tauri dev`) take the sidecars over PATH too — that is
+    // intended, and `MEDIACHEF_*` above is the way to point them elsewhere.
     if let Some(p) = std::env::current_exe()
         .ok()
         .as_deref()
