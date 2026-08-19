@@ -1,8 +1,28 @@
 pub fn humanize(stderr_tail: &str) -> Option<String> {
     let s = stderr_tail.to_lowercase();
-    let msg = if s.contains("invalid data found") {
+    // First, and that position is load-bearing. What arrives here is a failure's
+    // message *plus* its stderr tail — for whisper, 60 lines of backend chatter —
+    // and this is the one marker the app itself writes ([`crate::transcribe::
+    // NO_SPEECH`]) rather than something an engine said. It knows exactly what
+    // happened, so it must not lose to a needle that engine noise happens to carry.
+    //
+    // Anchored rather than merely contained, and that is the other half: the app
+    // writes the marker at the head of its own message, while the rest of this
+    // string is engine output that quotes the user's file name. A clip called
+    // `no_speech.mp4` failing to decode has to read as a corrupted file.
+    //
+    // Nothing about the file is broken, so the sentence says what IS true: whisper
+    // ran fine and heard no speech. The frontend swaps it for the user's own
+    // language by watching for the same marker.
+    let msg = if s.starts_with("no_speech:") {
+        "No speech detected in the file."
+    } else if s.contains("invalid data found") {
         "The file looks corrupted or is not a media file."
-    } else if s.contains("no space left") {
+    // Two ways to run out of room, one sentence. `no space left` is ffmpeg's own
+    // complaint after it has already been writing for a while; `not enough disk
+    // space` is the app's enqueue-time refusal, which never starts the job at all.
+    // Neither matches the other's wording, hence both needles.
+    } else if s.contains("no space left") || s.contains("not enough disk space") {
         "Not enough disk space for the output file."
     } else if s.contains("does not contain any stream") {
         "The file has no audio/video streams FFmpeg can read."
@@ -54,6 +74,13 @@ mod tests {
         assert!(humanize("No space left on device")
             .unwrap()
             .contains("disk space"));
+        // The other half of the same story: the app's own enqueue-time refusal
+        // (`lib.rs::check_free_space`), which shares nothing with ffmpeg's wording.
+        assert!(
+            humanize("not enough disk space: need ~120MB free in /Volumes/Tiny")
+                .unwrap()
+                .contains("disk space")
+        );
         assert!(humanize("does not contain any stream")
             .unwrap()
             .contains("streams"));
@@ -114,6 +141,42 @@ mod tests {
         assert!(humanize("spawn: No such file or directory")
             .unwrap()
             .contains("FFmpeg"));
+    }
+
+    // Ruling W3-3: a transcription that heard nothing is a fact about the file, not
+    // a broken tool — so it gets a sentence of its own instead of the lane's
+    // "Transcription failed". The marker comes from the constant rather than a
+    // hand-copied string: `transcribe` writes it, this table reads it, and the
+    // queue panel keys its localized text off the same word.
+    #[test]
+    fn maps_no_speech_marker() {
+        let m = humanize(crate::transcribe::NO_SPEECH).unwrap();
+        assert!(m.contains("No speech"), "got: {m}");
+
+        // The load-bearing half: what reaches `humanize` is the message *plus*
+        // whisper's 60-line stderr tail (see `queue::run_next_lane`), so any needle
+        // that chatter happens to carry must lose to our own deliberate marker.
+        // Hence the arm's position at the very top of the table.
+        let with_tail = format!(
+            "{}\nwhisper_model_load: loading model\n\
+             Invalid data found when processing input\nNo space left on device",
+            crate::transcribe::NO_SPEECH
+        );
+        let m = humanize(&with_tail).unwrap();
+        assert!(m.contains("No speech"), "engine chatter won the arm: {m}");
+        assert!(!m.contains("corrupted"), "got: {m}");
+
+        // And it stays a marker, not a keyword: the words "no speech" in some
+        // engine's prose must not be answered with it.
+        assert!(humanize("model has no speech tokens configured").is_none());
+        // The reason it is anchored to the head of the message: engine output quotes
+        // the user's file name, so a clip *called* no_speech.mp4 that fails to
+        // decode must still read as a corrupted file.
+        let named = humanize(
+            "ffmpeg exited with code 1\n/x/no_speech.mp4: Invalid data found when processing input",
+        )
+        .unwrap();
+        assert!(named.contains("corrupted"), "got: {named}");
     }
 
     // The whisper lane's one enqueue-time refusal: the app cannot start a

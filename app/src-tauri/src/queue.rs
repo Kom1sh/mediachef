@@ -723,6 +723,30 @@ output: {ext: mp4, suffix: compressed}
         );
     }
 
+    // The no-speech path as the UI receives it (Ruling W3-3). Both halves of the
+    // view matter and they carry different things: `error` must be the humanized
+    // sentence rather than the lane's "Transcription failed" (which would say
+    // nothing about the file), and `error_detail` must still hold the `no_speech`
+    // marker — that is what QueuePanel keys its localized text off, so losing it
+    // would leave a Russian user reading English.
+    #[test]
+    fn no_speech_reaches_the_view_as_a_sentence_and_a_marker() {
+        let (q, _rx) = Queue::new_for_test();
+        let w = q.push_test_job_kind("whisper");
+        q.run_next_lane(Lane::Whisper, |_j, _p| {
+            // Exactly what `whisper_worker` builds out of a `RunError`: message,
+            // newline, stderr tail.
+            Err(format!(
+                "{}\nwhisper_print_progress_callback: progress = 100%",
+                mediachef_core::transcribe::NO_SPEECH
+            ))
+        });
+        let v = q.view(w).unwrap();
+        assert_eq!(v.status, "error");
+        assert_eq!(v.error.unwrap(), "No speech detected in the file.");
+        assert!(v.error_detail.unwrap().contains("no_speech"));
+    }
+
     // `kind` — это то, по чему UI отличает транскрибацию от конвертации; поле
     // обязано доехать до вьюхи (и до `types.ts`, где оно продублировано).
     #[test]

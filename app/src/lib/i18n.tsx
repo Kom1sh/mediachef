@@ -98,8 +98,11 @@ const EN = {
   cancelling: "Cancelling…",
   cancelDownload: "Cancel download",
   cancelHint: "A cancel lands at the download's next read — up to 30s if the connection died.",
-  // Whisper heard nothing worth writing down. Used by the transcription screen.
-  noSpeech: "No speech detected",
+  // Whisper ran fine and heard nothing worth writing down. The one Rust-side error
+  // the queue card says in the user's own language (Ruling W3-4): the failure it
+  // replaces carries a `no_speech` marker, and the raw text stays one click away
+  // under the summary.
+  noSpeech: "No speech detected in the file",
 
   // ── Settings ─────────────────────────────────────────────────────────────
   loadingSettings: "Loading settings…",
@@ -210,7 +213,9 @@ const RU: Record<TKey, string> = {
   cancelling: "Отмена…",
   cancelDownload: "Отменить загрузку",
   cancelHint: "Отмена срабатывает на следующем чтении из сети — до 30 с, если соединение уже оборвалось.",
-  noSpeech: "Речь не распознана",
+  // «Не обнаружена», а не «не распознана»: распознать не удалось бы плохую запись,
+  // а здесь речи в файле нет вовсе — и это не ошибка пользователя.
+  noSpeech: "Речь в файле не обнаружена",
 
   loadingSettings: "Загружаю настройки…",
   optSystem: "Как в системе",

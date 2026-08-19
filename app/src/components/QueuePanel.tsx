@@ -16,6 +16,24 @@ const STATUS_KEY: Record<JobView["status"], TKey> = {
   error: "st_error", cancelled: "st_cancelled",
 };
 
+/** The one Rust-side failure the card says in the user's own language (Ruling
+ *  W3-4 — every error gets a marker in wave 4; until then the rest stay English).
+ *
+ *  `run_whisper` fails a transcription with no words in it as `no_speech: …`, which
+ *  `errors::humanize` turns into an English sentence for `error` while the marker
+ *  itself leads `error_detail` — so both fields are tested, and either one carrying
+ *  it means the same thing.
+ *
+ *  The marker has to be at the *head* of the text, not merely somewhere in it:
+ *  `error_detail` ends in engine output that quotes the user's file name, and a
+ *  clip called `no_speech.mp4` that failed to decode must not be told it has no
+ *  speech in it.
+ *
+ *  Only the summary line is swapped: the status word stays "error" (nothing was
+ *  produced) and the raw log stays one click away underneath. */
+const isNoSpeech = (j: JobView) =>
+  [j.error, j.error_detail].some(s => (s ?? "").startsWith("no_speech:"));
+
 const mmss = (s: number) => {
   const t = Math.max(0, Math.round(s));
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
@@ -126,7 +144,7 @@ export function QueuePanel({
             )}
             {j.status === "error" && (
               <details className="mt-1">
-                <summary className="cursor-pointer text-red-400">{j.error ?? t("failed")}</summary>
+                <summary className="cursor-pointer text-red-400">{isNoSpeech(j) ? t("noSpeech") : (j.error ?? t("failed"))}</summary>
                 <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap text-neutral-500">{j.error_detail}</pre>
                 <button onClick={() => navigator.clipboard.writeText(j.error_detail ?? "").then(() => setActionError("")).catch(e => setActionError(String(e)))} className="mt-1 text-neutral-400">{t("copyLog")}</button>
               </details>

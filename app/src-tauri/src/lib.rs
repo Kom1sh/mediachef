@@ -432,6 +432,68 @@ fn output_base(state: &State<AppState>) -> Result<Option<PathBuf>, String> {
     settings::output_base(&state.settings.lock().unwrap())
 }
 
+/// What the whisper lane asks for. A transcript is text — kilobytes for an hour of
+/// speech — so this is not an estimate of the output but a floor against a disk
+/// that is simply full: the run also decodes a 16kHz WAV (about 2MB a minute) and
+/// whisper's own scratch writes go through the temp volume, and a machine with less
+/// than this free has nothing to gain from being told so five minutes later.
+const WHISPER_MIN_FREE: u64 = 50 * 1024 * 1024;
+
+/// Free space a job needs in its output folder before it is allowed to start.
+///
+/// * ffmpeg — twice the input. A worst case rather than a prediction: most recipes
+///   shrink what they are given (that is what "compress" means), but a lossless
+///   remux into a bigger container, a GIF of a long clip or a WAV out of an MP3 can
+///   all end up larger, and doubling covers those without pretending to know a
+///   codec's bitrate. It is deliberately not a *guarantee* — a 20x GIF blowup will
+///   still run out of disk, and ffmpeg's own "No space left on device" is already
+///   humanized for that.
+/// * whisper — a flat [`WHISPER_MIN_FREE`], because the output's size has nothing
+///   to do with the input's.
+///
+/// `Pipeline` is sized like ffmpeg for one reason: `enqueue` runs it down the ffmpeg
+/// lane, so the two must not disagree about what a pipeline job is.
+fn required_bytes(engine: Engine, input_size: u64) -> u64 {
+    match engine {
+        Engine::Whisper => WHISPER_MIN_FREE,
+        // `saturating_mul`, so a nonsense input size (a 9-exabyte file, a bad stat)
+        // refuses the job instead of wrapping around into "needs nothing".
+        Engine::Ffmpeg | Engine::Pipeline => input_size.saturating_mul(2),
+    }
+}
+
+/// Refuses a job whose output folder plainly has no room for it (spec §8: validate
+/// before launching, not after ffmpeg fails).
+///
+/// `dir` is the folder the finished file goes into — the Settings folder or the
+/// input's own — because that, not the input's volume, is where the bytes land:
+/// transcoding a clip off a full external drive onto a roomy boot disk is fine, and
+/// the reverse is not.
+///
+/// A directory that cannot be stat'ed is waved through on purpose. This exists to
+/// save the user a doomed run, not to add a new way for one to fail — and a missing
+/// *fixed* folder is already refused, with a message that says what to do about it,
+/// by [`settings::output_base`] before this is reached.
+///
+/// The message is returned to the UI as it is rather than through [`human`]: the
+/// megabytes and the folder are the actionable part, and `errors::humanize` can only
+/// answer with a fixed sentence (it has one for this text, for the day it travels
+/// the queue's error path instead).
+fn check_free_space(dir: &Path, engine: Engine, input_size: u64) -> Result<(), String> {
+    let need = required_bytes(engine, input_size);
+    let Ok(free) = fs2::available_space(dir) else {
+        return Ok(());
+    };
+    if free >= need {
+        return Ok(());
+    }
+    Err(format!(
+        "not enough disk space: need ~{}MB free in {}",
+        need.div_ceil(1024 * 1024),
+        dir.display()
+    ))
+}
+
 /// `async` because this touches the disk on a keystroke: `output_base` stats the
 /// user's chosen output folder and `naming::dedupe` loops over candidate names in
 /// it, once per debounce tick. On the main thread a folder on a sleeping external
@@ -495,6 +557,19 @@ fn enqueue(
     // change it between two Adds, and a missing folder must stop the job here —
     // before a reservation is taken — rather than fail it in ffmpeg later.
     let base = output_base(&state)?;
+    // Disk space, checked before the reservation is taken so a refusal needs no
+    // cleanup. The folder measured is the one the file is going to, which is what
+    // `planned_path` decides — computing it here as well as inside `plan_unique`
+    // below is free: it is pure and claims nothing.
+    let planned = naming::planned_path(r, std::path::Path::new(&input), base.as_deref());
+    check_free_space(
+        planned.parent().unwrap_or(Path::new(".")),
+        r.engine,
+        // `size_bytes` is `None` only when ffprobe could not stat the file, which
+        // for a file it just probed successfully means something is odd about it;
+        // 0 then asks for no room rather than refusing the job on a missing number.
+        info.size_bytes.unwrap_or(0),
+    )?;
     // Reserved from here on; release it if we bail out before `push`.
     let output = state
         .queue
@@ -1162,6 +1237,63 @@ output: {ext: mp4, suffix: compressed}
                 .collect::<Vec<_>>()
                 .join(", ")
         );
+    }
+
+    /// The free-space heuristic: two lanes, two different shapes of demand.
+    #[test]
+    fn required_bytes_doubles_the_input_for_ffmpeg_and_floors_whisper() {
+        const MB: u64 = 1024 * 1024;
+        assert_eq!(required_bytes(Engine::Ffmpeg, 10 * MB), 20 * MB);
+        // A pipeline recipe runs down the ffmpeg lane (see `enqueue`), so it is
+        // sized the same way rather than falling into whisper's floor.
+        assert_eq!(required_bytes(Engine::Pipeline, 10 * MB), 20 * MB);
+        // A transcript is kilobytes whatever the input weighs: the number is a floor
+        // against "the disk is full", not an estimate of the output.
+        assert_eq!(required_bytes(Engine::Whisper, 10 * MB), WHISPER_MIN_FREE);
+        assert_eq!(
+            required_bytes(Engine::Whisper, 4_000 * MB),
+            WHISPER_MIN_FREE
+        );
+        // The doubling must not wrap: an absurd input has to refuse the job, not
+        // come back asking for nothing.
+        assert_eq!(required_bytes(Engine::Ffmpeg, u64::MAX), u64::MAX);
+    }
+
+    /// The check against a real directory, which is the point of it: the number
+    /// comes from the volume the file is actually going to.
+    #[test]
+    fn free_space_check_reads_a_real_dir_and_refuses_the_impossible() {
+        let d = tempfile::tempdir().unwrap();
+        // An ordinary job on a working disk has nothing to answer.
+        check_free_space(d.path(), Engine::Ffmpeg, 1024).unwrap();
+        check_free_space(d.path(), Engine::Whisper, 0).unwrap();
+
+        // Half of u64::MAX fits on no disk in existence, so the SAME directory now
+        // refuses — which is what proves the answer came from `available_space`
+        // rather than from a constant.
+        let err = check_free_space(d.path(), Engine::Ffmpeg, u64::MAX / 2).unwrap_err();
+        assert!(err.contains("not enough disk space"), "got: {err}");
+        // The folder is named: with a fixed output folder the boot disk can be
+        // roomy while that volume is full, and the user needs to know which is which.
+        assert!(
+            err.contains(&d.path().display().to_string()),
+            "the refusal must name the folder: {err}"
+        );
+        // enqueue returns this text as it is (the megabytes are the actionable
+        // part), but it also has to read as a sentence if it ever travels the
+        // queue's humanized error path.
+        assert!(
+            mediachef_core::errors::humanize(&err)
+                .unwrap()
+                .contains("disk space"),
+            "unmapped: {err}"
+        );
+
+        // A directory that is not there is not a refusal. This check exists to save
+        // the user a doomed run, not to invent a new way for one to fail — and a
+        // missing *fixed* folder is already refused, with a better message, by
+        // `settings::output_base` before this runs.
+        check_free_space(&d.path().join("nope"), Engine::Ffmpeg, u64::MAX / 2).unwrap();
     }
 
     /// With nothing downloading every `.part` is garbage — including one whose
