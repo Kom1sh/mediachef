@@ -1,9 +1,25 @@
 import { useEffect, useState } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { CookingPot } from "lucide-react";
 import { useT } from "../lib/i18n";
 import { pickFiles } from "../lib/ipc";
 
-export function DropZone({ onFiles }: { onFiles: (paths: string[]) => void }) {
+/**
+ * The chopping board: the one surface a file is put on. A dashed card that goes
+ * solid basil the moment a drag enters the window, and shrinks to a strip once
+ * there is something on it — with files up, the board is no longer the subject of
+ * the screen, only the way to add one more.
+ *
+ * `CookingPot` rather than an upload arrow: the pot is what the rail's Convert
+ * screen is marked with, so the board reads as "this is where cooking starts"
+ * instead of borrowing a web-form idiom the app has no other use for.
+ */
+export function DropZone({ onFiles, compact = false }: {
+  onFiles: (paths: string[]) => void;
+  /** With files already on the board, a ~96px strip with the invitation alone —
+   *  the recipe list below is what the user is reading by then. */
+  compact?: boolean;
+}) {
   const [hover, setHover] = useState(false);
   const t = useT();
   useEffect(() => {
@@ -29,9 +45,32 @@ export function DropZone({ onFiles }: { onFiles: (paths: string[]) => void }) {
   return (
     <button
       onClick={async () => { const ps = await pickFiles(); if (ps.length > 0) onFiles(ps); }}
-      className={`w-full rounded-xl border-2 border-dashed p-10 text-center text-sm ${hover ? "border-blue-500 bg-blue-500/10" : "border-neutral-600"}`}
+      // `motion-safe:` on the lift rather than an unguarded scale utility: the
+      // global reduced-motion rule in index.css can only silence the *transition*,
+      // which would leave the jump instant instead of absent. The colour change
+      // carries the same information without moving anything.
+      className={`flex w-full shrink-0 items-center justify-center rounded-2xl border-2 border-dashed text-center transition ${
+        compact ? "h-24 gap-3 px-4" : "flex-col gap-2 px-6 py-10"
+      } ${
+        hover
+          ? "border-basil bg-card-2 motion-safe:scale-[1.01]"
+          : "border-line bg-card hover:border-basil hover:bg-card-2 motion-safe:hover:scale-[1.01]"
+      }`}
     >
-      {t("dropZone")}
+      <CookingPot className="size-7 shrink-0 text-ink-2" aria-hidden />
+      {/* One text block either way, so the compact board is the same sentence on
+          one line rather than a second layout to keep in step. */}
+      <span className="min-w-0">
+        {/* Wraps rather than truncates: at the 760px minimum window the board is
+            288px wide, and the Russian invitation is long enough that an ellipsis
+            would eat the "or click" half of it — the half a user who cannot drag
+            needs to read. Two lines still clear the 96px strip. */}
+        <span className="block text-sm font-medium">{t("dropHint")}</span>
+        {/* Dropped in the strip: 96px does not hold two lines beside a 28px pot,
+            and the format list is onboarding — it has already been read by the
+            time there are files on the board. */}
+        {compact ? null : <span className="mt-1 block text-xs text-ink-2">{t("dropSub")}</span>}
+      </span>
     </button>
   );
 }

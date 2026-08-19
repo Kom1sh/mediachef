@@ -35,14 +35,22 @@ const EN = {
   navSettings: "Settings",
 
   // ── Board: drop zone, search, recipe list ────────────────────────────────
-  dropZone: "Drop files here or click to choose",
-  dropHint: "Drop files to filter recipes by type.",
+  // The board's own two lines: the invitation, and the formats under it. The
+  // invitation names both ways in (drag and click) because the board is a button
+  // that does not look like one.
+  dropHint: "Drop files here — or click to choose",
+  dropSub: "MP4, MKV, MOV, MP3, WAV, SRT and more",
   // Both example queries stay in both locales on purpose: the Russian one shows a
   // Russian speaker that their own words work, the English one that the search is
   // not fussy about which language it is asked in.
   searchPlaceholder: "Search: «видео в мп3», «make gif»…",
   nothingFound: "Nothing found",
+  clearSearch: "Clear search",
   popular: "Popular",
+  // The screen with nothing on it yet. Display face, asked as a question — the
+  // one place the app speaks in the first person plural, because a kitchen does.
+  emptyTitle: "What are we cooking?",
+  emptySub: "Put a file on the board and pick a recipe.",
 
   // ── File card ────────────────────────────────────────────────────────────
   clearFile: "Clear file",
@@ -157,11 +165,16 @@ const RU: Record<TKey, string> = {
   navModels: "Модели",
   navSettings: "Настройки",
 
-  dropZone: "Перетащите файлы сюда или нажмите, чтобы выбрать",
-  dropHint: "Перетащите файлы — рецепты отфильтруются по типу.",
+  dropHint: "Перетащите файлы сюда — или нажмите, чтобы выбрать",
+  dropSub: "MP4, MKV, MOV, MP3, WAV, SRT и другие",
   searchPlaceholder: "Поиск: «видео в мп3», «make gif»…",
   nothingFound: "Ничего не нашлось",
+  clearSearch: "Очистить поиск",
   popular: "Популярное",
+  // «Что готовим?» — вопрос, а не заголовок раздела: экран пустой, и первое слово
+  // приложения должно приглашать, а не описывать.
+  emptyTitle: "Что готовим?",
+  emptySub: "Положите файл на доску и выберите рецепт.",
 
   clearFile: "Убрать файл",
   clearNamed: "Убрать {name}",

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Search } from "lucide-react";
 import { DropZone } from "./components/DropZone";
 import { FileCard } from "./components/FileCard";
 import { ModelsPanel } from "./components/ModelsPanel";
@@ -228,29 +229,61 @@ export default function App() {
             : <section className="p-4 text-sm text-ink-2">{settingsError || t("loadingSettings")}</section>
         ) : (
           <section className="flex min-h-0 flex-col gap-3 overflow-y-auto p-4">
-            {files.map((f, i) => (
-              <FileCard key={f.path} path={f.path} info={f.info} probeError={f.probeError}
-                // With a single card there is nothing to choose between, so a
-                // highlight would be pure decoration: it is there to answer "which of
-                // these drives the filter", a question only a list can raise.
-                active={files.length > 1 && i === active}
-                onSelect={() => setActive(i)} onClear={() => removeFile(f.path)} />
-            ))}
-            <DropZone onFiles={addFiles} />
-            <input
-              value={query} onChange={e => setQuery(e.target.value)}
-              placeholder={t("searchPlaceholder")}
-              className="w-full rounded-lg border border-line bg-card p-2 text-sm"
-            />
-            {/* `key` on the recipe id: the form seeds its params from the recipe once,
-                at mount, so a swap without a remount would run the new recipe with the
-                old recipe's params — along with a stale busy flag and enqueue error. */}
-            {selected && activeFile
-              ? <RecipeForm key={selected.id} recipe={selected} input={activeFile.path} batch={batch}
-                  onQueued={() => setSelected(null)} onClose={() => setSelected(null)}
-                  onOpenModels={() => setTab("models")} />
-              : <RecipeList recipes={results} onPick={r => setSelected(r)} />}
-            {files.length === 0 && <p className="text-xs text-ink-2">{t("dropHint")}</p>}
+            {files.length === 0 ? (
+              // Nothing on the board yet, so the board *is* the screen: one
+              // invitation, centred, and no search box or recipe list under it.
+              // Both would be dead controls — a picked recipe with no file to run it
+              // on is cleared again by the effect above, so the click would look
+              // broken rather than early.
+              //
+              // `my-auto` rather than `justify-center` on the section: auto margins
+              // collapse to zero when the content is taller than the track, so a
+              // short window scrolls to the top of the hero instead of clipping it.
+              <div className="my-auto flex w-full flex-col items-center gap-5 self-center text-center">
+                <div className="max-w-md">
+                  {/* Unbounded, second and last use in the app (the rail's wordmark
+                      is the other): a display face earns its keep on the one line
+                      that greets, and nowhere a user reads twice. */}
+                  <h1 className="font-display text-2xl font-semibold">{t("emptyTitle")}</h1>
+                  <p className="mt-2 text-sm text-ink-2">{t("emptySub")}</p>
+                </div>
+                <div className="w-full max-w-xl"><DropZone onFiles={addFiles} /></div>
+              </div>
+            ) : (
+              <>
+                {files.map((f, i) => (
+                  <FileCard key={f.path} path={f.path} info={f.info} probeError={f.probeError}
+                    // With a single card there is nothing to choose between, so a
+                    // highlight would be pure decoration: it is there to answer "which of
+                    // these drives the filter", a question only a list can raise.
+                    active={files.length > 1 && i === active}
+                    onSelect={() => setActive(i)} onClear={() => removeFile(f.path)} />
+                ))}
+                {/* Compact: with files up, the board is the way to add one more, not
+                    the subject of the screen. */}
+                <DropZone onFiles={addFiles} compact />
+                {/* The icon sits in the padding the input leaves for it (`pl-9`)
+                    rather than in a bordered flex row, so the field keeps its own
+                    focus ring — one box, not a box drawn around a box. */}
+                <div className="relative shrink-0">
+                  <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-2" aria-hidden />
+                  <input
+                    value={query} onChange={e => setQuery(e.target.value)}
+                    placeholder={t("searchPlaceholder")}
+                    className="w-full rounded-xl border border-line bg-card py-2 pr-3 pl-9 text-sm"
+                  />
+                </div>
+                {/* `key` on the recipe id: the form seeds its params from the recipe once,
+                    at mount, so a swap without a remount would run the new recipe with the
+                    old recipe's params — along with a stale busy flag and enqueue error. */}
+                {selected && activeFile
+                  ? <RecipeForm key={selected.id} recipe={selected} input={activeFile.path} batch={batch}
+                      onQueued={() => setSelected(null)} onClose={() => setSelected(null)}
+                      onOpenModels={() => setTab("models")} />
+                  : <RecipeList recipes={results} query={query} onPick={r => setSelected(r)}
+                      onClearSearch={() => setQuery("")} />}
+              </>
+            )}
           </section>
         )}
         {/* Always mounted: a queue that vanished on a tab switch would drop its
