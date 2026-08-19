@@ -71,10 +71,25 @@ fn find(bin: &str, env_key: &str) -> Option<PathBuf> {
 /// `bin_name` arrives with the platform suffix already applied by the caller, so
 /// the match is verbatim — no extension guessing here. Files only: a directory
 /// of the same name passes `exists()` and would be handed to the runner as a
-/// binary, which fails much later and much more confusingly.
+/// binary, which fails much later and much more confusingly. Same for files
+/// that cannot run: a 0-byte placeholder `touch`-ed to appease tauri-build gets
+/// copied next to the executable like a real sidecar and, executable bit set,
+/// even "runs" as an empty script that exits 0 — so require content, and on
+/// unix the exec bit too (Windows has no such bit; being a file is the check).
 fn find_near(dir: &Path, bin_name: &str) -> Option<PathBuf> {
     let p = dir.join(bin_name);
-    p.is_file().then_some(p)
+    let meta = p.metadata().ok()?;
+    if !meta.is_file() || meta.len() == 0 {
+        return None;
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if meta.permissions().mode() & 0o111 == 0 {
+            return None;
+        }
+    }
+    Some(p)
 }
 
 fn which_path(bin: &str) -> Option<PathBuf> {
@@ -99,6 +114,18 @@ pub fn whisper() -> Option<PathBuf> {
 mod tests {
     use super::*;
 
+    /// Fixture files below stand in for real sidecars, which arrive `chmod +x`;
+    /// `fs::write` alone leaves 644 and `find_near` now rightly refuses that.
+    fn make_executable(p: &Path) {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(p, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        #[cfg(not(unix))]
+        let _ = p;
+    }
+
     /// `find_near` is the pure half of the "sidecar next to the executable"
     /// step: `current_exe` cannot be faked inside a test, so the directory is
     /// the parameter and only the thin wrapper in `find` is untested.
@@ -107,6 +134,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let fake = dir.path().join("ffmpeg");
         std::fs::write(&fake, b"#!/bin/sh\n").unwrap();
+        make_executable(&fake);
         assert_eq!(find_near(dir.path(), "ffmpeg"), Some(fake));
     }
 
@@ -120,6 +148,25 @@ mod tests {
         assert_eq!(find_near(dir.path(), "ffprobe"), None);
     }
 
+    /// The placeholder class: a 0-byte file `touch`-ed to satisfy tauri-build
+    /// would be copied beside the executable and, with the exec bit set, even
+    /// "run" (as an empty script, exiting 0) — never hand it to the runner.
+    /// Likewise a file with content but no exec bit is data, not an engine.
+    #[test]
+    fn find_near_refuses_placeholders() {
+        let dir = tempfile::tempdir().unwrap();
+        let empty = dir.path().join("ffmpeg");
+        std::fs::write(&empty, b"").unwrap();
+        make_executable(&empty);
+        assert_eq!(find_near(dir.path(), "ffmpeg"), None);
+        #[cfg(unix)]
+        {
+            let data = dir.path().join("ffprobe");
+            std::fs::write(&data, b"not a binary").unwrap();
+            assert_eq!(find_near(dir.path(), "ffprobe"), None);
+        }
+    }
+
     /// The suffix lives in the `bin_name` the caller builds (`.exe` on
     /// Windows), so the lookup must match that name exactly rather than
     /// guessing extensions of its own.
@@ -128,6 +175,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let windows_style = dir.path().join("whisper-cli.exe");
         std::fs::write(&windows_style, b"MZ").unwrap();
+        make_executable(&windows_style);
         assert_eq!(find_near(dir.path(), "whisper-cli"), None);
         assert_eq!(
             find_near(dir.path(), "whisper-cli.exe"),

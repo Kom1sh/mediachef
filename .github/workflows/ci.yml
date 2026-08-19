@@ -46,13 +46,27 @@ jobs:
       # cmake flag) refetches. Empty placeholder files would satisfy tauri and
       # ruin everything else: they get copied next to the binaries, locate's
       # exe-dir step accepts any file, and smoke would spawn a 0-byte "ffmpeg".
-      - uses: actions/cache@v4
+      # restore/save split rather than the combined action: the combined one
+      # saves in a job-end hook that fires only when the whole job is green
+      # (post-if: success()), so any later red step — a failing test, a flaky
+      # smoke — would throw away the 3-5 min whisper build and refetch on
+      # every push until the job recovers.
+      - uses: actions/cache/restore@v4
+        id: sidecars
         with:
           path: app/src-tauri/binaries
           key: sidecars-aarch64-apple-darwin-${{ hashFiles('scripts/fetch-sidecars.sh') }}
       # Near-instant on a cache hit — it re-verifies the pinned sha256s and that
       # nothing links outside /usr/lib and /System, then exits without work.
       - run: ./scripts/fetch-sidecars.sh
+      # Saved right after the fetch, and only if it succeeded (default step
+      # condition) — a partial binaries/ dir can never become an immutable
+      # cache entry.
+      - uses: actions/cache/save@v4
+        if: steps.sidecars.outputs.cache-hit != 'true'
+        with:
+          path: app/src-tauri/binaries
+          key: sidecars-aarch64-apple-darwin-${{ hashFiles('scripts/fetch-sidecars.sh') }}
       - run: cargo test --manifest-path app/src-tauri/Cargo.toml
       - run: cargo clippy -p mediachef -- -D warnings
       # Still needed by the two things that do NOT see the sidecars: make.sh

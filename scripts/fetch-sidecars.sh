@@ -183,8 +183,19 @@ build_whisper_cli
 echo
 "$OUT/ffmpeg-$TRIPLE" -version >/dev/null
 "$OUT/ffprobe-$TRIPLE" -version >/dev/null
-"$OUT/whisper-cli-$TRIPLE" --help >/dev/null 2>&1
-for b in ffmpeg ffprobe whisper-cli; do assert_self_contained "$OUT/$b-$TRIPLE"; done
+assert_self_contained "$OUT/ffmpeg-$TRIPLE"
+assert_self_contained "$OUT/ffprobe-$TRIPLE"
+# У ffmpeg/ffprobe битый файл самоисцеляется: sha установленного не совпала —
+# его перекладывают из архива. У whisper-cli пиненой sha нет (сборка локальная),
+# его битость ловится только здесь — и битый бинарник при валидной метке падал
+# бы на этом месте вечно (в CI одна испорченная кэш-запись красила бы джобу до
+# смены ключа). Поэтому на провале снимаем метку: следующий запуск пересоберёт.
+if ! { "$OUT/whisper-cli-$TRIPLE" --help >/dev/null 2>&1 &&
+       (assert_self_contained "$OUT/whisper-cli-$TRIPLE"); }; then
+  rm -f "$OUT/.whisper-cli-$TRIPLE.stamp"
+  echo "whisper-cli не прошёл самопроверку — метка сборки снята, повторный ./scripts/fetch-sidecars.sh пересоберёт его" >&2
+  exit 1
+fi
 # Заголовки латиницей не из вредности: printf выравнивает по БАЙТАМ, и кириллица
 # в первых двух колонках разъезжается. Русский текст — только в последней.
 printf '%-12s %-24s %s\n' "BINARY" "VERSION" "STATE"
