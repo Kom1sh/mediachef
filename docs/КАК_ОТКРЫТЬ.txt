@@ -1,4 +1,4 @@
-MediaChef 0.3.0 (macOS, Apple Silicon)
+MediaChef 0.4.0 (macOS, Apple Silicon)
 ======================================
 
 ПЕРВЫЙ ЗАПУСК — СНЯТИЕ КАРАНТИНА
