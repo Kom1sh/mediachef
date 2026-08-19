@@ -53,13 +53,23 @@ pub fn humanize(stderr_tail: &str) -> Option<String> {
     // Separate from ffmpeg only for the variable it names: ffprobe is what the
     // probe and the enqueue path resolve, and pointing that user at
     // MEDIACHEF_FFMPEG would be an override that changes nothing.
-    } else if s.contains("ffprobe not found") {
+    //
+    // Two needles for the same reason the whisper arm has two: `not found` is the
+    // lookup miss (`locate::ffprobe` came back empty), while `ffprobe spawn: ` is
+    // a sidecar that WAS found and could not be executed — a truncated download,
+    // a stripped exec bit, an antivirus stub (`probe::ProbeError::Io` names it so
+    // it can be recognised here). And exactly like the whisper arm, THIS one's
+    // position is load-bearing: "ffprobe spawn: " contains "spawn: ", so below
+    // the FFmpeg arm a damaged ffprobe would be reported as a damaged ffmpeg and
+    // offer MEDIACHEF_FFMPEG, which would not fix it.
+    } else if s.contains("ffprobe not found") || s.contains("ffprobe spawn: ") {
         "The bundled FFprobe engine is missing or damaged — reinstall MediaChef \
          (advanced: the MEDIACHEF_FFPROBE env variable overrides the engine path)."
     // Bare "spawn: " lands here on purpose: an untagged spawn failure comes from
     // the ffmpeg child — the converter itself, or the 16kHz WAV prep step of a
-    // transcription — and `transcribe` tags the whisper one (arm above) precisely
-    // so this stays unambiguous.
+    // transcription. Both other engines tag theirs (`transcribe` writes "whisper
+    // spawn: ", `probe` writes "ffprobe spawn: "), which is what leaves this arm
+    // unambiguous rather than merely last.
     } else if s.contains("ffmpeg not found") || s.contains("spawn: ") {
         "The bundled FFmpeg engine is missing or damaged — reinstall MediaChef \
          (advanced: the MEDIACHEF_FFMPEG env variable overrides the engine path)."
@@ -106,9 +116,12 @@ mod tests {
         // Ruling W4-4 pins the text itself: since the engines ship inside the app,
         // the sentence names the bundled engine and its override variable instead
         // of a package manager. Asserted verbatim, because "install" alone would
-        // still pass on the old brew wording.
+        // still pass on the old brew wording. The inputs here are the exact
+        // strings the lookup misses in `lib.rs` produce — the advice-carrying
+        // parentheticals they used to append are gone, since `error_detail` shows
+        // that raw text to the user verbatim.
         assert_eq!(
-            humanize("ffmpeg not found (brew install ffmpeg)").unwrap(),
+            humanize("ffmpeg not found").unwrap(),
             "The bundled FFmpeg engine is missing or damaged — reinstall MediaChef \
              (advanced: the MEDIACHEF_FFMPEG env variable overrides the engine path)."
         );
@@ -122,7 +135,7 @@ mod tests {
         // ffprobe is its own arm for one reason: the variable it offers. A user
         // told to set MEDIACHEF_FFMPEG for a missing ffprobe would override the
         // wrong engine and see the same failure again.
-        let probe = humanize("ffprobe not found (brew install ffmpeg)").unwrap();
+        let probe = humanize("ffprobe not found").unwrap();
         assert_eq!(
             probe,
             "The bundled FFprobe engine is missing or damaged — reinstall MediaChef \
@@ -142,7 +155,7 @@ mod tests {
     // FFmpeg arm's text either, since MEDIACHEF_FFMPEG cannot fix it.
     #[test]
     fn maps_missing_whisper_binary() {
-        let m = humanize("whisper-cli not found (brew install whisper-cpp)").unwrap();
+        let m = humanize("whisper-cli not found").unwrap();
         assert_eq!(
             m,
             "The bundled Whisper engine is missing or damaged — reinstall MediaChef \
@@ -177,6 +190,34 @@ mod tests {
         assert!(humanize("spawn: No such file or directory")
             .unwrap()
             .contains("bundled FFmpeg engine"));
+    }
+
+    // The damaged-engine case, and the reason `probe::ProbeError::Io` names the
+    // binary: a sidecar that exists but cannot be executed fails with the very
+    // text a deleted input file produces ("No such file or directory"), so
+    // untagged it was answered with "Input file not found" and sent the user
+    // hunting for a file that was never missing.
+    #[test]
+    fn maps_damaged_ffprobe_to_the_engine_not_the_input() {
+        let m = humanize("ffprobe spawn: No such file or directory (os error 2)").unwrap();
+        assert!(m.contains("bundled FFprobe engine"), "got: {m}");
+        assert!(m.contains("MEDIACHEF_FFPROBE"), "got: {m}");
+        // The arm order is what keeps this out of the generic FFmpeg arm below:
+        // "ffprobe spawn: " contains "spawn: ".
+        assert!(
+            !m.contains("FFmpeg"),
+            "a damaged ffprobe blamed on ffmpeg: {m}"
+        );
+        // A non-executable sidecar arrives as a permission error instead (and on
+        // Windows as a bad-image one) — same arm, same sentence.
+        assert!(humanize("ffprobe spawn: Permission denied (os error 13)")
+            .unwrap()
+            .contains("MEDIACHEF_FFPROBE"));
+        // Complement, so the new needle cannot swallow the input-file arm: a real
+        // missing input carries no engine tag and must still blame the input.
+        assert!(humanize("i.mp4: No such file or directory")
+            .unwrap()
+            .contains("Input file"));
     }
 
     // Ruling W3-3: a transcription that heard nothing is a fact about the file, not

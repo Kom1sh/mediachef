@@ -8,7 +8,14 @@ use thiserror::Error;
 pub enum ProbeError {
     #[error("ffprobe failed: {0}")]
     Failed(String),
-    #[error("io: {0}")]
+    /// Only one thing in [`probe`] can produce an [`std::io::Error`]: the
+    /// `.output()` call that spawns ffprobe. Naming it is what lets
+    /// [`crate::errors::humanize`] tell a broken engine from a missing input —
+    /// a damaged sidecar fails with "No such file or directory (os error 2)"
+    /// exactly like a deleted input file does, and under the old `io: {0}`
+    /// wording that text carried no engine marker at all, so it was answered
+    /// with "Input file not found (moved or renamed?)".
+    #[error("ffprobe spawn: {0}")]
     Io(#[from] std::io::Error),
 }
 
@@ -115,6 +122,30 @@ mod tests {
             "streams": [{"codec_type": "video", "disposition": {"attached_pic": 0}}]
         });
         assert_eq!(detect_media_type(&png), crate::recipe::MediaType::Image);
+    }
+
+    /// The other half of the retagged `Io` variant: this pins the *source* of the
+    /// needle, while `errors::tests::maps_damaged_ffprobe_to_the_engine_not_the_input`
+    /// pins what the table does with it. Needs no fixture — the spawn fails before
+    /// the input path is ever looked at, which is exactly the point.
+    #[test]
+    fn spawn_failure_names_ffprobe() {
+        let dir = tempfile::tempdir().unwrap();
+        let broken = dir.path().join("ffprobe");
+        // A 0-byte file with no exec bit: what a truncated download or a
+        // quarantined sidecar leaves behind. Unix answers EACCES, Windows a
+        // bad-image error — the assertion deliberately pins neither.
+        std::fs::write(&broken, b"").unwrap();
+        let text = probe(&broken, Path::new("/nonexistent/input.mp4"))
+            .unwrap_err()
+            .to_string();
+        assert!(text.starts_with("ffprobe spawn: "), "got: {text}");
+        assert!(
+            crate::errors::humanize(&text)
+                .unwrap()
+                .contains("bundled FFprobe engine"),
+            "humanizer lost the engine tag: {text}"
+        );
     }
 
     #[test]

@@ -369,7 +369,10 @@ fn human(e: impl std::fmt::Display) -> String {
 /// must not freeze the window.
 #[tauri::command(async)]
 fn probe_file(path: String) -> Result<probe::ProbeInfo, String> {
-    let fp = locate::ffprobe().ok_or("ffprobe not found (brew install ffmpeg)")?;
+    // `human` here too, not a bare `ok_or`: the invariant above is the whole
+    // reason this function has a humanizer, and `?` on a plain &str would hand
+    // the webview the raw needle instead of the sentence `errors` writes for it.
+    let fp = locate::ffprobe().ok_or_else(|| human("ffprobe not found"))?;
     probe::probe(&fp, std::path::Path::new(&path)).map_err(human)
 }
 
@@ -570,7 +573,9 @@ fn enqueue(
     params: HashMap<String, String>,
 ) -> Result<u64, String> {
     let r = find_recipe(&state.recipes, &recipe_id)?;
-    let fp = locate::ffprobe().ok_or("ffprobe not found (brew install ffmpeg)")?;
+    // Humanized for the same reason as in `probe_file`: this string goes straight
+    // to the Add button's error toast, with no queue job to launder it.
+    let fp = locate::ffprobe().ok_or_else(|| human("ffprobe not found"))?;
     let info = probe::probe(&fp, std::path::Path::new(&input)).map_err(human)?;
     // Ruling 20 / spec §8: validate before launching, not after ffmpeg fails.
     if !queue::input_accepted(&r.input.types, info.media_type) {
@@ -681,13 +686,15 @@ fn shutdown(queue: &Queue, downloads: &Downloads) {
 /// Each worker resolves its own `ffmpeg` path once, at spawn: the lookup is the
 /// same for all of them, and doing it here keeps a worker independent of every
 /// other one.
+///
+/// A lookup miss here carries the bare needle and no advice: `queue::run_next_lane`
+/// hands it to `errors::humanize` for the sentence the user reads, and keeps this
+/// raw text as the job's `error_detail`, which the queue panel shows verbatim.
 fn ffmpeg_worker(q: Queue) {
     let ffmpeg = locate::ffmpeg();
     loop {
         let ran = q.run_next_lane(queue::Lane::Ffmpeg, |job, on_p| {
-            let ffmpeg = ffmpeg
-                .as_ref()
-                .ok_or("ffmpeg not found (brew install ffmpeg)".to_string())?;
+            let ffmpeg = ffmpeg.as_ref().ok_or("ffmpeg not found".to_string())?;
             let queue::JobSpec::Ffmpeg { argv, duration_s } = &job.spec else {
                 return Err("not an ffmpeg job".to_string());
             };
@@ -711,12 +718,10 @@ fn whisper_worker(q: Queue) {
     let whisper = locate::whisper();
     loop {
         let ran = q.run_next_lane(queue::Lane::Whisper, |job, on_p| {
-            let ffmpeg = ffmpeg
-                .as_ref()
-                .ok_or("ffmpeg not found (brew install ffmpeg)".to_string())?;
+            let ffmpeg = ffmpeg.as_ref().ok_or("ffmpeg not found".to_string())?;
             let whisper = whisper
                 .as_ref()
-                .ok_or("whisper-cli not found (brew install whisper-cpp)".to_string())?;
+                .ok_or("whisper-cli not found".to_string())?;
             let queue::JobSpec::Whisper { job: wj } = &job.spec else {
                 return Err("not a whisper job".to_string());
             };
@@ -1174,7 +1179,8 @@ mod tests {
     #[test]
     #[ignore = "spawns real ffmpeg encoders and writes video files"]
     fn two_workers_convert_into_the_fixed_output_folder() {
-        let ffmpeg = locate::ffmpeg().expect("ffmpeg (brew install ffmpeg)");
+        let ffmpeg =
+            locate::ffmpeg().expect("ffmpeg (./scripts/fetch-sidecars.sh, or one on PATH)");
         let home = tempfile::tempdir().unwrap();
         let (app_data, inputs, out) = (
             home.path().join("app-data"),

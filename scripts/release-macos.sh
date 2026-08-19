@@ -3,7 +3,7 @@
 # Использование: ./scripts/release-macos.sh            (версия берётся из tauri.conf.json)
 # Перед первым запуском: ./scripts/fetch-sidecars.sh — без движков сборка .app
 # не проходит вообще (проверка ниже).
-# Что делает: tauri build → zip (.app + КАК_ОТКРЫТЬ.txt) → публикация:
+# Что делает: tauri build → zip (.app + КАК_ОТКРЫТЬ.txt + NOTICE.md) → публикация:
 #   - если установлен и авторизован gh: GitHub Release v<версия> (канонично)
 #   - иначе: коммит zip в orphan-ветку builds (прямые ссылки, без gh)
 set -euo pipefail
@@ -40,14 +40,19 @@ test -d "$APP" || { echo ".app not built"; exit 1; }
 echo "==> packaging ${ZIP}"
 rm -rf dist-release && mkdir -p dist-release
 cp docs/КАК_ОТКРЫТЬ.txt dist-release/ 2>/dev/null || cp scripts/КАК_ОТКРЫТЬ.txt dist-release/
+# NOTICE.md едет в каждой поставке: внутри .app лежат ffmpeg/ffprobe (GPL-сборки)
+# и whisper-cli, а GPL требует, чтобы лицензии и ссылки на исходники ехали вместе
+# с бинарниками, а не только лежали в репозитории.
+cp NOTICE.md dist-release/
 cp -R "$APP" dist-release/
-( cd dist-release && zip -qry "$ZIP" MediaChef.app КАК_ОТКРЫТЬ.txt )
+( cd dist-release && zip -qry "$ZIP" MediaChef.app КАК_ОТКРЫТЬ.txt NOTICE.md )
 
 DMG="MediaChef_${VER}_aarch64.dmg"
 echo "==> packaging ${DMG} (hdiutil — без GUI-зависимого оформления, с инструкцией внутри)"
 rm -rf dist-release/dmg-stage && mkdir -p dist-release/dmg-stage
 cp -R "$APP" dist-release/dmg-stage/
 cp dist-release/КАК_ОТКРЫТЬ.txt dist-release/dmg-stage/
+cp dist-release/NOTICE.md dist-release/dmg-stage/
 ln -s /Applications dist-release/dmg-stage/Applications
 hdiutil create -volname "MediaChef ${VER}" -srcfolder dist-release/dmg-stage -ov -format UDZO "dist-release/${DMG}" >/dev/null
 

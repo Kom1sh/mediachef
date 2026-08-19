@@ -351,9 +351,10 @@ pub fn run_whisper(
         }
     });
     // Tagged with the binary that failed, unlike the prep step above: a bare
-    // `spawn: No such file or directory` is humanized as "FFmpeg binary not
-    // found", which for THIS spawn would send the user to the wrong Homebrew
-    // formula. `whisper spawn: ` has its own arm in `errors`.
+    // `spawn: No such file or directory` is humanized as a damaged bundled FFmpeg
+    // engine, which for THIS spawn would name the wrong engine and offer an
+    // override variable that changes nothing. `whisper spawn: ` has its own arm in
+    // `errors`, as does `ffprobe spawn: ` from `probe`.
     let exit = exit.map_err(|e| err(format!("whisper {e}"), &tail))?;
     // No cleanup of `job.output` on either exit: whisper writes only under
     // `out_prefix` in the tempdir, so a file at the caller's path is somebody
