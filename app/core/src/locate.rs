@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn find(bin: &str, env_key: &str) -> Option<PathBuf> {
     if let Ok(p) = std::env::var(env_key) {
@@ -23,6 +23,20 @@ fn find(bin: &str, env_key: &str) -> Option<PathBuf> {
             "unknown-linux-gnu"
         }
     );
+    // A shipped MediaChef carries its own engines: tauri's `externalBin` copies
+    // them next to the app executable (Contents/MacOS on macOS) under their
+    // plain names — the host-triple suffix that the source `binaries/` dir
+    // requires is stripped on the way in. This step sits above the dev chain on
+    // purpose: a bundle must run the ffmpeg it was tested with rather than
+    // whatever the machine happens to have on PATH or in Homebrew.
+    if let Some(p) = std::env::current_exe()
+        .ok()
+        .as_deref()
+        .and_then(Path::parent)
+        .and_then(|dir| find_near(dir, &bin_name))
+    {
+        return Some(p);
+    }
     let repo_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .join("bin")
@@ -49,6 +63,17 @@ fn find(bin: &str, env_key: &str) -> Option<PathBuf> {
     None
 }
 
+/// `dir/bin_name`, if that is a file we could actually execute.
+///
+/// `bin_name` arrives with the platform suffix already applied by the caller, so
+/// the match is verbatim — no extension guessing here. Files only: a directory
+/// of the same name passes `exists()` and would be handed to the runner as a
+/// binary, which fails much later and much more confusingly.
+fn find_near(dir: &Path, bin_name: &str) -> Option<PathBuf> {
+    let p = dir.join(bin_name);
+    p.is_file().then_some(p)
+}
+
 fn which_path(bin: &str) -> Option<PathBuf> {
     let path = std::env::var_os("PATH")?;
     std::env::split_paths(&path)
@@ -70,6 +95,42 @@ pub fn whisper() -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `find_near` is the pure half of the "sidecar next to the executable"
+    /// step: `current_exe` cannot be faked inside a test, so the directory is
+    /// the parameter and only the thin wrapper in `find` is untested.
+    #[test]
+    fn find_near_picks_up_a_file_in_the_directory() {
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("ffmpeg");
+        std::fs::write(&fake, b"#!/bin/sh\n").unwrap();
+        assert_eq!(find_near(dir.path(), "ffmpeg"), Some(fake));
+    }
+
+    #[test]
+    fn find_near_is_none_when_the_binary_is_absent() {
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(find_near(dir.path(), "ffmpeg"), None);
+        // A same-named directory is not a binary — `exists()` would say yes and
+        // hand the runner something that can never be spawned.
+        std::fs::create_dir(dir.path().join("ffprobe")).unwrap();
+        assert_eq!(find_near(dir.path(), "ffprobe"), None);
+    }
+
+    /// The suffix lives in the `bin_name` the caller builds (`.exe` on
+    /// Windows), so the lookup must match that name exactly rather than
+    /// guessing extensions of its own.
+    #[test]
+    fn find_near_matches_the_name_it_was_given_verbatim() {
+        let dir = tempfile::tempdir().unwrap();
+        let windows_style = dir.path().join("whisper-cli.exe");
+        std::fs::write(&windows_style, b"MZ").unwrap();
+        assert_eq!(find_near(dir.path(), "whisper-cli"), None);
+        assert_eq!(
+            find_near(dir.path(), "whisper-cli.exe"),
+            Some(windows_style)
+        );
+    }
 
     #[test]
     fn whisper_resolves_from_env() {

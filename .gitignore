@@ -10,3 +10,6 @@ fixtures/*.aiff
 fixtures/smoke-out/
 .DS_Store
 dist-release/
+# Sidecar engines (ffmpeg/ffprobe/whisper-cli, ~200MB): put there by
+# scripts/fetch-sidecars.sh from pinned sources, never committed.
+app/src-tauri/binaries/
