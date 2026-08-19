@@ -109,29 +109,6 @@ pub fn input_accepted(types: &[MediaType], mt: MediaType) -> bool {
     types.contains(&MediaType::Any) || types.contains(&mt)
 }
 
-/// The name a finished file takes before any collision handling:
-/// `{stem}.{suffix}.{ext}` in `base_dir` when the Settings screen names one, next
-/// to the input otherwise.
-///
-/// Shared by [`Queue::plan_unique`] and the command preview in `lib.rs`, so the
-/// path the user reads in the preview is the path the job will write — the two
-/// drifting apart is exactly what a second copy of this rule would cause.
-pub fn planned_path(recipe: &Recipe, input: &Path, base_dir: Option<&Path>) -> PathBuf {
-    let suffix = recipe
-        .output
-        .suffix
-        .clone()
-        .unwrap_or_else(|| recipe.id.clone());
-    let beside = naming::output_path(input, &suffix, &recipe.output.ext);
-    match base_dir {
-        // `file_name` is `Some` for everything `output_path` can build (it always
-        // appends `stem.suffix.ext`), so the fallback is unreachable rather than
-        // meaningful.
-        Some(dir) => dir.join(beside.file_name().unwrap_or_default()),
-        None => beside,
-    }
-}
-
 #[derive(Clone)]
 pub struct Queue {
     inner: Arc<Mutex<Inner>>,
@@ -175,9 +152,11 @@ impl Queue {
     /// two concurrent `enqueue` calls for the same input+recipe cannot both be
     /// handed the same path.
     ///
-    /// Mirrors `naming::plan_output`'s rule (`{stem}.{suffix}.{ext}`, then a
-    /// ` (N)` suffix on collision), but tests every candidate against both
-    /// worlds; `naming::dedupe` knows about the filesystem only.
+    /// The name itself comes from `naming::planned_path`, the single source of
+    /// the `{stem}.{suffix}.{ext}` rule — so the path a job writes is the path the
+    /// preview showed. Only the ` (N)` collision handling is local, because it has
+    /// to test every candidate against both worlds; `naming::dedupe` knows about
+    /// the filesystem only.
     ///
     /// `base_dir` is the Settings screen's "fixed output folder": `Some(dir)`
     /// puts the file there under the same name, `None` leaves it next to the
@@ -188,7 +167,7 @@ impl Queue {
     /// the two (e.g. `build_argv` fails) MUST call `unreserve`, or the path stays
     /// blocked for the rest of the session.
     pub fn plan_unique(&self, recipe: &Recipe, input: &Path, base_dir: Option<&Path>) -> PathBuf {
-        let base = planned_path(recipe, input, base_dir);
+        let base = naming::planned_path(recipe, input, base_dir);
         let stem = base
             .file_stem()
             .map(|s| s.to_string_lossy().to_string())

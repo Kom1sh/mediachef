@@ -432,7 +432,11 @@ fn output_base(state: &State<AppState>) -> Result<Option<PathBuf>, String> {
     settings::output_base(&state.settings.lock().unwrap())
 }
 
-#[tauri::command]
+/// `async` because this touches the disk on a keystroke: `output_base` stats the
+/// user's chosen output folder and `naming::dedupe` loops over candidate names in
+/// it, once per debounce tick. On the main thread a folder on a sleeping external
+/// drive would freeze the window while the user typed.
+#[tauri::command(async)]
 fn preview(
     app: AppHandle,
     state: State<AppState>,
@@ -447,7 +451,7 @@ fn preview(
     // output folder included. It can still be one ` (N)` off by the time Add is
     // pressed, which is the nature of a preview of a future.
     let base = output_base(&state)?;
-    let output = naming::dedupe(&queue::planned_path(
+    let output = naming::dedupe(&naming::planned_path(
         r,
         std::path::Path::new(&input),
         base.as_deref(),
@@ -466,7 +470,8 @@ fn preview(
 /// `Queue::plan_unique`, not `naming::plan_output` — the latter dedupes against
 /// the filesystem only, so two identical enqueues issued before the first job
 /// runs would both plan the same path and the second run would overwrite the
-/// first's output. `async` for the same reason as `probe_file`.
+/// first's output. (Both spell the *name* the same way: `naming::planned_path`.)
+/// `async` for the same reason as `probe_file`.
 #[tauri::command(async)]
 fn enqueue(
     app: AppHandle,

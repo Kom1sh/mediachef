@@ -1,7 +1,7 @@
 /**
  * The app's two languages, in one file.
  *
- * Two rules hold the whole thing together:
+ * Three rules hold the whole thing together:
  *
  *  1. Every user-visible string in the UI is a key here — including the ones a
  *     screen reader reads and nobody sees (`aria-label`, `title`). The exceptions

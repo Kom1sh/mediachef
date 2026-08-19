@@ -32,13 +32,42 @@ pub fn dedupe(p: &Path) -> PathBuf {
     unreachable!()
 }
 
-pub fn plan_output(recipe: &Recipe, input: &Path) -> PathBuf {
+/// The name a finished file takes before any collision handling:
+/// `{stem}.{suffix}.{ext}` — the recipe's `output.suffix`, or its id when it
+/// declares none — in `base_dir` when the caller names one, next to the input
+/// otherwise.
+///
+/// **The single source of that rule.** Everything that needs to know where a
+/// recipe's output goes comes through here: the app's `Queue::plan_unique` (which
+/// adds its own ` (N)` dedupe against both the filesystem and pending jobs), the
+/// command preview shown before Add, the enqueue-time free-space check, and
+/// [`plan_output`] below. A second copy would let the preview and the run disagree
+/// about the path — which is exactly what having two of them once did.
+pub fn planned_path(recipe: &Recipe, input: &Path, base_dir: Option<&Path>) -> PathBuf {
     let suffix = recipe
         .output
         .suffix
         .clone()
         .unwrap_or_else(|| recipe.id.clone());
-    dedupe(&output_path(input, &suffix, &recipe.output.ext))
+    let beside = output_path(input, &suffix, &recipe.output.ext);
+    match base_dir {
+        // `file_name` is `Some` for everything `output_path` can build (it always
+        // appends `stem.suffix.ext`), so the fallback is unreachable rather than
+        // meaningful.
+        Some(dir) => dir.join(beside.file_name().unwrap_or_default()),
+        None => beside,
+    }
+}
+
+/// [`planned_path`] next to the input, stepped aside from whatever is already on
+/// disk.
+///
+/// The planner for callers whose only rival is the filesystem — the smoke runner,
+/// which has no queue. The app deliberately does **not** use this: two enqueues
+/// issued before the first job runs would both be handed the same free path, so
+/// `Queue::plan_unique` dedupes against pending reservations as well.
+pub fn plan_output(recipe: &Recipe, input: &Path) -> PathBuf {
+    dedupe(&planned_path(recipe, input, None))
 }
 
 #[cfg(test)]
@@ -96,5 +125,33 @@ output: {OUTPUT}
         assert_eq!(r.output.suffix.as_deref(), Some("audio"));
         let p = plan_output(&r, Path::new("/dir/in.mp4"));
         assert_eq!(p.file_name().unwrap().to_string_lossy(), "in.audio.mp3");
+    }
+
+    /// The half of the rule the app uses and `plan_output` does not: a fixed
+    /// output folder keeps the name and changes only the directory. Pinned here
+    /// because this function is the one copy of the rule — `Queue::plan_unique`
+    /// and the command preview both read it, and a change that moved the name
+    /// would move both without either noticing.
+    #[test]
+    fn planned_path_keeps_the_name_and_takes_the_base_dir() {
+        let r = recipe_with_output("{ext: mp3, suffix: audio}");
+        let input = Path::new("/dir/in.mp4");
+        // No base dir: next to the input, byte for byte what `plan_output` plans
+        // before its dedupe.
+        assert_eq!(
+            planned_path(&r, input, None),
+            Path::new("/dir/in.audio.mp3")
+        );
+        // A base dir moves the file, never renames it.
+        assert_eq!(
+            planned_path(&r, input, Some(Path::new("/out/put"))),
+            Path::new("/out/put/in.audio.mp3")
+        );
+        // The suffix fallback (recipe id) applies in the base dir just the same.
+        let no_suffix = recipe_with_output("{ext: mp3}");
+        assert_eq!(
+            planned_path(&no_suffix, input, Some(Path::new("/out"))),
+            Path::new("/out/in.extract-audio-mp3.mp3")
+        );
     }
 }
