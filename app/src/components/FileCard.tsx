@@ -35,8 +35,20 @@ export function FileCard({ path, info, probeError, active, onSelect, onClear }: 
         // gigabytes rather than four thousand megabytes: `lib/format` is the one
         // place in the app either is spelled, shared with the queue's ETA and the
         // model list's sizes.
-        { k: "duration", text: info.duration_s == null ? "" : duration(info.duration_s), title: "" },
-        { k: "size", text: info.size_bytes == null ? "" : size(info.size_bytes, t("unitGB"), t("unitMB")), title: "" },
+        //
+        // The clock is the one chip whose number does not name itself — «01:32»
+        // could be a length, a start point or a bitrate — so it carries the word
+        // in its tooltip. The size chip has its unit written on it and needs none.
+        {
+          k: "duration",
+          text: info.duration_s == null ? "" : duration(info.duration_s),
+          title: info.duration_s == null ? "" : t("durationNamed", { time: duration(info.duration_s) }),
+        },
+        {
+          k: "size",
+          text: info.size_bytes == null ? "" : size(info.size_bytes, { kb: t("unitKB"), mb: t("unitMB"), gb: t("unitGB") }),
+          title: "",
+        },
         // The codec line is the one chip that can outgrow the row it sits in
         // (`truncate` below), so it carries the whole summary as a tooltip. The
         // other two are short by construction — a tooltip repeating them would be

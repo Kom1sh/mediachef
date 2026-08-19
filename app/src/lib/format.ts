@@ -15,16 +15,28 @@
  */
 
 /**
- * Bytes in the largest unit that keeps the number short — gigabytes from 1 GB up,
- * megabytes below that, one decimal for GB and none for MB.
+ * Bytes in the largest unit that keeps the number short, at roughly two or three
+ * significant figures: gigabytes with one decimal from 1 GB up, whole megabytes
+ * from 10 MB, megabytes with one decimal below that, and kilobytes under 1 MB.
  *
- * Decimal units (1e9 / 1e6), not binary: this number sits beside the one the OS
- * shows for the same file, and the model table's own estimates are decimal too.
+ * The kilobyte tier is what makes the small end honest — a 300 KB thumbnail and a
+ * 40 KB subtitle file both read «0 МБ» when megabytes are the floor, which looks
+ * like a broken probe rather than a small file. For the same reason anything with
+ * bytes in it rounds up to 1 KB instead of down to zero: only a genuinely empty
+ * file says 0.
+ *
+ * The units arrive as a named triple rather than as three positional strings —
+ * with three of them in one call, an object is the difference between a swap being
+ * a type error and being a silent «74 ГБ».
+ *
+ * Decimal units (1e9 / 1e6 / 1e3), not binary: this number sits beside the one the
+ * OS shows for the same file, and the model table's own estimates are decimal too.
  */
-export function size(bytes: number, gb: string, mb: string): string {
-  return bytes / 1e9 >= 1
-    ? `${(bytes / 1e9).toFixed(1)} ${gb}`
-    : `${Math.round(bytes / 1e6)} ${mb}`;
+export function size(bytes: number, units: { kb: string; mb: string; gb: string }): string {
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} ${units.gb}`;
+  if (bytes >= 1e7) return `${Math.round(bytes / 1e6)} ${units.mb}`;
+  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} ${units.mb}`;
+  return `${bytes > 0 ? Math.max(1, Math.round(bytes / 1e3)) : 0} ${units.kb}`;
 }
 
 /**

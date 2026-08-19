@@ -107,7 +107,7 @@ export function ModelsPanel() {
                         measures 4.25:1 in the light theme, under the small-text
                         floor of 4.5. */}
                     <span className="shrink-0 rounded-full bg-card-2 px-2 py-0.5 text-xs text-ink tabular-nums">
-                      {size(m.approx_bytes, t("unitGB"), t("unitMB"))}
+                      {size(m.approx_bytes, { kb: t("unitKB"), mb: t("unitMB"), gb: t("unitGB") })}
                     </span>
                   </div>
                   {/* The note is written on the Rust side in both languages. Through

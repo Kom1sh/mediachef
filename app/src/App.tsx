@@ -269,10 +269,17 @@ export default function App() {
                     focus ring — one box, not a box drawn around a box. */}
                 <div className="relative shrink-0">
                   <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-2" aria-hidden />
+                  {/* `placeholder:text-ink-2` is not decoration: Tailwind's preflight
+                      leaves `::placeholder` at `currentColor` with 50% alpha, which
+                      over `card` measures 3.13:1 in the light theme (4.35 dark) —
+                      under the floor, and invisible to a contrast audit that only
+                      reads elements rather than pseudo-elements. The token clears it
+                      at 4.91 / 5.69, and this text is the only hint of what the box
+                      searches. */}
                   <input
                     value={query} onChange={e => setQuery(e.target.value)}
                     placeholder={t("searchPlaceholder")}
-                    className="w-full rounded-xl border border-line bg-card py-2 pr-3 pl-9 text-sm"
+                    className="w-full rounded-xl border border-line bg-card py-2 pr-3 pl-9 text-sm placeholder:text-ink-2"
                   />
                 </div>
                 {/* `key` on the recipe id: the form seeds its params from the recipe once,

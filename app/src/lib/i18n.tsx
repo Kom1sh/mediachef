@@ -54,6 +54,10 @@ const EN = {
 
   // ── File card ────────────────────────────────────────────────────────────
   clearNamed: "Clear {name}",
+  // The chip that holds a bare clock, named in its tooltip: the digits alone do
+  // not say which quantity they are.
+  durationNamed: "Duration: {time}",
+  unitKB: "KB",
   unitMB: "MB",
   unitGB: "GB",
   // What a probed file's tile glyph is called — read out, not written out (the
@@ -179,6 +183,8 @@ const RU: Record<TKey, string> = {
   emptySub: "Положите файл на доску и выберите рецепт.",
 
   clearNamed: "Убрать {name}",
+  durationNamed: "Длительность: {time}",
+  unitKB: "КБ",
   unitMB: "МБ",
   unitGB: "ГБ",
   mt_video: "видео",

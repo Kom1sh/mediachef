@@ -24,9 +24,18 @@ const LABEL: Record<Tab, TKey> = { main: "navConvert", models: "navModels", sett
  *
  * The width is set by the longest Russian label, measured rather than guessed:
  * «Конвертация» is 63.4px at 10px Manrope-500, so the button is `w-20` (80px,
- * 72px inside its padding) and the rail 88px around it — room for the ring the
- * global focus rule draws 2px outside the button, too. The 80px rail this
- * started as left 56px and broke the word across two lines as «Конвертац/ия».
+ * 72px inside its padding) and the rail 88px around it. The 80px rail this
+ * started as left the label 56px and broke the word across two lines as
+ * «Конвертац/ия».
+ *
+ * The focus ring is a hair tighter than that arithmetic looks: 88px minus the 1px
+ * `border-r` leaves an 87px content box, so a centred 80px button has 3.5px on
+ * each side and the ring wants 4 (2px outline at 2px offset). Its outermost half
+ * pixel therefore sits *on* the rail's own border on the right and at the window
+ * edge on the left — the ring reads as flush with the rail rather than inset
+ * inside it, which is cosmetic and was measured, not assumed. A 76px button would
+ * inset it fully and still hold the label (68px of room for 63.4), at the cost of
+ * a narrower active pill.
  */
 export function Sidebar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
   const t = useT();
