@@ -10,14 +10,12 @@ MediaChef 0.3.0 (Windows x64)
 
 ЗАВИСИМОСТИ
 -----------
-Конвертация требует ffmpeg в PATH:
-    winget install Gyan.FFmpeg
-(или ffmpeg.org → добавить папку bin в PATH; после установки перезапусти MediaChef).
+Их нет: FFmpeg и Whisper уже внутри приложения — ни ffmpeg в PATH, ни отдельный
+whisper-cli.exe не нужны. Модели скачиваются в самом приложении (вкладка «Модели»).
 
-Транскрибация (Whisper) на Windows требует whisper-cli.exe:
-    скачай whisper-bin-x64.zip со страницы релизов github.com/ggerganov/whisper.cpp,
-    распакуй и добавь папку в PATH (либо задай переменную окружения MEDIACHEF_WHISPER
-    с полным путём к whisper-cli.exe). Модели скачиваются в самом приложении.
+Для продвинутых: подменить встроенные движки своими сборками можно переменными
+окружения MEDIACHEF_FFMPEG, MEDIACHEF_FFPROBE, MEDIACHEF_WHISPER — в каждой
+полный путь к .exe.
 
 ---
 
@@ -27,6 +25,7 @@ INSTALL (EN)
 2. SmartScreen may warn (unsigned yet): "More info" → "Run anyway".
 3. WebView2 is bootstrapped automatically if missing.
 
-ffmpeg required for conversion:  winget install Gyan.FFmpeg
-whisper-cli required for transcription: whisper-bin-x64.zip from
-github.com/ggerganov/whisper.cpp releases → add to PATH (or set MEDIACHEF_WHISPER).
+No dependencies: FFmpeg and Whisper ship inside the app. Models are downloaded
+inside the app (Models tab).
+Advanced: MEDIACHEF_FFMPEG / MEDIACHEF_FFPROBE / MEDIACHEF_WHISPER (full path to
+an .exe) override the bundled engines.

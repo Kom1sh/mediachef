@@ -28,6 +28,14 @@ pub fn humanize(stderr_tail: &str) -> Option<String> {
         "The file has no audio/video streams FFmpeg can read."
     } else if s.contains("unknown encoder") {
         "This FFmpeg build lacks the required encoder."
+    // The three engine arms below say "reinstall MediaChef", not "install ffmpeg":
+    // since wave 4 every distribution carries its own ffmpeg/ffprobe/whisper-cli
+    // next to the app executable (`locate`), so a lookup that comes back empty
+    // means the bundle lost a file — a half-extracted zip, an antivirus quarantine,
+    // a `binaries/` dir never fetched in a dev tree — and no package manager can
+    // fix that. The env-variable half is the one thing a user CAN act on without a
+    // reinstall, and it is the same override `locate` checks first.
+    //
     // Must stay ABOVE the "no such file" arm: a failed spawn reports
     // "spawn: No such file or directory", which would otherwise be blamed on the
     // user's INPUT file instead of the missing binary.
@@ -37,18 +45,24 @@ pub fn humanize(stderr_tail: &str) -> Option<String> {
     // is the run-time failure — `transcribe` tags its child's spawn error with the
     // binary's name precisely so it can be told apart here. Unlike the arm above,
     // THIS one's position is load-bearing: "whisper spawn: " contains "spawn: ",
-    // so below the FFmpeg arm it would be answered with "brew install ffmpeg",
-    // which installs the wrong thing.
+    // so below the FFmpeg arm it would name the wrong engine and offer
+    // MEDIACHEF_FFMPEG, which cannot make a transcription run.
     } else if s.contains("whisper-cli not found") || s.contains("whisper spawn: ") {
-        // Sits next to the FFmpeg arm because it is the same kind of failure —
-        // a missing binary, not a bad file — but it must never fall INTO it:
-        // "brew install ffmpeg" does not put whisper-cli on the PATH.
-        "whisper-cli is not installed — brew install whisper-cpp."
-    } else if s.contains("ffmpeg not found")
-        || s.contains("ffprobe not found")
-        || s.contains("spawn: ")
-    {
-        "FFmpeg binary not found — install it (brew install ffmpeg on macOS)."
+        "The bundled Whisper engine is missing or damaged — reinstall MediaChef \
+         (advanced: the MEDIACHEF_WHISPER env variable overrides the engine path)."
+    // Separate from ffmpeg only for the variable it names: ffprobe is what the
+    // probe and the enqueue path resolve, and pointing that user at
+    // MEDIACHEF_FFMPEG would be an override that changes nothing.
+    } else if s.contains("ffprobe not found") {
+        "The bundled FFprobe engine is missing or damaged — reinstall MediaChef \
+         (advanced: the MEDIACHEF_FFPROBE env variable overrides the engine path)."
+    // Bare "spawn: " lands here on purpose: an untagged spawn failure comes from
+    // the ffmpeg child — the converter itself, or the 16kHz WAV prep step of a
+    // transcription — and `transcribe` tags the whisper one (arm above) precisely
+    // so this stays unambiguous.
+    } else if s.contains("ffmpeg not found") || s.contains("spawn: ") {
+        "The bundled FFmpeg engine is missing or damaged — reinstall MediaChef \
+         (advanced: the MEDIACHEF_FFMPEG env variable overrides the engine path)."
     } else if s.contains("no such file") {
         "Input file not found (moved or renamed?)."
     // Not an ffmpeg failure at all: the whisper enqueue refuses a job whose model
@@ -85,17 +99,34 @@ mod tests {
             .unwrap()
             .contains("streams"));
         assert!(humanize("something totally else").is_none());
-        // Ruling 21: a missing binary must read as "install ffmpeg", never as a
+        // Ruling 21: a missing binary must read as a broken engine, never as a
         // moved input file. The spawn case pins the arm order — it contains
         // "No such file or directory" and would match the input-file arm below.
-        assert!(humanize("ffmpeg not found (brew install ffmpeg)")
-            .unwrap()
-            .contains("install"));
+        //
+        // Ruling W4-4 pins the text itself: since the engines ship inside the app,
+        // the sentence names the bundled engine and its override variable instead
+        // of a package manager. Asserted verbatim, because "install" alone would
+        // still pass on the old brew wording.
+        assert_eq!(
+            humanize("ffmpeg not found (brew install ffmpeg)").unwrap(),
+            "The bundled FFmpeg engine is missing or damaged — reinstall MediaChef \
+             (advanced: the MEDIACHEF_FFMPEG env variable overrides the engine path)."
+        );
         let spawned = humanize("spawn: No such file or directory").unwrap();
-        assert!(spawned.contains("install"), "got: {spawned}");
+        assert!(spawned.contains("bundled FFmpeg engine"), "got: {spawned}");
+        assert!(spawned.contains("MEDIACHEF_FFMPEG"), "got: {spawned}");
         assert!(
             !spawned.contains("Input file"),
             "spawn failure blamed on the input file: {spawned}"
+        );
+        // ffprobe is its own arm for one reason: the variable it offers. A user
+        // told to set MEDIACHEF_FFMPEG for a missing ffprobe would override the
+        // wrong engine and see the same failure again.
+        let probe = humanize("ffprobe not found (brew install ffmpeg)").unwrap();
+        assert_eq!(
+            probe,
+            "The bundled FFprobe engine is missing or damaged — reinstall MediaChef \
+             (advanced: the MEDIACHEF_FFPROBE env variable overrides the engine path)."
         );
         // Complement: a real ffmpeg input-not-found (no "spawn: " prefix) must
         // still blame the input, so the new arm cannot swallow the old one.
@@ -107,12 +138,16 @@ mod tests {
     // The other half of the whisper lane's "cannot even start" pair: the model is
     // there but the binary is not. Left unmapped (T6 carry) this surfaced as the
     // lane's bare "Transcription failed" fallback, which sends the user looking at
-    // their file instead of at Homebrew — and it must not borrow the FFmpeg arm's
-    // text either, since installing ffmpeg would not fix it.
+    // their file instead of at the broken engine — and it must not borrow the
+    // FFmpeg arm's text either, since MEDIACHEF_FFMPEG cannot fix it.
     #[test]
     fn maps_missing_whisper_binary() {
         let m = humanize("whisper-cli not found (brew install whisper-cpp)").unwrap();
-        assert!(m.contains("whisper-cpp"), "got: {m}");
+        assert_eq!(
+            m,
+            "The bundled Whisper engine is missing or damaged — reinstall MediaChef \
+             (advanced: the MEDIACHEF_WHISPER env variable overrides the engine path)."
+        );
         assert!(
             !m.contains("FFmpeg"),
             "a missing whisper-cli must not read as a missing FFmpeg: {m}"
@@ -127,20 +162,21 @@ mod tests {
     #[test]
     fn maps_failed_whisper_spawn_to_whisper_not_ffmpeg() {
         let m = humanize("whisper spawn: No such file or directory (os error 2)").unwrap();
-        assert!(m.contains("whisper-cpp"), "got: {m}");
+        assert!(m.contains("bundled Whisper engine"), "got: {m}");
+        assert!(m.contains("MEDIACHEF_WHISPER"), "got: {m}");
         assert!(
             !m.contains("FFmpeg"),
             "a failed whisper-cli spawn blamed on FFmpeg: {m}"
         );
-        // Permission denied on a half-installed binary is the same story.
+        // Permission denied on a damaged binary is the same story.
         assert!(humanize("whisper spawn: Permission denied (os error 13)")
             .unwrap()
-            .contains("whisper-cpp"));
+            .contains("MEDIACHEF_WHISPER"));
         // And the ffmpeg-side spawn (the WAV prep step, untagged) still answers
         // with ffmpeg: the tag is what separates the two, so both must hold.
         assert!(humanize("spawn: No such file or directory")
             .unwrap()
-            .contains("FFmpeg"));
+            .contains("bundled FFmpeg engine"));
     }
 
     // Ruling W3-3: a transcription that heard nothing is a fact about the file, not

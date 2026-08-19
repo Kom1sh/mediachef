@@ -5,29 +5,57 @@ FFmpeg for humans + local transcription. Open-core, GPL-3.0, fully offline.
 ## Dev setup (macOS)
 
 ```bash
-brew install ffmpeg          # for fixtures/make.sh and the core tests, which take PATH
+brew install ffmpeg          # dev lane only: fixtures/make.sh and the test
+                             # binaries take PATH — not what a release runs
 ./scripts/fetch-sidecars.sh  # engines that ship inside the app → app/src-tauri/binaries/
 cd app && npm i && npm run tauri dev
 ```
 
-The sidecars are a **build** prerequisite, not just a packaging one:
-`bundle.externalBin` in `tauri.conf.json` makes tauri's build script copy
-`app/src-tauri/binaries/<bin>-<triple>` next to the compiled executable, and it
-hard-errors when a file is missing. So anything touching the `mediachef` crate —
-`npm run tauri dev|build`, `cargo build|test|check|clippy` on `app/src-tauri` —
-needs `./scripts/fetch-sidecars.sh` (~130MB, macOS/arm64, pinned versions) run
-once first. `mediachef-core` on its own has no such dependency.
+## Sidecars — the engines that ship
+
+A MediaChef release carries its own `ffmpeg`, `ffprobe` and `whisper-cli`, so a
+user installs nothing. `bundle.externalBin` in `tauri.conf.json` makes tauri's
+build script copy `app/src-tauri/binaries/<bin>-<triple>` next to the compiled
+executable, and it hard-errors when a file is missing. The sidecars are
+therefore a **build** prerequisite, not just a packaging one: anything touching
+the `mediachef` crate — `npm run tauri dev|build`, `cargo build|test|check|clippy`
+on `app/src-tauri` — needs `./scripts/fetch-sidecars.sh` (~130MB, macOS/arm64,
+pinned versions) run once first. `mediachef-core` on its own has no such
+dependency.
 
 Those copies land in `target/debug/` and `target/release/`, and the lookup checks
 the directory of the running executable *before* `PATH`, so in a dev tree too
 anything built into the target dir root — the smoke runner, the `tauri dev` app —
 runs the pinned engines rather than Homebrew's. That is deliberate (dev exercises
 what ships); test binaries live one level down in `target/debug/deps/` and still
-take `PATH`. Full order: `MEDIACHEF_FFMPEG` / `MEDIACHEF_FFPROBE` /
+take `PATH`, which is the whole reason the `brew install` lines in this README
+exist. Full order: `MEDIACHEF_FFMPEG` / `MEDIACHEF_FFPROBE` /
 `MEDIACHEF_WHISPER` (absolute paths, and the escape hatch when you need a
 specific binary) → next to the executable → `bin/<arch>-<os>/` → `PATH` →
 Homebrew prefixes. With none of them resolving, the app still starts, but probing
-a file and running a job both fail with "FFmpeg binary not found".
+a file and running a job both fail with "The bundled FFmpeg engine is missing or
+damaged".
+
+One acquisition script per platform, each pinning every download by URL **and**
+sha256 — nothing floats, and nothing is fetched at runtime:
+
+| Platform | Script |
+| --- | --- |
+| macOS arm64 | `./scripts/fetch-sidecars.sh` — the one you run locally, and the very same one CI and release run |
+| Linux x64 | `scripts/fetch-sidecars-linux.sh` — run by the release runner (or by you, on that platform) |
+| Windows x64 | `scripts/fetch-sidecars-windows.ps1` — same, in PowerShell |
+
+ffmpeg and ffprobe are prebuilt downloads; `whisper-cli` is compiled from a
+pinned whisper.cpp tag (2-4 min on a cold runner, cached in CI). All three
+scripts are idempotent and self-healing: a second run re-verifies the shas,
+prints a `BINARY / VERSION / STATE` table and does nothing else, while a
+corrupted or half-written binary in `binaries/` is simply replaced.
+
+**`scripts/fetch-sidecars-ci.md` is the registry**: which version is pinned
+where, which line of which script holds it, why each cmake flag is there, what
+the self-checks assert, and the step-by-step bump procedure. Read it before
+touching a pin — and note that a bump also has to land in `NOTICE.md`, which
+carries the licenses and the GPL source offers for the bundled binaries.
 
 ## Transcription (whisper)
 
@@ -35,8 +63,13 @@ Transcription recipes shell out to whisper.cpp's CLI the same way the rest of th
 app shells out to ffmpeg:
 
 ```bash
-brew install whisper-cpp     # provides `whisper-cli` on PATH
+brew install whisper-cpp     # dev lane: `whisper-cli` on PATH for the test binaries
 ```
+
+That brew formula is **not** what ships — a release runs the pinned `whisper-cli`
+from `binaries/` (see Sidecars) — it is here because the tests below run out of
+`target/debug/deps/`, one level below the sidecar copies, and so still resolve
+through `PATH`.
 
 Models are not bundled — the app downloads them on request (Models screen) into
 its app-data directory, `~/Library/Application Support/com.mediachef.dev/models`
@@ -99,7 +132,7 @@ Then:
 cargo test -p mediachef-core                        # core: recipes, template, runner, probe
 cargo test --manifest-path app/src-tauri/Cargo.toml # queue state machine; the app crate
                                                     # only *builds* with the sidecars in
-                                                    # place, see Dev setup
+                                                    # place, see Sidecars
 cargo run -p mediachef-core --bin smoke             # every ffmpeg recipe (+ whisper, see above)
 cd app && npm test                                  # vitest: 56 tests in 4 files —
                                                     # search + IPC golden, i18n,

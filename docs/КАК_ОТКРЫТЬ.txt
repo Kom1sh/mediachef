@@ -18,9 +18,12 @@ MediaChef 0.3.0 (macOS, Apple Silicon)
 
 ТРЕБОВАНИЯ
 ----------
-MediaChef использует установленные в системе ffmpeg и whisper-cli:
-      brew install ffmpeg whisper-cpp
+Ничего доустанавливать не нужно: FFmpeg и Whisper уже внутри приложения.
 Модели распознавания речи скачиваются прямо из приложения (вкладка «Модели»).
+
+Для продвинутых: подменить встроенные движки своими сборками можно переменными
+окружения MEDIACHEF_FFMPEG, MEDIACHEF_FFPROBE, MEDIACHEF_WHISPER — в каждой
+полный путь к бинарнику.
 
 ---
 
@@ -32,6 +35,7 @@ Way 1: Right-click MediaChef.app → "Open" → "Open" (needed once).
 Way 2 (if still blocked): run in Terminal:
       xattr -cr /Applications/MediaChef.app
 
-Requires ffmpeg and whisper-cli from Homebrew:
-      brew install ffmpeg whisper-cpp
+Nothing else to install: FFmpeg and Whisper ship inside the app.
 Speech models are downloaded inside the app (Models tab).
+Advanced: MEDIACHEF_FFMPEG / MEDIACHEF_FFPROBE / MEDIACHEF_WHISPER (full path to
+a binary) override the bundled engines.

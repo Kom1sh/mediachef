@@ -13,14 +13,16 @@ MediaChef 0.3.0 (Linux x86_64)
 
 ЗАВИСИМОСТИ
 -----------
-Конвертация:      sudo apt install ffmpeg
-Транскрибация:    whisper-cli из whisper.cpp — собери или возьми бинарник:
-                  github.com/ggerganov/whisper.cpp (make → whisper-cli в PATH,
-                  либо переменная MEDIACHEF_WHISPER с полным путём).
-Модели скачиваются в самом приложении (вкладка «Модели»).
+Ставить ffmpeg и whisper.cpp не нужно: они уже внутри приложения (в AppImage и
+в deb-пакете). Модели скачиваются в самом приложении (вкладка «Модели»).
+
+Для продвинутых: подменить встроенные движки своими сборками можно переменными
+окружения MEDIACHEF_FFMPEG, MEDIACHEF_FFPROBE, MEDIACHEF_WHISPER — в каждой
+полный путь к бинарнику.
 
 ---
 
 EN: AppImage → chmod +x && run (needs libfuse2). Or: sudo apt install ./MediaChef_*.deb
-ffmpeg via apt for conversion; whisper-cli from whisper.cpp for transcription
-(build or grab a binary, put in PATH or set MEDIACHEF_WHISPER).
+No dependencies: FFmpeg and Whisper ship inside the app; models are downloaded
+inside it (Models tab). Advanced: MEDIACHEF_FFMPEG / MEDIACHEF_FFPROBE /
+MEDIACHEF_WHISPER (full path to a binary) override the bundled engines.
