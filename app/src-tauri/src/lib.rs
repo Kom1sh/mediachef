@@ -287,6 +287,28 @@ fn settings_get(app: AppHandle, state: State<AppState>) -> AppSettings {
     s
 }
 
+/// Sanitize → write the file → refresh the cache, with the settings mutex held
+/// across all three.
+///
+/// A function of its own for the same reason as [`claim_download`]: the atomicity is
+/// the whole content, and a test can hammer a function. Two saves overlapping used to
+/// be able to leave the cache and the file disagreeing — each wrote the file, then
+/// took the lock, so the *first* value could win the file and the second the cache,
+/// after which every `enqueue` planned output paths from a folder that is not the one
+/// on disk (until the next `settings_get` re-read it). Inside one critical section the
+/// two are one decision, and the last writer owns both.
+///
+/// The lock is held across a disk write, which is fine here and nowhere near a hot
+/// path: it is a few hundred bytes, once per click in Settings. `output_base` — the
+/// reader on the enqueue path — deliberately does not hold it across its own stat.
+fn store_settings(dir: &Path, cell: &Settings, s: AppSettings) -> Result<AppSettings, String> {
+    let mut cache = cell.lock().unwrap();
+    let s = settings::sanitize(s);
+    settings::save(dir, &s)?;
+    *cache = s.clone();
+    Ok(s)
+}
+
 /// Saves what the UI sends and answers with what was actually stored — the
 /// frontend adopts the returned value, so `sanitize` clamping a bad number is
 /// visible in the controls rather than silently disagreeing with them.
@@ -308,10 +330,7 @@ fn settings_set(
     state: State<AppState>,
     s: AppSettings,
 ) -> Result<AppSettings, String> {
-    let s = settings::sanitize(s);
-    settings::save(&settings_dir(&app), &s)?;
-    *state.settings.lock().unwrap() = s.clone();
-    Ok(s)
+    store_settings(&settings_dir(&app), &state.settings, s)
 }
 
 /// The folder picker behind "Choose folder" in Settings. `None` means the user
@@ -428,8 +447,16 @@ fn whisper_preview(job: &WhisperJob) -> Vec<String> {
 /// Where a job's output would go, per the Settings screen: the fixed folder or
 /// next to the input. `Err` only when a configured folder has gone away — see
 /// [`settings::output_base`].
+///
+/// The settings are *copied* out of the lock before that function runs, because what
+/// it does is an `is_dir()` — a filesystem stat, and on a folder living on a sleeping
+/// external drive one that can block for seconds. This is called on every preview
+/// keystroke, so holding the mutex across it would park `settings_set` (and the click
+/// that is trying to point the app at a folder that is actually there) behind a stat
+/// of the folder that is not. The copy is six small fields.
 fn output_base(state: &State<AppState>) -> Result<Option<PathBuf>, String> {
-    settings::output_base(&state.settings.lock().unwrap())
+    let s = state.settings.lock().unwrap().clone();
+    settings::output_base(&s)
 }
 
 /// What the whisper lane asks for. A transcript is text — kilobytes for an hour of
@@ -868,6 +895,62 @@ mod tests {
         // And the claim is a lease: releasing it lets the next download in.
         downloads.lock().unwrap().remove("tiny");
         assert!(claim_download(&downloads, "tiny", &CancelToken::new()));
+    }
+
+    /// The settings writer, hammered. Eight rival `settings_set`s — a user clicking
+    /// through the segmented controls faster than the disk answers — must leave the
+    /// file holding *one* of the eight values rather than a mixture, and the in-memory
+    /// copy every `enqueue` reads must be that same value.
+    ///
+    /// Both halves used to be reachable: the save happened outside the lock, so the
+    /// cache could end up holding a value the file does not (each writer took the lock
+    /// after its own write, in whatever order they got there), and two saves shared
+    /// one scratch file name, so the bytes on disk could come from a write that a
+    /// rival's rename had already carried off. Only the whole critical section —
+    /// sanitize, write, cache — makes the two agree.
+    #[test]
+    fn racing_settings_saves_agree_with_the_file() {
+        let d = tempfile::tempdir().unwrap();
+        let dir = d.path().join("app-data-that-does-not-exist-yet");
+        let cell: Settings = Settings::default();
+        // Eight distinct values, of very different sizes: a mixture of two of them is
+        // only visible in the file when they are not the same length.
+        let values: Vec<AppSettings> = (0..8)
+            .map(|i| AppSettings {
+                language: ["system", "en", "ru"][i % 3].into(),
+                theme: ["system", "light", "dark"][i % 3].into(),
+                output_mode: "fixed".into(),
+                output_dir: Some(format!("/tmp/{}", "o".repeat(1 + i * 50))),
+                notifications: i % 2 == 0,
+                ffmpeg_workers: 1 + (i % 3) as u8,
+            })
+            .collect();
+
+        std::thread::scope(|scope| {
+            for v in &values {
+                let (dir, cell) = (dir.clone(), cell.clone());
+                scope.spawn(move || {
+                    let stored = store_settings(&dir, &cell, v.clone()).expect("save failed");
+                    // What the command answers the UI with is what the UI adopts, so
+                    // it has to be this call's own value — not a rival's.
+                    assert_eq!(
+                        &stored, v,
+                        "settings_set answered with someone else's value"
+                    );
+                });
+            }
+        });
+
+        let on_disk = settings::load(&dir);
+        assert!(
+            values.contains(&on_disk),
+            "the file is a mixture rather than one of the values: {on_disk:?}"
+        );
+        assert_eq!(
+            *cell.lock().unwrap(),
+            on_disk,
+            "the cache enqueue reads disagrees with the file settings_get reads"
+        );
     }
 
     /// A `.part` file survives an app kill (`Drop` never runs, so core's

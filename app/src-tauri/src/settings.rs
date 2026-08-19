@@ -74,8 +74,29 @@ pub fn load(dir: &Path) -> AppSettings {
     sanitize(serde_json::from_str(&text).unwrap_or_default())
 }
 
-/// Writes the settings file atomically: a scratch file next to the target, then
-/// a rename over it.
+/// A scratch file name no other writer can pick: this process, a clock, and a
+/// counter.
+///
+/// Three parts because each covers the others' blind spot — the pid tells two
+/// processes apart, the counter two threads of one process (two clock reads can land
+/// on the same nanosecond), and the clock a second run of a recycled pid whose
+/// counter is back at zero.
+fn scratch_name() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    format!(
+        "{FILE}.{}-{nanos}-{}.tmp",
+        std::process::id(),
+        SEQ.fetch_add(1, Ordering::Relaxed)
+    )
+}
+
+/// Writes the settings file atomically: a scratch file of this save's own next to
+/// the target, then a rename over it.
 ///
 /// The rename is the point. A plain write truncates first, so a crash (or a
 /// full disk) in the middle leaves a half file — which `load` would then read as
@@ -83,11 +104,30 @@ pub fn load(dir: &Path) -> AppSettings {
 /// a rename the file on disk is either entirely the old settings or entirely the
 /// new ones. `create_dir_all` covers the first run, where the app-data directory
 /// may not exist yet.
+///
+/// The scratch *name* is the other half of it, and it used to be a constant. Two
+/// overlapping saves then wrote the same scratch file, and what that costs is worse
+/// than one of the two values losing: whichever bytes landed last are what the first
+/// rename carries off, and the second rename finds nothing left to rename — so a
+/// save can report failure for the value that ended up on disk and success for the
+/// value that did not. `settings_set` holds a mutex across its own save, but a
+/// second process running the same app is not inside that lock, and neither is any
+/// future caller of this function. A unique name makes each save's scratch file its
+/// own, so every interleaving ends with one whole value on disk.
+///
+/// The one thing a unique name gives up: a hard kill between the write and the
+/// rename leaves a scratch file that no later save reuses (every ordinary failure
+/// still cleans up after itself below). It is a few hundred bytes in the app-data
+/// directory, next to the `.part` files the models sweep exists for.
 pub fn save(dir: &Path, s: &AppSettings) -> Result<(), String> {
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let text = serde_json::to_string_pretty(s).map_err(|e| e.to_string())?;
-    let tmp = dir.join(format!("{FILE}.tmp"));
-    std::fs::write(&tmp, text).map_err(|e| e.to_string())?;
+    let tmp = dir.join(scratch_name());
+    std::fs::write(&tmp, text).map_err(|e| {
+        // Half a scratch file (a full disk) is as much litter as a whole one.
+        let _ = std::fs::remove_file(&tmp);
+        e.to_string()
+    })?;
     std::fs::rename(&tmp, dir.join(FILE)).map_err(|e| {
         // A failed rename would otherwise leave the scratch file lying next to
         // the real one for good — nothing else ever looks at it again.
@@ -162,6 +202,17 @@ mod tests {
         std::fs::write(dir.join("settings.json"), json).unwrap();
     }
 
+    /// Every scratch file left in `dir`. The name carries a pid and a clock, so the
+    /// tests ask for the pattern rather than for one path.
+    fn scratch_files(dir: &Path) -> Vec<String> {
+        std::fs::read_dir(dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n.ends_with(".tmp"))
+            .collect()
+    }
+
     /// The whole point of the store: what the user picked is still picked after a
     /// restart. Plus the two things the atomic write owes: it creates the app-data
     /// directory on a first run, and it leaves no scratch file behind.
@@ -183,8 +234,53 @@ mod tests {
         save(&dir, &s).unwrap();
         assert_eq!(load(&dir), s, "a restart lost the user's choices");
         assert!(
-            !dir.join("settings.json.tmp").exists(),
-            "the atomic write left its scratch file behind"
+            scratch_files(&dir).is_empty(),
+            "the atomic write left its scratch file behind: {:?}",
+            scratch_files(&dir)
+        );
+    }
+
+    /// Overlapping saves, which is what the unique scratch name is for. With one
+    /// shared `settings.json.tmp` the rename of whoever got there second had nothing
+    /// left to rename, so a save reported failure for a value that had in fact landed
+    /// on disk — and the file could hold bytes from a write that reported success.
+    ///
+    /// What must hold with a name per save: every one of them succeeds, the file is
+    /// *one whole value* rather than a mixture of several, and no scratch file is left
+    /// behind. The payloads differ wildly in length on purpose — a garbled file is
+    /// only visible when the two candidates are not the same size.
+    #[test]
+    fn overlapping_saves_leave_one_whole_value() {
+        let d = tempfile::tempdir().unwrap();
+        let dir = d.path();
+        // Distinct, and deliberately of very different sizes: `beside` with no folder
+        // against a fixed folder whose path is hundreds of characters long.
+        let values: Vec<AppSettings> = (0..12)
+            .map(|i| AppSettings {
+                language: if i % 2 == 0 { "ru" } else { "en" }.into(),
+                theme: "dark".into(),
+                output_mode: "fixed".into(),
+                output_dir: Some(format!("/tmp/{}", "d".repeat(1 + i * 40))),
+                notifications: i % 3 == 0,
+                ffmpeg_workers: 1 + (i % 3) as u8,
+            })
+            .collect();
+
+        std::thread::scope(|scope| {
+            for v in &values {
+                scope.spawn(move || save(dir, v).expect("a rival save must not fail"));
+            }
+        });
+
+        let stored = load(dir);
+        assert!(
+            values.contains(&stored),
+            "the file is a mixture of two saves, not one of them: {stored:?}"
+        );
+        assert!(
+            scratch_files(dir).is_empty(),
+            "scratch files left behind: {:?}",
+            scratch_files(dir)
         );
     }
 
