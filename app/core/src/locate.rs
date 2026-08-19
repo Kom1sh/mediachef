@@ -31,7 +31,22 @@ fn find(bin: &str, env_key: &str) -> Option<PathBuf> {
     if repo_bin.exists() {
         return Some(repo_bin);
     }
-    which_path(&bin_name)
+    if let Some(p) = which_path(&bin_name) {
+        return Some(p);
+    }
+    // GUI apps launched from Finder get launchd's minimal PATH
+    // (/usr/bin:/bin:/usr/sbin:/sbin) — Homebrew never appears in it, so a
+    // bundled MediaChef.app would miss a perfectly installed ffmpeg. Probe the
+    // two well-known Homebrew prefixes (Apple Silicon, then Intel) directly.
+    if cfg!(target_os = "macos") {
+        for prefix in ["/opt/homebrew/bin", "/usr/local/bin"] {
+            let p = PathBuf::from(prefix).join(&bin_name);
+            if p.exists() {
+                return Some(p);
+            }
+        }
+    }
+    None
 }
 
 fn which_path(bin: &str) -> Option<PathBuf> {
