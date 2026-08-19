@@ -93,9 +93,12 @@ jobs:
           cp -R target/release/bundle/macos/MediaChef.app out/ && cp docs/КАК_ОТКРЫТЬ.txt NOTICE.md out/
           (cd out && zip -qry "MediaChef-${VER}-macos-arm64.zip" MediaChef.app КАК_ОТКРЫТЬ.txt NOTICE.md)
           cp docs/КАК_ОТКРЫТЬ.txt out/HOW_TO_OPEN_macos.txt
-      # NOTICE.md is listed by every job on purpose — whichever platforms run, the
-      # release carries the licence notice. All three upload byte-identical
-      # content under one asset name, so the last writer simply wins.
+      # Only THIS job uploads the loose NOTICE.md: release assets are per-release,
+      # so one upload makes it visible to every platform's downloaders — while
+      # three jobs racing on one asset name can 422 (the action deletes the
+      # existing asset, then uploads; an interleave hits "already_exists"). The
+      # mac archives also carry the notice internally; this asset is what puts
+      # it on the release page for the deb/AppImage/NSIS downloads.
       - uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -177,7 +180,6 @@ jobs:
             target/release/bundle/deb/*.deb
             target/release/bundle/appimage/*.AppImage
             out/HOW_TO_RUN_linux.txt
-            NOTICE.md
 
   windows:
     runs-on: windows-latest
@@ -239,4 +241,3 @@ jobs:
           files: |
             target/release/bundle/nsis/*.exe
             out/HOW_TO_RUN_windows.txt
-            NOTICE.md
