@@ -13,21 +13,48 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy -p mediachef-core -- -D warnings
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # No TTS and no whisper-cli installed here on purpose: make.sh leaves
+      # speech.wav unbuilt and smoke reports its whisper recipes as SKIP. The
+      # ffmpeg lane still has to pass, and whisper is covered on macOS below.
       - run: ./fixtures/make.sh
       - run: cargo test -p mediachef-core
       - run: cargo run -p mediachef-core --bin smoke
 
   # The tauri crate builds only where its webview toolkit does: macOS needs no
-  # extra system packages, Linux would need webkit2gtk. No ffmpeg here — the
-  # queue tests inject a fake runner instead of spawning one.
+  # extra system packages, Linux would need webkit2gtk. This is also the only
+  # runner that can exercise whisper end to end: whisper-cpp is a brew formula,
+  # and `say` gives us the voice fixture the ubuntu job cannot produce.
   rust-tauri:
     runs-on: macos-latest
+    env:
+      MEDIACHEF_MODELS_DIR: ${{ runner.temp }}/whisper-models
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with: { components: "clippy" }
       - run: cargo test --manifest-path app/src-tauri/Cargo.toml
       - run: cargo clippy -p mediachef -- -D warnings
+      - run: brew install ffmpeg whisper-cpp
+      # The model is 78MB from huggingface: cached so a CI run neither depends on
+      # that host being up nor re-downloads it on every push. The key is versioned
+      # rather than hashed — nothing in the repo determines the file's content, so
+      # bump `-v1` to force a refetch.
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/whisper-models
+          key: whisper-tiny-v1
+      - name: Fetch tiny model on cache miss
+        run: |
+          mkdir -p "$MEDIACHEF_MODELS_DIR"
+          if [ ! -s "$MEDIACHEF_MODELS_DIR/ggml-tiny.bin" ]; then
+            curl -fLo "$MEDIACHEF_MODELS_DIR/ggml-tiny.bin" \
+              https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
+          fi
+      # Builds speech.wav from `say`, so both the ignored transcribe tests and the
+      # smoke run below have real speech to work on.
+      - run: ./fixtures/make.sh
+      - run: cargo test -p mediachef-core transcribe -- --ignored
+      - run: cargo run -p mediachef-core --bin smoke
 
   web:
     runs-on: ubuntu-latest
