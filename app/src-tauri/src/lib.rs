@@ -151,7 +151,10 @@ struct ModelView {
     downloading: bool,
 }
 
-#[tauri::command]
+/// `async` for the same reason as `probe_file`: this reads the models directory
+/// and sweeps stale `.part` files, so it is disk IO and has no business running
+/// on the main thread.
+#[tauri::command(async)]
 fn models_list(app: AppHandle, state: State<AppState>) -> Vec<ModelView> {
     let dir = models_dir(&app);
     sweep_parts(&dir, &state.downloads);
@@ -227,7 +230,8 @@ fn models_cancel_download(state: State<AppState>, id: String) {
     }
 }
 
-#[tauri::command]
+/// `async`: unlinking a multi-gigabyte model file is disk IO.
+#[tauri::command(async)]
 fn models_delete(app: AppHandle, id: String) -> Result<(), String> {
     models::delete(&models_dir(&app), &id)
 }

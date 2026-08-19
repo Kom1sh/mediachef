@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "app",
+  "productName": "MediaChef",
   "version": "0.1.0",
   "identifier": "com.mediachef.dev",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "app",
+        "title": "MediaChef",
         "width": 800,
         "height": 600
       }

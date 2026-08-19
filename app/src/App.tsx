@@ -5,7 +5,7 @@ import { ModelsPanel } from "./components/ModelsPanel";
 import { RecipeForm } from "./components/RecipeForm";
 import { RecipeList } from "./components/RecipeList";
 import { QueuePanel } from "./components/QueuePanel";
-import { getRecipes, probeFile } from "./lib/ipc";
+import { getRecipes, onJobUpdate, probeFile } from "./lib/ipc";
 import { buildIndex, search } from "./lib/search";
 import type { ProbeInfo, Recipe } from "./lib/types";
 import "./index.css";
@@ -34,6 +34,25 @@ export default function App() {
       .catch(e => { setInfo(null); setProbeError(String(e)); });
   }, []);
 
+  // Back to "no file chosen": the ✕ on the card and the auto-clear below both go
+  // through here. `info: null` also drops the media-type filter, so the recipe
+  // list widens back to everything.
+  const clearFile = useCallback(() => {
+    setFile(null); setInfo(null); setProbeError(""); setSelected(null);
+  }, []);
+
+  // The card's own life cycle, kept apart from the queue's listener in QueuePanel:
+  // once the file the card is showing has actually been converted, holding on to
+  // it invites a second identical job. Only `done` clears — an `error` or a
+  // `cancelled` job is exactly when the user still needs the card to retry from.
+  useEffect(() => {
+    if (!file) return;
+    const un = onJobUpdate(j => { if (j.status === "done" && j.input === file) clearFile(); });
+    // .catch for the same upstream tauri bug the other unlisten cleanups guard
+    // against (unguarded unlisten script + StrictMode double-mount).
+    return () => { un.then(f => f()).catch(() => {}); };
+  }, [file, clearFile]);
+
   const index = useMemo(() => buildIndex(recipes), [recipes]);
   const results = useMemo(
     () => search(index, query, info?.media_type),
@@ -54,7 +73,7 @@ export default function App() {
       </nav>
       {tab === "models" ? <ModelsPanel /> : (
         <section className="flex min-h-0 flex-col gap-3 overflow-y-auto">
-          {file ? <FileCard path={file} info={info} /> : null}
+          {file ? <FileCard path={file} info={info} onClear={clearFile} /> : null}
           {probeError ? <p className="text-xs text-red-400">{probeError}</p> : null}
           <DropZone onFile={onFile} />
           <input

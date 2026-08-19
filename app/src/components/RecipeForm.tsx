@@ -56,6 +56,12 @@ export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
   const [params, setParams] = useState<Record<string, string>>(initial);
   const [cmd, setCmd] = useState<string>("");
   const [error, setError] = useState<string>("");
+  // Kept apart from `error` on purpose. `error` is the preview's verdict — the
+  // command cannot be built, so there is nothing to queue and the button stays
+  // disabled. An enqueue rejection is a different animal: the command was fine
+  // and the attempt failed (input moved, ffprobe gone, disk full). That is a
+  // retryable condition, so it must not disable the button that retries it.
+  const [enqueueError, setEnqueueError] = useState<string>("");
   const [hint, setHint] = useState<string>("");
   // Which whisper models are on disk. `null` = the list has not answered yet, and
   // it is a state of its own: rendering the empty-state "Download a model" prompt
@@ -69,6 +75,7 @@ export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
   const [busy, setBusy] = useState(false);
 
   const modelParam = useMemo(() => recipe.params.find(p => p.type === "model"), [recipe]);
+  const isWhisper = recipe.engine === "whisper";
 
   // Only whisper recipes carry a model param, so an ffmpeg form never pays for
   // this call. The list is read once per mount — which is also how a model
@@ -94,6 +101,14 @@ export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
   }, [modelParam, installed]);
 
   useEffect(() => {
+    // Hold the first preview of a model-bearing recipe until the installed list
+    // has answered. The recipes ship `small` as their default, so previewing
+    // before auto-pick has rewritten `params` asks Rust about a model the user
+    // very likely does not have — and flashes "model is not downloaded yet" at
+    // someone who has one. A `models_list` failure lifts the gate: `installed`
+    // then stays `null` forever, and a blank preview pane with a live "Add to
+    // queue" button would be worse than the engine's own error.
+    if (modelParam && installed === null && !modelsError) return;
     const t = setTimeout(() => {
       previewCmd(recipe.id, input, params)
         // A whisper preview already carries its own binary as argv[0] (the queue
@@ -103,18 +118,22 @@ export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
         // `build_argv`, which today includes `Engine::Pipeline` (it runs on the
         // ffmpeg lane, T6 note 6). Testing for the exception rather than for
         // `=== "ffmpeg"` keeps the prefix correct when that engine grows recipes.
-        .then(argv => { setError(""); setHint(""); setCmd((recipe.engine === "whisper" ? "" : "ffmpeg ") + argv.map(a => (/\s/.test(a) ? `"${a}"` : a)).join(" ")); })
+        .then(argv => { setError(""); setHint(""); setCmd((isWhisper ? "" : "ffmpeg ") + argv.map(a => (/\s/.test(a) ? `"${a}"` : a)).join(" ")); })
         .catch(e => setError(String(e)));
     }, 150);
     return () => clearTimeout(t);
-  }, [recipe.id, input, params]);
+  }, [recipe.id, input, params, isWhisper, modelParam, installed, modelsError]);
 
-  const add = () => {
+  // Both the button and Retry go through here: one attempt per press, and the
+  // previous failure is cleared before the new one starts so the red line always
+  // describes the latest try.
+  const submit = () => {
     if (busy) return;
     setBusy(true);
+    setEnqueueError("");
     enqueueJob(recipe.id, input, params)
       .then(onQueued)
-      .catch(e => setError(String(e)))
+      .catch(e => setEnqueueError(String(e)))
       .finally(() => setBusy(false));
   };
 
@@ -140,7 +159,16 @@ export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
       <label key={p.key} className="block">
         <span className="text-xs text-neutral-400">{p.label.en}</span>
         {modelsError
-          ? <p className="mt-1 break-words text-xs text-red-400">{modelsError}</p>
+          // The error alone is a dead end: the field has no select to offer and
+          // no button either, and the Models screen is where a stuck model list
+          // can actually be looked at. Same escape hatch as the empty state.
+          ? <>
+              <p className="mt-1 break-words text-xs text-red-400">{modelsError}</p>
+              <button onClick={onOpenModels}
+                className="mt-1 w-full rounded border border-blue-600 p-1.5 text-sm text-blue-400 hover:bg-blue-600/10">
+                Open Models
+              </button>
+            </>
           : installed === null
             ? <p className="mt-1 text-xs text-neutral-500">Loading models…</p>
             : installed.length === 0
@@ -174,11 +202,23 @@ export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
           </details>
         )}
       </div>
-      <pre onClick={copyCmd} title={cmd ? "Click to copy" : undefined}
-        className="mt-3 overflow-x-auto rounded bg-neutral-900 p-2 text-xs text-neutral-400 [&:not(:empty)]:cursor-pointer">{error || cmd}</pre>
+      {/* The marker line is a child of the <pre>, not part of `cmd`: click-to-copy
+          copies the state, so the note never lands in the user's clipboard. */}
+      <pre onClick={copyCmd}
+        title={cmd ? (isWhisper ? "Click to copy — illustrative, not runnable as-is" : "Click to copy") : undefined}
+        className="mt-3 overflow-x-auto rounded bg-neutral-900 p-2 text-xs text-neutral-400 [&:not(:empty)]:cursor-pointer">{error || cmd}
+        {cmd && isWhisper
+          ? <span className="mt-1 block text-neutral-600"># preview only — the queue decodes a 16 kHz WAV first, so this is not runnable as-is</span>
+          : null}</pre>
       {hint ? <p className="mt-1 text-xs text-neutral-500">{hint}</p> : null}
+      {enqueueError ? (
+        <div className="mt-2 flex items-center justify-between gap-2 rounded border border-red-900 bg-red-950/40 p-2">
+          <span className="break-words text-xs text-red-400">{enqueueError}</span>
+          <button onClick={submit} disabled={busy} className="shrink-0 rounded bg-red-600 px-2 py-1 text-xs disabled:opacity-50">Retry</button>
+        </div>
+      ) : null}
       <button
-        onClick={add}
+        onClick={submit}
         disabled={!!error || busy}
         className="mt-3 w-full rounded-lg bg-blue-600 p-2 text-sm font-medium disabled:opacity-50">
         {busy ? "Adding…" : "Add to queue"}

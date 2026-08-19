@@ -8,14 +8,28 @@ const COLOR: Record<JobView["status"], string> = {
   error: "text-red-400", cancelled: "text-neutral-500",
 };
 
+const mmss = (s: number) => {
+  const t = Math.max(0, Math.round(s));
+  return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+};
+
 export function QueuePanel({ recipes }: { recipes: Recipe[] }) {
   const [jobs, setJobs] = useState<Map<number, JobView>>(new Map());
   const [actionError, setActionError] = useState<string>("");
   const notified = useRef(new Set<number>());
+  // When each job was first seen running — the clock the ETA is measured from.
+  // A ref, not state: it is written from inside the same event that re-renders
+  // the card anyway, so making it state would only buy a second render. Progress
+  // events arrive often enough (percent-gated, a few per second) that the
+  // estimate refreshes on its own without a timer.
+  const startedAt = useRef<Record<number, number>>({});
 
   useEffect(() => {
     listJobs().then(js => setJobs(new Map(js.map(j => [j.id, j]))));
     const un = onJobUpdate(j => {
+      if (j.status === "running" && startedAt.current[j.id] === undefined) {
+        startedAt.current[j.id] = Date.now();
+      }
       setJobs(m => new Map(m).set(j.id, j));
       if (j.status === "done" && !notified.current.has(j.id)) {
         notified.current.add(j.id);
@@ -32,6 +46,17 @@ export function QueuePanel({ recipes }: { recipes: Recipe[] }) {
 
   const title = (id: string) => recipes.find(r => r.id === id)?.title.en ?? id;
   const list = [...jobs.values()].sort((a, b) => b.id - a.id);
+
+  // Naive linear extrapolation, and deliberately so — the alternative is to model
+  // per-recipe throughput, which no recipe knows. Below 3% the divisor is small
+  // enough that the number would swing by minutes between two ticks, so the card
+  // shows a dash instead of lying precisely.
+  const eta = (j: JobView) => {
+    const t0 = startedAt.current[j.id];
+    if (t0 === undefined || j.percent < 3) return "—";
+    const elapsed = (Date.now() - t0) / 1000;
+    return `~${mmss((elapsed * (100 - j.percent)) / Math.max(j.percent, 1))} left`;
+  };
 
   return (
     <aside className="flex min-h-0 flex-col rounded-xl border border-neutral-800 p-3">
@@ -50,7 +75,10 @@ export function QueuePanel({ recipes }: { recipes: Recipe[] }) {
                 <div className="mt-1 h-1.5 w-full rounded bg-neutral-800">
                   <div className="h-1.5 rounded bg-blue-500" style={{ width: `${j.percent}%` }} />
                 </div>
-                <button onClick={() => cancelJob(j.id)} className="mt-1 text-neutral-500 hover:text-red-400">Cancel</button>
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <button onClick={() => cancelJob(j.id)} className="text-neutral-500 hover:text-red-400">Cancel</button>
+                  {j.status === "running" ? <span className="tabular-nums text-neutral-500">{eta(j)}</span> : null}
+                </div>
               </>
             )}
             {j.status === "done" && (

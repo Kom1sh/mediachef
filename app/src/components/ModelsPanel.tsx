@@ -20,7 +20,10 @@ export function ModelsPanel() {
   );
 
   useEffect(() => {
-    refresh();
+    // Subscribe first, list second. The other order leaves a window in which a
+    // download that finishes between the two calls loses its terminal event: the
+    // list would answer `downloading: true` (the claim is still held at the moment
+    // it is read) and nothing would ever arrive to clear the progress row.
     const un = onModelProgress(p => {
       if (p.done) {
         // "cancelled" is the expected answer to pressing ✕, not a failure to
@@ -36,6 +39,7 @@ export function ModelsPanel() {
         setProgress(s => ({ ...s, [p.id]: p.percent }));
       }
     });
+    refresh();
     return () => { un.then(f => f()).catch(() => {}); };
   }, [refresh]);
 
@@ -44,7 +48,13 @@ export function ModelsPanel() {
   const cancel = (id: string) => {
     setError("");
     setCancelling(s => ({ ...s, [id]: true }));
-    cancelModelDownload(id).catch(e => setError(String(e)));
+    cancelModelDownload(id).catch(e => {
+      setError(String(e));
+      // The request never landed, so no terminal event is coming to resolve
+      // "Cancelling…" — put the ✕ back rather than leave the row wedged in a
+      // state the user cannot leave.
+      setCancelling(s => { const { [id]: _drop, ...rest } = s; return rest; });
+    });
   };
 
   const download = (id: string) => {
