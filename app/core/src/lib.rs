@@ -10,3 +10,4 @@ pub mod progress;
 pub mod recipe;
 pub mod runner;
 pub mod template;
+pub mod transcribe;

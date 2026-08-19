@@ -12,8 +12,7 @@ thiserror = "1"
 shell-words = "1"
 include_dir = "0.7"
 ureq = "2"
-
-[dev-dependencies]
+# Not dev-only: run_whisper stages its 16k WAV and whisper's output in a tempdir.
 tempfile = "3"
 
 [[bin]]
