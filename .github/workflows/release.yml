@@ -9,6 +9,21 @@ on:
 permissions:
   contents: write
 
+# Every job has the same three-part shape around its build:
+#   1. sidecars — restore cache, run the platform's fetch script, save cache.
+#      This is a BUILD prerequisite, not a packaging step: `bundle.externalBin`
+#      makes tauri-build fail with "resource path ... doesn't exist" whenever
+#      app/src-tauri/binaries/<bin>-<triple>[.exe] is missing, so nothing can be
+#      compiled before the engines are on disk.
+#   2. tauri build.
+#   3. sidecar self-check — run the engines out of the built artifact, which is
+#      the only place that proves the whole chain: externalBin copied them in,
+#      the triple suffix got stripped, the exec bit survived, and they start.
+# The restore/save split (rather than the combined actions/cache) is deliberate:
+# the combined action saves from a job-end hook that fires only when the whole
+# job is green, so one later red step would throw away a 2-4 min whisper build
+# and refetch on every attempt until the job recovers. Long version of the same
+# reasoning lives in ci.yml.
 jobs:
   macos:
     runs-on: macos-latest
@@ -18,7 +33,51 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm, cache-dependency-path: app/package-lock.json }
       - run: cd app && npm ci
+      # Script and cache key are byte-identical to the ci.yml rust-tauri job's,
+      # so both workflows share one cache entry: a release cut right after a
+      # green CI run downloads nothing and rebuilds nothing.
+      - uses: actions/cache/restore@v4
+        id: sidecars
+        with:
+          path: app/src-tauri/binaries
+          key: sidecars-aarch64-apple-darwin-${{ hashFiles('scripts/fetch-sidecars.sh') }}
+      # Near-instant on a cache hit — it re-verifies the pinned sha256s and that
+      # nothing links outside /usr/lib and /System, then exits without work.
+      - run: ./scripts/fetch-sidecars.sh
+      - uses: actions/cache/save@v4
+        if: steps.sidecars.outputs.cache-hit != 'true'
+        with:
+          path: app/src-tauri/binaries
+          key: sidecars-aarch64-apple-darwin-${{ hashFiles('scripts/fetch-sidecars.sh') }}
       - run: cd app && npm run tauri build -- --bundles app
+      - name: sidecar self-check (inside MediaChef.app)
+        run: |
+          # `${out%%$'\n'*}` keeps the first line without a pipe: the default
+          # shell here is `bash -eo pipefail`, where `... | head -1` can fail the
+          # step on SIGPIPE instead of reporting the version.
+          check_dir() {
+            local dir="$1" root="$2" b out
+            [ -d "$dir" ] || {
+              echo "::error::no $dir inside the artifact — bundle layout changed?"
+              find "$root" -maxdepth 4 -type f | head -40 || true
+              exit 1
+            }
+            for b in ffmpeg ffprobe whisper-cli; do
+              test -x "$dir/$b" || {
+                echo "::error::$dir/$b is missing or not executable"
+                ls -la "$dir"
+                exit 1
+              }
+            done
+            out=$("$dir/ffmpeg" -version);  echo "  ffmpeg:      ${out%%$'\n'*}"
+            out=$("$dir/ffprobe" -version); echo "  ffprobe:     ${out%%$'\n'*}"
+            # whisper-cli has no -version and prints its usage to stderr; the
+            # exit code is the signal we want, not 60 lines of help.
+            "$dir/whisper-cli" --help >/dev/null 2>&1
+            echo "  whisper-cli: --help ok"
+          }
+          APP=target/release/bundle/macos/MediaChef.app
+          check_dir "$APP/Contents/MacOS" "$APP"
       - name: package zip + dmg (инструкция внутри)
         run: |
           VER=$(python3 -c "import json;print(json.load(open('app/src-tauri/tauri.conf.json'))['version'])")
@@ -50,7 +109,59 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
             libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libfuse2 patchelf
       - run: cd app && npm ci
+      # After the apt step on purpose: the whisper build needs the g++ that
+      # build-essential brings.
+      - uses: actions/cache/restore@v4
+        id: sidecars
+        with:
+          path: app/src-tauri/binaries
+          key: sidecars-x86_64-unknown-linux-gnu-${{ hashFiles('scripts/fetch-sidecars-linux.sh') }}
+      # Near-instant on a cache hit — it re-verifies the pinned sha256s and that
+      # ldd shows nothing outside the base system set, then exits without work.
+      - run: ./scripts/fetch-sidecars-linux.sh
+      - uses: actions/cache/save@v4
+        if: steps.sidecars.outputs.cache-hit != 'true'
+        with:
+          path: app/src-tauri/binaries
+          key: sidecars-x86_64-unknown-linux-gnu-${{ hashFiles('scripts/fetch-sidecars-linux.sh') }}
       - run: cd app && npm run tauri build -- --bundles deb,appimage
+      # Both artifacts, because they carry the engines by different mechanisms:
+      # the AppImage packs them into its squashfs, the deb into /usr/bin.
+      # `--appimage-extract` needs no FUSE, and `dpkg -x` needs no root.
+      - name: sidecar self-check (extracted AppImage and deb)
+        run: |
+          check_dir() {
+            local dir="$1" root="$2" b out
+            [ -d "$dir" ] || {
+              echo "::error::no $dir inside the artifact — bundle layout changed?"
+              find "$root" -maxdepth 4 -type f | head -40 || true
+              exit 1
+            }
+            for b in ffmpeg ffprobe whisper-cli; do
+              test -x "$dir/$b" || {
+                echo "::error::$dir/$b is missing or not executable"
+                ls -la "$dir"
+                exit 1
+              }
+            done
+            out=$("$dir/ffmpeg" -version);  echo "  ffmpeg:      ${out%%$'\n'*}"
+            out=$("$dir/ffprobe" -version); echo "  ffprobe:     ${out%%$'\n'*}"
+            "$dir/whisper-cli" --help >/dev/null 2>&1
+            echo "  whisper-cli: --help ok"
+          }
+          # Unpacked outside the checkout: the extracted copies are ~400MB and
+          # have no business sitting next to the artifacts we upload.
+          SELF="$RUNNER_TEMP/selfcheck"
+          rm -rf "$SELF" && mkdir -p "$SELF/appimage" "$SELF/deb"
+          cp target/release/bundle/appimage/*.AppImage "$SELF/appimage/MediaChef.AppImage"
+          chmod +x "$SELF/appimage/MediaChef.AppImage"
+          # --appimage-extract unpacks into the current directory, hence the cd.
+          (cd "$SELF/appimage" && ./MediaChef.AppImage --appimage-extract >/dev/null)
+          echo "AppImage:"
+          check_dir "$SELF/appimage/squashfs-root/usr/bin" "$SELF/appimage/squashfs-root"
+          dpkg -x target/release/bundle/deb/*.deb "$SELF/deb"
+          echo "deb:"
+          check_dir "$SELF/deb/usr/bin" "$SELF/deb"
       - run: mkdir -p out && cp docs/КАК_ЗАПУСТИТЬ_LINUX.txt out/HOW_TO_RUN_linux.txt
       - uses: softprops/action-gh-release@v2
         with:
@@ -67,7 +178,45 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm, cache-dependency-path: app/package-lock.json }
       - run: cd app && npm ci
+      - uses: actions/cache/restore@v4
+        id: sidecars
+        with:
+          path: app/src-tauri/binaries
+          key: sidecars-x86_64-pc-windows-msvc-${{ hashFiles('scripts/fetch-sidecars-windows.ps1') }}
+      # Near-instant on a cache hit — it re-verifies the pinned sha256s and that
+      # whisper-cli.exe imports no VC redist DLL, then exits without work.
+      - run: ./scripts/fetch-sidecars-windows.ps1
+        shell: pwsh
+      - uses: actions/cache/save@v4
+        if: steps.sidecars.outputs.cache-hit != 'true'
+        with:
+          path: app/src-tauri/binaries
+          key: sidecars-x86_64-pc-windows-msvc-${{ hashFiles('scripts/fetch-sidecars-windows.ps1') }}
       - run: cd app && npm run tauri build -- --bundles nsis
+      # target/release is where externalBin lands next to mediachef.exe, and it
+      # is the same layout the NSIS installer copies into Program Files — so it
+      # is what the user gets, without installing the installer on the runner.
+      - name: sidecar self-check (target/release layout next to mediachef.exe)
+        shell: pwsh
+        run: |
+          $dir = 'target/release'
+          foreach ($n in 'mediachef', 'ffmpeg', 'ffprobe', 'whisper-cli') {
+            $exe = Join-Path $dir "$n.exe"
+            if (-not (Test-Path $exe) -or (Get-Item $exe).Length -eq 0) {
+              Get-ChildItem $dir -File | Format-Table Name, Length | Out-String | Write-Host
+              throw "$exe is missing or empty"
+            }
+          }
+          $out = & (Join-Path $dir 'ffmpeg.exe') -version
+          if ($LASTEXITCODE -ne 0) { throw "ffmpeg -version exited $LASTEXITCODE" }
+          Write-Host "  ffmpeg:      $(@($out)[0])"
+          $out = & (Join-Path $dir 'ffprobe.exe') -version
+          if ($LASTEXITCODE -ne 0) { throw "ffprobe -version exited $LASTEXITCODE" }
+          Write-Host "  ffprobe:     $(@($out)[0])"
+          # No -version in whisper-cli; --help exits 0 and that is the signal.
+          & (Join-Path $dir 'whisper-cli.exe') --help > $null
+          if ($LASTEXITCODE -ne 0) { throw "whisper-cli --help exited $LASTEXITCODE" }
+          Write-Host "  whisper-cli: --help ok"
       - run: mkdir out; copy docs\КАК_ЗАПУСТИТЬ_WINDOWS.txt out\HOW_TO_RUN_windows.txt
         shell: cmd
       - uses: softprops/action-gh-release@v2

@@ -36,11 +36,28 @@ FFPROBE_BIN_SHA="7abc49fb2bdf2204f018e76dc6e0a8ae7643313bae09a9fa43e7eb12442271b
 # иначе whisper-cli тянет libwhisper/libggml*.dylib и рядом с exe в бандле
 # развалится. Metal-шейдеры вкомпилированы в бинарник, отдельного
 # ggml-metal.metal рядом не нужно (проверено запуском из бандла).
+# GGML_OPENMP=OFF — по той же причине самодостаточности: если на машине сборки
+# случился brew-libomp, ggml подхватит его и бинарник уедет со ссылкой на
+# /opt/homebrew/opt/libomp (на CI-раннере состав brew не наш выбор). Свой
+# пул потоков у whisper.cpp и так есть.
+# GGML_NATIVE=OFF — про переносимость, а не про самодостаточность: с NATIVE=ON
+# (это дефолт ggml) сборка проверяет флагом -mcpu=native, что умеет ЭТОТ
+# процессор, и вкомпилирует найденное — на M4-раннере это i8mm и SME, которых у
+# M1 нет, то есть «illegal instruction» у части пользователей. С NATIVE=OFF
+# ggml не добавляет arch-флагов вовсе и остаётся на дефолтной базовой линии
+# компилятора для arm64-apple-darwin, одинаковой на любом раннере. Тяжёлое
+# считает Metal, так что на маке эта потеря — копейки.
 WHISPER_TAG="v1.7.6"
 # Канонический адрес репозитория: ggerganov/whisper.cpp жив только редиректом
 # GitHub на организацию, а пин не должен зависеть от редиректа.
 WHISPER_REPO="https://github.com/ggml-org/whisper.cpp.git"
-WHISPER_CMAKE_FLAGS=(-DGGML_METAL=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF)
+WHISPER_CMAKE_FLAGS=(
+  -DGGML_METAL=ON
+  -DCMAKE_BUILD_TYPE=Release
+  -DBUILD_SHARED_LIBS=OFF
+  -DGGML_NATIVE=OFF
+  -DGGML_OPENMP=OFF
+)
 # ------------------------------------------------------------------------------
 
 [ "$(uname -s)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ] || {
