@@ -2,6 +2,7 @@
 pub mod catalog;
 pub mod errors;
 pub mod locate;
+pub mod models;
 pub mod naming;
 pub mod probe;
 pub mod process;
