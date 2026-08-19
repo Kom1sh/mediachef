@@ -1,0 +1,214 @@
+---
+import Base from "./Base.astro";
+import { T, LINKS, type Locale } from "../content";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = T[locale];
+const check = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+---
+
+<Base locale={locale}>
+  <main>
+    <div class="wrap hero">
+      <div>
+        <h1>{t.heroTitle1}<br />{t.heroTitle2}<span class="accent">{t.heroAccent}</span></h1>
+        <p class="sub">{t.heroSub}</p>
+        <div class="ctas" id="download">
+          <a class="btn btn-primary" href={LINKS.releases}>{t.ctaMac}</a>
+          <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaWin}</a>
+          <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaLinux}</a>
+        </div>
+        <p class="ctas-note">{t.ctaNote} <a href={LINKS.github}>{t.ctaNoteLink}</a></p>
+        <div class="trust">
+          {t.trust.map((c) => <span class="chip">{c}</span>)}
+        </div>
+      </div>
+
+      <!-- Стилизованное окно приложения: сайдбар, доска, карточки-рецепты, очередь. -->
+      <svg class="window" viewBox="0 0 560 400" role="img" aria-label="MediaChef app window">
+        <rect width="560" height="400" fill="var(--card)"/>
+        <circle cx="22" cy="20" r="5" fill="var(--tomato)" opacity=".8"/>
+        <circle cx="40" cy="20" r="5" fill="var(--amber)" opacity=".8"/>
+        <circle cx="58" cy="20" r="5" fill="var(--basil)" opacity=".8"/>
+        <rect x="0" y="38" width="64" height="362" fill="var(--card-2)"/>
+        <rect x="16" y="58" width="32" height="32" rx="9" fill="var(--basil)" opacity=".92"/>
+        <rect x="16" y="104" width="32" height="32" rx="9" fill="var(--line)"/>
+        <rect x="16" y="150" width="32" height="32" rx="9" fill="var(--line)"/>
+        <g>
+          <rect x="84" y="58" width="284" height="64" rx="14" fill="var(--paper)" stroke="var(--basil)" stroke-width="2" stroke-dasharray="7 6"/>
+          <text x="226" y="95" text-anchor="middle" font-family="Manrope, sans-serif" font-size="13" font-weight="600" fill="var(--ink-2)">{locale === "ru" ? "Перетащите файлы сюда" : "Drop files here"}</text>
+        </g>
+        <rect x="84" y="138" width="284" height="30" rx="9" fill="var(--paper)" stroke="var(--line)"/>
+        <g>
+          <rect x="84" y="184" width="136" height="88" rx="12" fill="var(--paper)" stroke="var(--line)"/>
+          <rect x="96" y="196" width="28" height="28" rx="8" fill="#F2E9DB"/>
+          <rect x="102" y="203" width="4" height="14" rx="2" fill="#9A6B22"/><rect x="109" y="199" width="4" height="18" rx="2" fill="#9A6B22"/><rect x="116" y="205" width="4" height="12" rx="2" fill="#9A6B22"/>
+          <rect x="96" y="234" width="96" height="8" rx="4" fill="var(--ink)" opacity=".75"/>
+          <rect x="96" y="250" width="112" height="6" rx="3" fill="var(--line-strong)" opacity=".5"/>
+        </g>
+        <g>
+          <rect x="232" y="184" width="136" height="88" rx="12" fill="var(--paper)" stroke="var(--line)"/>
+          <rect x="244" y="196" width="28" height="28" rx="8" fill="#E7EFE8"/>
+          <path d="M251 210 h14 M251 205 h14 M251 215 h9" stroke="#3D7A46" stroke-width="3" stroke-linecap="round"/>
+          <rect x="244" y="234" width="88" height="8" rx="4" fill="var(--ink)" opacity=".75"/>
+          <rect x="244" y="250" width="104" height="6" rx="3" fill="var(--line-strong)" opacity=".5"/>
+        </g>
+        <g>
+          <rect x="84" y="288" width="136" height="88" rx="12" fill="var(--paper)" stroke="var(--line)"/>
+          <rect x="96" y="300" width="28" height="28" rx="8" fill="#F1E7F0"/>
+          <rect x="102" y="307" width="16" height="13" rx="3" fill="none" stroke="#8F4C82" stroke-width="2.6"/>
+          <rect x="96" y="338" width="76" height="8" rx="4" fill="var(--ink)" opacity=".75"/>
+          <rect x="96" y="354" width="100" height="6" rx="3" fill="var(--line-strong)" opacity=".5"/>
+        </g>
+        <g>
+          <rect x="232" y="288" width="136" height="88" rx="12" fill="var(--paper)" stroke="var(--line)"/>
+          <rect x="244" y="300" width="28" height="28" rx="8" fill="#E7EFE8"/>
+          <rect x="250" y="306" width="16" height="16" rx="4" fill="none" stroke="#3D7A46" stroke-width="2.6"/>
+          <rect x="244" y="338" width="92" height="8" rx="4" fill="var(--ink)" opacity=".75"/>
+          <rect x="244" y="354" width="84" height="6" rx="3" fill="var(--line-strong)" opacity=".5"/>
+        </g>
+        <g>
+          <rect x="384" y="58" width="160" height="318" rx="14" fill="var(--paper)" stroke="var(--line)"/>
+          <rect x="398" y="74" width="70" height="9" rx="4" fill="var(--ink)" opacity=".7"/>
+          <rect x="398" y="96" width="132" height="52" rx="10" fill="var(--card)" stroke="var(--line)"/>
+          <rect x="406" y="106" width="80" height="7" rx="3" fill="var(--ink)" opacity=".7"/>
+          <rect x="406" y="126" width="116" height="8" rx="4" fill="var(--card-2)"/>
+          <rect x="406" y="126" width="76" height="8" rx="4" fill="var(--amber)"/>
+          <rect x="398" y="160" width="132" height="52" rx="10" fill="var(--card)" stroke="var(--line)"/>
+          <rect x="406" y="170" width="64" height="7" rx="3" fill="var(--ink)" opacity=".7"/>
+          <rect x="406" y="190" width="116" height="8" rx="4" fill="var(--card-2)"/>
+          <rect x="406" y="190" width="116" height="8" rx="4" fill="var(--basil)"/>
+          <circle cx="514" cy="173" r="7" fill="var(--basil)"/>
+        </g>
+      </svg>
+    </div>
+
+    <section id="how">
+      <div class="wrap">
+        <h2>{t.howTitle}</h2>
+        <div class="steps">
+          {t.steps.map((s) => (
+            <div class="step">
+              <div class="n">{s.n}</div>
+              <h3>{s.h}</h3>
+              <p>{s.p}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="recipes">
+      <div class="wrap">
+        <h2>{t.recipesTitle}</h2>
+        <p class="lead">{t.recipesLead}</p>
+        <div class="recipes">
+          {t.recipes.map((r) => (
+            <div class="recipe">
+              <div class={`tile ${r.tile}`}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </div>
+              <h3>{r.h}</h3>
+              <p>{r.p}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="transcribe">
+      <div class="wrap split">
+        <div>
+          <h2>{t.trTitle}</h2>
+          <div class="bullets">
+            {t.trBullets.map((b) => (
+              <div class="bullet">
+                <Fragment set:html={check} />
+                <p><strong>{b.h}</strong> {b.p}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <svg class="window" viewBox="0 0 520 300" role="img" aria-label={locale === "ru" ? "Транскрибация" : "Transcription"}>
+          <rect width="520" height="300" fill="var(--card)"/>
+          <g>
+            <rect x="36" y="40" width="448" height="70" rx="14" fill="var(--paper)" stroke="var(--line)"/>
+            {Array.from({ length: 26 }).map((_, i) => {
+              const hs = [10, 18, 30, 42, 34, 22, 14, 26, 40, 46, 36, 24, 12, 20, 34, 44, 38, 26, 16, 28, 38, 30, 18, 12, 22, 14];
+              const h = hs[i];
+              return <rect x={56 + i * 16} y={75 - h / 2} width="7" height={h} rx="3.5" fill={i < 17 ? "var(--basil)" : "var(--line-strong)"} />;
+            })}
+          </g>
+          <g font-family="JetBrains Mono, monospace" font-size="12" fill="var(--ink-2)">
+            <text x="36" y="150" fill="var(--amber)">00:00:04</text>
+            <text x="120" y="150" fill="var(--ink)">{locale === "ru" ? "Всем привет, начинаем встречу…" : "Hi everyone, let's get started…"}</text>
+            <text x="36" y="180" fill="var(--amber)">00:00:11</text>
+            <text x="120" y="180" fill="var(--ink)">{locale === "ru" ? "Первый вопрос — планы на квартал." : "First topic — plans for the quarter."}</text>
+            <text x="36" y="210" fill="var(--amber)">00:00:19</text>
+            <text x="120" y="210" fill="var(--ink)">{locale === "ru" ? "Есть три сценария, покажу таблицу." : "There are three scenarios, sharing now."}</text>
+          </g>
+          <rect x="36" y="240" width="110" height="30" rx="9" fill="var(--basil)"/>
+          <text x="91" y="260" text-anchor="middle" font-family="Manrope" font-size="12" font-weight="700" fill="var(--basil-ink)">.srt · .txt</text>
+        </svg>
+      </div>
+    </section>
+
+    <section id="privacy" class="wrap">
+      <div class="privacy">
+        <div class="wrap">
+          <h2>{t.privTitle}</h2>
+          <p class="lead">{t.privLead}</p>
+          <div class="trust" style="margin-top:22px">
+            {t.privChips.map((c) => <span class="chip">{c}</span>)}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="oss">
+      <div class="wrap split">
+        <div>
+          <h2>{t.ossTitle}</h2>
+          <p class="lead">{t.ossLead}</p>
+          <div class="ctas"><a class="btn btn-ghost" href={LINKS.github}>GitHub →</a></div>
+        </div>
+        <div class="window" style="padding:22px">
+          <p class="mono" style="font-size:0.82rem;color:var(--ink-2);line-height:1.9">
+            $ ffmpeg -i input.mp4 -vn -b:a 192k output.mp3<br />
+            <span style="color:var(--basil)">{locale === "ru" ? "# MediaChef набирает это за вас" : "# MediaChef types this for you"}</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="wrap">
+        <h2>{t.faqTitle}</h2>
+        <div class="faq" style="margin-top:24px">
+          {t.faq.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="cta-final">
+          <h2>{t.finalTitle}</h2>
+          <p class="lead" style="margin:10px auto 0;max-width:32em">{t.finalSub}</p>
+          <div class="ctas">
+            <a class="btn btn-primary" href={LINKS.releases}>{t.ctaMac}</a>
+            <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaWin}</a>
+            <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaLinux}</a>
+          </div>
+          <p class="ctas-note" style="max-width:46em;margin:18px auto 0">{t.betaNote}</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</Base>

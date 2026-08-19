@@ -1,0 +1,17 @@
+{
+  "name": "mediachef-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.2.0",
+    "@fontsource/manrope": "^5.2.0",
+    "@fontsource/unbounded": "^5.2.0",
+    "astro": "^5.1.0"
+  }
+}
