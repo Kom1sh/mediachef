@@ -51,6 +51,24 @@ on. That is exactly the ubuntu CI job's situation: `speech.wav` needs a TTS voic
 whisper lane is covered by the macOS job, which installs whisper-cpp and keeps a
 cached `ggml-tiny.bin`.
 
+## Settings
+
+The Settings screen writes one JSON file into the app-data directory, next to
+`models/` — `~/Library/Application Support/com.mediachef.dev/settings.json` on
+macOS:
+
+| Row | Key(s) | Values | Notes |
+| --- | --- | --- | --- |
+| Language | `language` | `system` \| `en` \| `ru` | `system` follows the OS locale; switching re-renders the whole UI, no restart |
+| Theme | `theme` | `system` \| `light` \| `dark` | applied immediately |
+| Output folder | `output_mode`, `output_dir` | `beside` \| `fixed` | `fixed` without a folder is demoted to `beside` |
+| Notifications | `notifications` | `true` \| `false` | desktop alert when a job finishes |
+| Parallel conversions | `ffmpeg_workers` | `1`–`3` | read once when the lane workers spawn, so it lands after a restart |
+
+The file is sanitized on the way in as well as on the way out, so a hand-edited
+`ffmpeg_workers: 99` is read as `3` rather than honoured, and an unparseable file
+or an unknown key falls back to the defaults above instead of stopping the app.
+
 ## Tests
 
 Generate the media fixtures once — the core suite and the smoke runner both
