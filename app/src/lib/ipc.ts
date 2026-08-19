@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import type { JobView, ModelProgress, ModelView, ProbeInfo, Recipe } from "./types";
+import type { AppSettings, JobView, ModelProgress, ModelView, ProbeInfo, Recipe } from "./types";
 
 export const getRecipes = () => invoke<Recipe[]>("recipes");
 export const probeFile = (path: string) => invoke<ProbeInfo>("probe_file", { path });
@@ -31,3 +31,12 @@ export const pickFiles = async (): Promise<string[]> => {
   return Array.isArray(r) ? r : typeof r === "string" ? [r] : [];
 };
 export const revealFile = (path: string) => revealItemInDir(path);
+// Read from `settings.json` rather than from a cache, so the screen cannot open
+// on defaults it would then save over the user's real file.
+export const getSettings = () => invoke<AppSettings>("settings_get");
+// Answers with what was actually stored: Rust clamps and normalises first, so the
+// caller must adopt the return value instead of assuming its own object won.
+export const setSettings = (s: AppSettings) => invoke<AppSettings>("settings_set", { s });
+// `null` means the user closed the dialog — not an error, and above all not a
+// reason to clear the folder they had chosen before.
+export const pickFolder = () => invoke<string | null>("pick_folder");

@@ -109,6 +109,29 @@ pub fn input_accepted(types: &[MediaType], mt: MediaType) -> bool {
     types.contains(&MediaType::Any) || types.contains(&mt)
 }
 
+/// The name a finished file takes before any collision handling:
+/// `{stem}.{suffix}.{ext}` in `base_dir` when the Settings screen names one, next
+/// to the input otherwise.
+///
+/// Shared by [`Queue::plan_unique`] and the command preview in `lib.rs`, so the
+/// path the user reads in the preview is the path the job will write — the two
+/// drifting apart is exactly what a second copy of this rule would cause.
+pub fn planned_path(recipe: &Recipe, input: &Path, base_dir: Option<&Path>) -> PathBuf {
+    let suffix = recipe
+        .output
+        .suffix
+        .clone()
+        .unwrap_or_else(|| recipe.id.clone());
+    let beside = naming::output_path(input, &suffix, &recipe.output.ext);
+    match base_dir {
+        // `file_name` is `Some` for everything `output_path` can build (it always
+        // appends `stem.suffix.ext`), so the fallback is unreachable rather than
+        // meaningful.
+        Some(dir) => dir.join(beside.file_name().unwrap_or_default()),
+        None => beside,
+    }
+}
+
 #[derive(Clone)]
 pub struct Queue {
     inner: Arc<Mutex<Inner>>,
@@ -156,16 +179,16 @@ impl Queue {
     /// ` (N)` suffix on collision), but tests every candidate against both
     /// worlds; `naming::dedupe` knows about the filesystem only.
     ///
+    /// `base_dir` is the Settings screen's "fixed output folder": `Some(dir)`
+    /// puts the file there under the same name, `None` leaves it next to the
+    /// input. Either way the ` (N)` dedupe runs in the directory the file is
+    /// actually going to.
+    ///
     /// The reservation is handed over to `push`. A caller that bails out between
     /// the two (e.g. `build_argv` fails) MUST call `unreserve`, or the path stays
     /// blocked for the rest of the session.
-    pub fn plan_unique(&self, recipe: &Recipe, input: &Path) -> PathBuf {
-        let suffix = recipe
-            .output
-            .suffix
-            .clone()
-            .unwrap_or_else(|| recipe.id.clone());
-        let base = naming::output_path(input, &suffix, &recipe.output.ext);
+    pub fn plan_unique(&self, recipe: &Recipe, input: &Path, base_dir: Option<&Path>) -> PathBuf {
+        let base = planned_path(recipe, input, base_dir);
         let stem = base
             .file_stem()
             .map(|s| s.to_string_lossy().to_string())
@@ -556,7 +579,7 @@ output: {ext: mp4, suffix: compressed}
         std::fs::write(&input, b"x").unwrap();
         let r = recipe();
 
-        let a = q.plan_unique(&r, &input);
+        let a = q.plan_unique(&r, &input, None);
         q.push(
             "compress-video-crf".into(),
             input.display().to_string(),
@@ -564,7 +587,7 @@ output: {ext: mp4, suffix: compressed}
             vec![],
             None,
         );
-        let b = q.plan_unique(&r, &input);
+        let b = q.plan_unique(&r, &input, None);
 
         assert_eq!(a.file_name().unwrap(), "clip.compressed.mp4");
         assert_eq!(b.file_name().unwrap(), "clip.compressed (1).mp4");
@@ -575,6 +598,40 @@ output: {ext: mp4, suffix: compressed}
         assert!(
             !a.exists() && !b.exists(),
             "neither file exists yet — reservation, not fs, must separate them"
+        );
+    }
+
+    // Settings' "fixed output folder" (spec §7): the file keeps the name the
+    // recipe would have given it next to the input, but lands in the chosen
+    // directory — and the ` (N)` dedupe has to happen THERE. The fixture is built
+    // so that only a dedupe against the right directory can pass: the name is
+    // free next to the input and already taken in the output folder.
+    #[test]
+    fn base_dir_moves_the_output_and_dedupes_in_it() {
+        let (q, _rx) = Queue::new_for_test();
+        let src = tempfile::tempdir().unwrap();
+        let out = tempfile::tempdir().unwrap();
+        let input = src.path().join("clip.mp4");
+        std::fs::write(&input, b"x").unwrap();
+        std::fs::write(out.path().join("clip.compressed.mp4"), b"x").unwrap();
+        let r = recipe();
+
+        let a = q.plan_unique(&r, &input, Some(out.path()));
+        assert_eq!(a, out.path().join("clip.compressed (1).mp4"));
+        q.push(
+            "compress-video-crf".into(),
+            input.display().to_string(),
+            a.display().to_string(),
+            vec![],
+            None,
+        );
+        // The reservation lives in the output folder too, not next to the input.
+        let b = q.plan_unique(&r, &input, Some(out.path()));
+        assert_eq!(b, out.path().join("clip.compressed (2).mp4"));
+        // …and `None` still means "next to the input", where nothing is taken.
+        assert_eq!(
+            q.plan_unique(&r, &input, None),
+            src.path().join("clip.compressed.mp4")
         );
     }
 
@@ -589,7 +646,7 @@ output: {ext: mp4, suffix: compressed}
         std::fs::write(d.path().join("clip.compressed.mp4"), b"x").unwrap();
         let r = recipe();
 
-        let a = q.plan_unique(&r, &input);
+        let a = q.plan_unique(&r, &input, None);
         assert_eq!(a.file_name().unwrap(), "clip.compressed (1).mp4");
         q.push(
             "compress-video-crf".into(),
@@ -598,7 +655,7 @@ output: {ext: mp4, suffix: compressed}
             vec![],
             None,
         );
-        let b = q.plan_unique(&r, &input);
+        let b = q.plan_unique(&r, &input, None);
         assert_eq!(b.file_name().unwrap(), "clip.compressed (2).mp4");
     }
 
@@ -613,7 +670,7 @@ output: {ext: mp4, suffix: compressed}
         std::fs::write(&input, b"x").unwrap();
         let r = recipe();
 
-        let a = q.plan_unique(&r, &input);
+        let a = q.plan_unique(&r, &input, None);
         let id = q.push(
             "compress-video-crf".into(),
             input.display().to_string(),
@@ -625,7 +682,7 @@ output: {ext: mp4, suffix: compressed}
         assert_eq!(q.view(id).unwrap().status, "done");
         // The runner is a stub here, so nothing was written — the freed path is
         // planned again verbatim, proving the lease was dropped.
-        assert_eq!(q.plan_unique(&r, &input), a);
+        assert_eq!(q.plan_unique(&r, &input, None), a);
     }
 
     #[test]
@@ -636,7 +693,7 @@ output: {ext: mp4, suffix: compressed}
         std::fs::write(&input, b"x").unwrap();
         let r = recipe();
 
-        let a = q.plan_unique(&r, &input);
+        let a = q.plan_unique(&r, &input, None);
         let id = q.push(
             "compress-video-crf".into(),
             input.display().to_string(),
@@ -646,7 +703,7 @@ output: {ext: mp4, suffix: compressed}
         );
         q.cancel(id);
         assert_eq!(q.view(id).unwrap().status, "cancelled");
-        assert_eq!(q.plan_unique(&r, &input), a);
+        assert_eq!(q.plan_unique(&r, &input, None), a);
     }
 
     // Полосы независимы: транскрибация занимает свой воркер минутами, и всё это
@@ -781,8 +838,8 @@ output: {ext: mp4, suffix: compressed}
         std::fs::write(&input, b"x").unwrap();
         let r = recipe();
 
-        let a = q.plan_unique(&r, &input);
+        let a = q.plan_unique(&r, &input, None);
         q.unreserve(&a.display().to_string());
-        assert_eq!(q.plan_unique(&r, &input), a);
+        assert_eq!(q.plan_unique(&r, &input, None), a);
     }
 }

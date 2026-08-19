@@ -5,6 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MediaChef</title>
+    <script>
+      // First paint only; App's applyTheme owns `data-theme` from then on. Without
+      // it a dark-theme user gets a flash of light paper on every cold start.
+      var t = localStorage.getItem("mc-theme");
+      if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      else document.documentElement.removeAttribute("data-theme");
+    </script>
   </head>
 
   <body>

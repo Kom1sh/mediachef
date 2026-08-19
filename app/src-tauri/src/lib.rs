@@ -1,4 +1,5 @@
 pub mod queue;
+pub mod settings;
 
 use mediachef_core::process::CancelToken;
 use mediachef_core::recipe::{Engine, Recipe};
@@ -6,6 +7,7 @@ use mediachef_core::transcribe::{WhisperFormat, WhisperJob};
 use mediachef_core::{catalog, locate, models, naming, probe, template};
 use queue::{Queue, TestOutcome};
 use serde::Serialize;
+use settings::AppSettings;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
@@ -40,16 +42,28 @@ fn models_dir(app: &AppHandle) -> PathBuf {
     app.path().app_data_dir().unwrap().join("models")
 }
 
+/// The app-data directory itself, which is where `settings.json` lives (next to
+/// the `models/` directory above).
+fn settings_dir(app: &AppHandle) -> PathBuf {
+    app.path().app_data_dir().unwrap()
+}
+
 /// Model downloads in flight, keyed by model id. Two jobs: it is the guard that
 /// stops a second `models_download` for the same id from starting a rival thread
 /// onto the same `.part` file, and it is the authority the `.part` sweep asks
 /// before deleting anything.
 type Downloads = Arc<Mutex<HashMap<String, CancelToken>>>;
 
+/// The live settings. `settings.json` is the durable copy; this is the one
+/// `enqueue` reads on every job, kept in step by `settings_set` (and primed from
+/// disk in `setup`, before the lane workers it sizes are spawned).
+type Settings = Arc<Mutex<AppSettings>>;
+
 struct AppState {
     queue: Queue,
     recipes: Vec<Recipe>,
     downloads: Downloads,
+    settings: Settings,
 }
 
 impl AppState {
@@ -257,6 +271,68 @@ fn models_delete(app: AppHandle, id: String) -> Result<(), String> {
     models::delete(&models_dir(&app), &id)
 }
 
+/// Reads `settings.json` and refreshes the in-memory copy from it.
+///
+/// Disk is the authority here rather than the cache, and the reason is the boot
+/// order: the webview starts loading while `setup` is still running, so a
+/// `settings_get` racing the priming read would otherwise answer with defaults
+/// and leave the Settings screen showing choices the user did not make. Reading
+/// the file (a few hundred bytes, once per screen mount) removes the race
+/// instead of arguing about how unlikely it is. `async` for the same reason as
+/// every other disk-touching command here.
+#[tauri::command(async)]
+fn settings_get(app: AppHandle, state: State<AppState>) -> AppSettings {
+    let s = settings::load(&settings_dir(&app));
+    *state.settings.lock().unwrap() = s.clone();
+    s
+}
+
+/// Saves what the UI sends and answers with what was actually stored — the
+/// frontend adopts the returned value, so `sanitize` clamping a bad number is
+/// visible in the controls rather than silently disagreeing with them.
+///
+/// This is also where the runtime side effects of a setting would go, and the
+/// notable thing is how few there are:
+/// * `output_mode`/`output_dir` need nothing — `enqueue` reads the cache below on
+///   every job;
+/// * `notifications` needs nothing — the frontend gates its own toast on it;
+/// * `theme` is applied by the frontend's `applyTheme` (and remembered for the
+///   next cold start), because only the webview owns `data-theme`;
+/// * `language` needs nothing — React re-renders with the new dictionary;
+/// * `ffmpeg_workers` *cannot* be applied here: the lane workers are spawned once
+///   in `setup`, so the number takes effect after a restart. The Settings screen
+///   says so under the control.
+#[tauri::command(async)]
+fn settings_set(
+    app: AppHandle,
+    state: State<AppState>,
+    s: AppSettings,
+) -> Result<AppSettings, String> {
+    let s = settings::sanitize(s);
+    settings::save(&settings_dir(&app), &s)?;
+    *state.settings.lock().unwrap() = s.clone();
+    Ok(s)
+}
+
+/// The folder picker behind "Choose folder" in Settings. `None` means the user
+/// cancelled the dialog, which is not an error and must not clear the setting.
+///
+/// `async` is load-bearing and not just good manners: `blocking_pick_folder`
+/// pumps the dialog on the calling thread and must never be called on the main
+/// one.
+#[tauri::command(async)]
+fn pick_folder(app: AppHandle) -> Option<String> {
+    use tauri_plugin_dialog::DialogExt;
+    app.dialog()
+        .file()
+        .blocking_pick_folder()
+        // `into_path` rather than `Display`: a picker can hand back a `file://`
+        // URL, and the settings file must hold a real path — `/Users/…`, not
+        // `file:///Users/…`, which nothing downstream would open.
+        .and_then(|p| p.into_path().ok())
+        .map(|p| p.display().to_string())
+}
+
 #[tauri::command]
 fn recipes(state: State<AppState>) -> Vec<Recipe> {
     state.recipes.clone()
@@ -349,6 +425,13 @@ fn whisper_preview(job: &WhisperJob) -> Vec<String> {
     argv
 }
 
+/// Where a job's output would go, per the Settings screen: the fixed folder or
+/// next to the input. `Err` only when a configured folder has gone away — see
+/// [`settings::output_base`].
+fn output_base(state: &State<AppState>) -> Result<Option<PathBuf>, String> {
+    settings::output_base(&state.settings.lock().unwrap())
+}
+
 #[tauri::command]
 fn preview(
     app: AppHandle,
@@ -359,7 +442,16 @@ fn preview(
 ) -> Result<Vec<String>, String> {
     let r = find_recipe(&state.recipes, &recipe_id)?;
     let resolved = template::resolve_params(r, &params).map_err(|e| e.to_string())?;
-    let output = naming::plan_output(r, std::path::Path::new(&input));
+    // The same planning rule as `enqueue`, minus the reservation — a preview must
+    // not claim a path — so the command shown is the command that will run, fixed
+    // output folder included. It can still be one ` (N)` off by the time Add is
+    // pressed, which is the nature of a preview of a future.
+    let base = output_base(&state)?;
+    let output = naming::dedupe(&queue::planned_path(
+        r,
+        std::path::Path::new(&input),
+        base.as_deref(),
+    ));
     if matches!(r.engine, Engine::Whisper) {
         // Surfaces the missing-model error on purpose: the preview pane is where
         // the user should learn the job cannot run, before clicking Add.
@@ -394,8 +486,14 @@ fn enqueue(
         ));
     }
     let resolved = template::resolve_params(r, &params).map_err(human)?;
+    // Settings' output folder, resolved per job rather than at boot: the user can
+    // change it between two Adds, and a missing folder must stop the job here —
+    // before a reservation is taken — rather than fail it in ffmpeg later.
+    let base = output_base(&state)?;
     // Reserved from here on; release it if we bail out before `push`.
-    let output = state.queue.plan_unique(r, std::path::Path::new(&input));
+    let output = state
+        .queue
+        .plan_unique(r, std::path::Path::new(&input), base.as_deref());
     let out_s = output.display().to_string();
     if matches!(r.engine, Engine::Whisper) {
         let job = match whisper_job(&app, r, &input, &output, &resolved) {
@@ -468,15 +566,79 @@ fn shutdown(queue: &Queue, downloads: &Downloads) {
     }
 }
 
+/// The ffmpeg lane's worker loop: takes the next ffmpeg job, runs it, sleeps when
+/// the lane is empty. Runs forever — one of these per thread, and the Settings
+/// screen decides how many threads (1..=3), which is why this is a function
+/// instead of a closure inside `setup`.
+///
+/// Each worker resolves its own `ffmpeg` path once, at spawn: the lookup is the
+/// same for all of them, and doing it here keeps a worker independent of every
+/// other one.
+fn ffmpeg_worker(q: Queue) {
+    let ffmpeg = locate::ffmpeg();
+    loop {
+        let ran = q.run_next_lane(queue::Lane::Ffmpeg, |job, on_p| {
+            let ffmpeg = ffmpeg
+                .as_ref()
+                .ok_or("ffmpeg not found (brew install ffmpeg)".to_string())?;
+            let queue::JobSpec::Ffmpeg { argv, duration_s } = &job.spec else {
+                return Err("not an ffmpeg job".to_string());
+            };
+            match mediachef_core::runner::run_ffmpeg(ffmpeg, argv, *duration_s, &job.cancel, on_p) {
+                Ok(_) => Ok(TestOutcome::Done),
+                Err(e) => Err(format!("{}\n{}", e.message, e.stderr_tail)),
+            }
+        });
+        if !ran {
+            std::thread::sleep(std::time::Duration::from_millis(WORKER_IDLE_MS));
+        }
+    }
+}
+
+/// The whisper lane's worker loop. Exactly one of these, always: a transcription
+/// is minutes of all-core work, and the parallelism setting deliberately does not
+/// reach it (spec §7 — the ffmpeg lane is what a user with 16 cores wants
+/// widened). ffmpeg is needed here too, to decode the 16kHz WAV whisper eats.
+fn whisper_worker(q: Queue) {
+    let ffmpeg = locate::ffmpeg();
+    let whisper = locate::whisper();
+    loop {
+        let ran = q.run_next_lane(queue::Lane::Whisper, |job, on_p| {
+            let ffmpeg = ffmpeg
+                .as_ref()
+                .ok_or("ffmpeg not found (brew install ffmpeg)".to_string())?;
+            let whisper = whisper
+                .as_ref()
+                .ok_or("whisper-cli not found (brew install whisper-cpp)".to_string())?;
+            let queue::JobSpec::Whisper { job: wj } = &job.spec else {
+                return Err("not a whisper job".to_string());
+            };
+            match mediachef_core::transcribe::run_whisper(ffmpeg, whisper, wj, &job.cancel, on_p) {
+                Ok(_) => Ok(TestOutcome::Done),
+                Err(e) => Err(format!("{}\n{}", e.message, e.stderr_tail)),
+            }
+        });
+        if !ran {
+            std::thread::sleep(std::time::Duration::from_millis(WORKER_IDLE_MS));
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let (tx, rx) = channel::<queue::JobView>();
     let q = Queue::new(tx);
     let downloads = Downloads::default();
+    // Defaults for now: the real file is read in `setup`, which is the first place
+    // with an `AppHandle` to ask for the app-data directory. Nothing can observe
+    // this placeholder — `settings_get` reads the file itself, and `enqueue` cannot
+    // be called before there is a window.
+    let settings: Settings = Settings::default();
     let state = AppState {
         queue: q.clone(),
         recipes: catalog::bundled(),
         downloads: downloads.clone(),
+        settings: settings.clone(),
     };
     // Handles for the exit hook at the bottom: `state` is about to be handed to
     // `manage`, and the setup closure below takes `q` by move.
@@ -495,68 +657,20 @@ pub fn run() {
                     let _ = handle.emit("job:update", view);
                 }
             });
-            // Два воркера, по одному на полосу: транскрибация занимает минуты, и
-            // ffmpeg-очередь всё это время обязана разбираться. Внутри полосы
-            // по-прежнему одна задача за раз — обе жгут все ядра.
-            let ffmpeg_q = q.clone();
-            std::thread::spawn(move || {
-                let ffmpeg = locate::ffmpeg();
-                loop {
-                    let ran = ffmpeg_q.run_next_lane(queue::Lane::Ffmpeg, |job, on_p| {
-                        let ffmpeg = ffmpeg
-                            .as_ref()
-                            .ok_or("ffmpeg not found (brew install ffmpeg)".to_string())?;
-                        let queue::JobSpec::Ffmpeg { argv, duration_s } = &job.spec else {
-                            return Err("not an ffmpeg job".to_string());
-                        };
-                        match mediachef_core::runner::run_ffmpeg(
-                            ffmpeg,
-                            argv,
-                            *duration_s,
-                            &job.cancel,
-                            on_p,
-                        ) {
-                            Ok(_) => Ok(TestOutcome::Done),
-                            Err(e) => Err(format!("{}\n{}", e.message, e.stderr_tail)),
-                        }
-                    });
-                    if !ran {
-                        std::thread::sleep(std::time::Duration::from_millis(WORKER_IDLE_MS));
-                    }
-                }
-            });
-            // Воркер whisper-полосы. ffmpeg тоже нужен: он готовит 16kHz WAV.
+            // Настройки с диска — до спавна воркеров, число которых они задают.
+            let loaded = settings::load(&settings_dir(app.handle()));
+            let workers = loaded.ffmpeg_workers;
+            *settings.lock().unwrap() = loaded;
+            // Полосы независимы: транскрибация занимает минуты, и ffmpeg-очередь
+            // всё это время обязана разбираться. Внутри ffmpeg-полосы — столько
+            // одновременных задач, сколько выбрано в настройках (1..=3); значение
+            // читается ровно здесь, поэтому применяется после перезапуска.
+            for _ in 0..workers {
+                let q = q.clone();
+                std::thread::spawn(move || ffmpeg_worker(q));
+            }
             let whisper_q = q.clone();
-            std::thread::spawn(move || {
-                let ffmpeg = locate::ffmpeg();
-                let whisper = locate::whisper();
-                loop {
-                    let ran = whisper_q.run_next_lane(queue::Lane::Whisper, |job, on_p| {
-                        let ffmpeg = ffmpeg
-                            .as_ref()
-                            .ok_or("ffmpeg not found (brew install ffmpeg)".to_string())?;
-                        let whisper = whisper.as_ref().ok_or(
-                            "whisper-cli not found (brew install whisper-cpp)".to_string(),
-                        )?;
-                        let queue::JobSpec::Whisper { job: wj } = &job.spec else {
-                            return Err("not a whisper job".to_string());
-                        };
-                        match mediachef_core::transcribe::run_whisper(
-                            ffmpeg,
-                            whisper,
-                            wj,
-                            &job.cancel,
-                            on_p,
-                        ) {
-                            Ok(_) => Ok(TestOutcome::Done),
-                            Err(e) => Err(format!("{}\n{}", e.message, e.stderr_tail)),
-                        }
-                    });
-                    if !ran {
-                        std::thread::sleep(std::time::Duration::from_millis(WORKER_IDLE_MS));
-                    }
-                }
-            });
+            std::thread::spawn(move || whisper_worker(whisper_q));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -569,7 +683,10 @@ pub fn run() {
             models_list,
             models_download,
             models_cancel_download,
-            models_delete
+            models_delete,
+            settings_get,
+            settings_set,
+            pick_folder
         ])
         // `build` + `run(callback)` rather than plain `run(context)`, which is the
         // same thing with an empty callback — the callback is the only place a
@@ -872,6 +989,174 @@ mod tests {
         );
         // …and a finished job is not rewritten into a cancelled one.
         assert_eq!(q.view(done).unwrap().status, "done");
+    }
+
+    /// The two settings that change how a job actually runs, end to end against
+    /// real ffmpeg: a `settings.json` nobody's UI wrote (two workers, a fixed
+    /// output folder) is read exactly as [`run`]'s setup reads it, the ffmpeg lane
+    /// is spawned from the number it names, and two conversions are queued.
+    ///
+    /// Two things are asserted that no unit test can see. Both jobs are `running`
+    /// at the same instant — with one worker the lane would serialise them, so
+    /// this is the only thing that can tell `ffmpeg_workers: 2` from a setting
+    /// that is stored and then ignored. And both files land in the configured
+    /// folder rather than next to their inputs, through the real
+    /// `load` → `output_base` → `plan_unique` chain.
+    ///
+    /// Opt-in because it spawns real encoders and writes real video:
+    ///
+    /// ```text
+    /// cargo test --manifest-path app/src-tauri/Cargo.toml -- --ignored --nocapture
+    /// ```
+    #[test]
+    #[ignore = "spawns real ffmpeg encoders and writes video files"]
+    fn two_workers_convert_into_the_fixed_output_folder() {
+        let ffmpeg = locate::ffmpeg().expect("ffmpeg (brew install ffmpeg)");
+        let home = tempfile::tempdir().unwrap();
+        let (app_data, inputs, out) = (
+            home.path().join("app-data"),
+            home.path().join("in"),
+            home.path().join("out"),
+        );
+        std::fs::create_dir_all(&inputs).unwrap();
+        std::fs::create_dir_all(&out).unwrap();
+
+        // The settings file as a user's own editor would leave it.
+        std::fs::create_dir_all(&app_data).unwrap();
+        std::fs::write(
+            app_data.join("settings.json"),
+            format!(
+                r#"{{"output_mode": "fixed", "output_dir": "{}", "ffmpeg_workers": 2}}"#,
+                out.display()
+            ),
+        )
+        .unwrap();
+        let settings = settings::load(&app_data);
+        assert_eq!(settings.ffmpeg_workers, 2);
+        let base = settings::output_base(&settings).unwrap();
+        assert_eq!(base.as_deref(), Some(out.as_path()));
+
+        // Real inputs, so the conversions read a real file: 6s of 720p, made fast
+        // and re-encoded slowly below — the slow preset is what makes the two runs
+        // overlap long enough to be observed at all.
+        let recipe = Recipe::from_yaml(
+            r#"
+id: compress-video-crf
+category: compress
+title: {en: C, ru: С}
+aliases: {en: [], ru: []}
+description: {en: D, ru: Д}
+input: {types: [video]}
+engine: ffmpeg
+args: ["-i", "{input}", "{output}"]
+output: {ext: mp4, suffix: compressed}
+"#,
+        )
+        .unwrap();
+        let (q, _rx) = Queue::new_for_test();
+        let mut planned = Vec::new();
+        for name in ["clip-a", "clip-b"] {
+            let input = inputs.join(format!("{name}.mp4"));
+            let made = std::process::Command::new(&ffmpeg)
+                .args([
+                    "-y",
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    "testsrc2=size=1280x720:rate=30:duration=6",
+                    "-c:v",
+                    "libx264",
+                    "-preset",
+                    "ultrafast",
+                ])
+                .arg(&input)
+                .output()
+                .unwrap();
+            assert!(made.status.success(), "fixture encode failed");
+
+            let output = q.plan_unique(&recipe, &input, base.as_deref());
+            assert_eq!(
+                output.parent(),
+                Some(out.as_path()),
+                "not in the fixed folder"
+            );
+            let argv: Vec<String> = [
+                "-y",
+                "-i",
+                &input.display().to_string(),
+                "-c:v",
+                "libx264",
+                "-preset",
+                "veryslow",
+                "-crf",
+                "20",
+                &output.display().to_string(),
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+            let id = q.push(
+                recipe.id.clone(),
+                input.display().to_string(),
+                output.display().to_string(),
+                argv,
+                Some(6.0),
+            );
+            planned.push((id, input, output));
+        }
+
+        // The lane, sized by the settings file — the same loop `setup` runs.
+        for _ in 0..settings.ffmpeg_workers {
+            let q = q.clone();
+            std::thread::spawn(move || ffmpeg_worker(q));
+        }
+
+        // Both `running` in the same snapshot: the whole point of the setting.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        let mut seen_together = false;
+        while std::time::Instant::now() < deadline && !seen_together {
+            seen_together = q.views().iter().filter(|v| v.status == "running").count() == 2;
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        assert!(
+            seen_together,
+            "two workers never ran two jobs at once: {:?}",
+            q.views()
+                .iter()
+                .map(|v| (v.id, v.status.clone()))
+                .collect::<Vec<_>>()
+        );
+
+        // …and both finish, in the folder the settings named.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(180);
+        while q.views().iter().any(|v| v.status != "done") {
+            assert!(
+                std::time::Instant::now() < deadline,
+                "jobs did not finish: {:?}",
+                q.views()
+                    .iter()
+                    .map(|v| (v.id, v.status.clone(), v.error.clone()))
+                    .collect::<Vec<_>>()
+            );
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        for (_, input, output) in &planned {
+            assert!(output.exists(), "no output at {}", output.display());
+            let beside = input.with_file_name(output.file_name().unwrap());
+            assert!(
+                !beside.exists(),
+                "the fixed folder was ignored: {} exists",
+                beside.display()
+            );
+        }
+        println!(
+            "two workers -> {}",
+            planned
+                .iter()
+                .map(|(_, _, o)| o.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     }
 
     /// With nothing downloading every `.part` is garbage — including one whose

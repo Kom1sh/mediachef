@@ -5,10 +5,12 @@ import { ModelsPanel } from "./components/ModelsPanel";
 import { RecipeForm } from "./components/RecipeForm";
 import { RecipeList } from "./components/RecipeList";
 import { QueuePanel } from "./components/QueuePanel";
+import { SettingsPanel } from "./components/SettingsPanel";
 import { Sidebar, type Tab } from "./components/Sidebar";
-import { getRecipes, onJobUpdate, probeFile } from "./lib/ipc";
+import { getRecipes, getSettings, onJobUpdate, probeFile, setSettings as saveSettings } from "./lib/ipc";
 import { applicable, buildIndex, search } from "./lib/search";
-import type { ProbeInfo, Recipe } from "./lib/types";
+import { applyTheme } from "./lib/theme";
+import type { AppSettings, ProbeInfo, Recipe } from "./lib/types";
 import "./index.css";
 
 /** One dropped file: its path, what ffprobe said, or why ffprobe would not say. */
@@ -29,6 +31,11 @@ export default function App() {
   // to Models: T8 threads `onOpenModels={() => setTab("models")}` into RecipeForm
   // for the "no model downloaded yet" case.
   const [tab, setTab] = useState<Tab>("main");
+  // `null` until the first `settings_get` answers — a few milliseconds in which
+  // the Settings screen must not render controls seeded with guesses that the
+  // first click would then save over the user's real file.
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [settingsError, setSettingsError] = useState("");
 
   // A mirror of `files`, written synchronously with every state write. The
   // `job:update` listener below is registered once for the app's lifetime, so its
@@ -38,6 +45,40 @@ export default function App() {
   const filesRef = useRef<Entry[]>([]);
 
   useEffect(() => { getRecipes().then(setRecipes); }, []);
+
+  // Takes a settings value as the truth and makes the app agree with it. The
+  // theme is applied here rather than in an effect keyed on `settings.theme`
+  // because this is also the path a *rejected* value comes back on: Rust
+  // sanitizes, so the value the UI adopts is always the one on disk.
+  const adopt = useCallback((s: AppSettings) => {
+    setSettings(s);
+    applyTheme(s.theme);
+    // Read by the inline script in index.html before the first paint of the next
+    // cold start — the app's own boot is far too late to prevent a flash of light
+    // paper on an espresso-theme machine. `applyTheme` above stays the only thing
+    // that actually themes a running app; this is a hint for the next one.
+    try {
+      localStorage.setItem("mc-theme", s.theme);
+    } catch {
+      // Storage unavailable: costs the next cold start its flash, nothing else.
+    }
+  }, []);
+
+  useEffect(() => {
+    getSettings().then(adopt).catch(e => setSettingsError(String(e)));
+  }, [adopt]);
+
+  // Optimistic, then authoritative: the click lands in the UI at once (a theme
+  // must not wait on a disk write), and the saved value — clamped by `sanitize` —
+  // replaces it a moment later. A failed save re-reads the file, so the screen
+  // ends up showing what is really stored rather than what was attempted.
+  const changeSettings = useCallback((next: AppSettings) => {
+    adopt(next);
+    saveSettings(next).then(saved => { adopt(saved); setSettingsError(""); }).catch(e => {
+      setSettingsError(String(e));
+      getSettings().then(adopt).catch(() => {});
+    });
+  }, [adopt]);
 
   // The single writer for `files` — every add, removal and per-file update goes
   // through here, which is what keeps the ref from drifting from the state (the one
@@ -157,9 +198,14 @@ export default function App() {
     // smaller than its content.
     <main className="grid h-screen grid-cols-[80px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
       <Sidebar tab={tab} onTab={setTab} />
-      {/* Settings is a hole in the shell until T2 lands the screen — the nav item
-          is here now so the rail is not rebuilt twice. */}
-      {tab === "models" ? <ModelsPanel /> : tab === "settings" ? <div /> : (
+      {tab === "models" ? <ModelsPanel /> : tab === "settings" ? (
+        settings
+          ? <SettingsPanel settings={settings} onChange={changeSettings} error={settingsError} />
+          // Either the round trip is still in flight (milliseconds) or it failed,
+          // in which case the reason is the only thing this screen can honestly
+          // show — controls without settings behind them would be a lie.
+          : <section className="p-4 text-sm text-ink-2">{settingsError || "Loading settings…"}</section>
+      ) : (
         <section className="flex min-h-0 flex-col gap-3 overflow-y-auto p-4">
           {files.map((f, i) => (
             <FileCard key={f.path} path={f.path} info={f.info} probeError={f.probeError}
@@ -192,7 +238,11 @@ export default function App() {
           classes (T6 restyles it): a single-cell grid stretches its child to the
           full column height, which a padded block would not. */}
       <div className="grid min-h-0 py-4 pr-4">
-        <QueuePanel recipes={recipes} />
+        {/* Silence until the real setting arrives: no job can reach `done` in that
+            window (the queue starts empty and there is no UI to enqueue from yet),
+            so the choice only decides whose preference is guessed — and guessing
+            "off" cannot notify someone who switched notifications off. */}
+        <QueuePanel recipes={recipes} notificationsEnabled={settings?.notifications ?? false} />
       </div>
     </main>
   );

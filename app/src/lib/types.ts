@@ -1,5 +1,30 @@
+import type { Theme } from "./theme";
+
 export type MediaType = "video" | "audio" | "image" | "subtitle" | "any";
 export type Loc = { en: string; ru: string };
+
+/**
+ * The preferences the Settings screen edits — mirrors `AppSettings` in
+ * `settings.rs`, snake_case keys included, because that struct is what crosses
+ * IPC in both directions.
+ *
+ * Rust sanitizes everything it is handed, so a value here is always one of the
+ * listed literals: the unions are a promise the border guard keeps, not a hope.
+ */
+export interface AppSettings {
+  /** "system" follows the OS locale. */
+  language: "system" | "en" | "ru";
+  theme: Theme;
+  /** "beside" writes next to the input file, "fixed" always into `output_dir`. */
+  output_mode: "beside" | "fixed";
+  /** Only meaningful with `output_mode: "fixed"` — Rust demotes the mode to
+   *  "beside" when it is missing, so the two can never disagree. */
+  output_dir: string | null;
+  notifications: boolean;
+  /** 1…3 parallel ffmpeg jobs. Read once when the app boots its workers, so a
+   *  change lands after a restart. */
+  ffmpeg_workers: number;
+}
 
 export interface Param {
   key: string;

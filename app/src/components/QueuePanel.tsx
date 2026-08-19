@@ -13,10 +13,22 @@ const mmss = (s: number) => {
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 };
 
-export function QueuePanel({ recipes }: { recipes: Recipe[] }) {
+export function QueuePanel({
+  recipes,
+  notificationsEnabled,
+}: {
+  recipes: Recipe[];
+  notificationsEnabled: boolean;
+}) {
   const [jobs, setJobs] = useState<Map<number, JobView>>(new Map());
   const [actionError, setActionError] = useState<string>("");
   const notified = useRef(new Set<number>());
+  // Mirrored into a ref because the `job:update` listener below is registered
+  // once for the panel's lifetime: read through the prop, its closure would keep
+  // answering with the value from the first render and the toggle would only take
+  // effect after a restart.
+  const notify = useRef(notificationsEnabled);
+  useEffect(() => { notify.current = notificationsEnabled; }, [notificationsEnabled]);
   // When each job was first seen running — the clock the ETA is measured from.
   // A ref, not state: it is written from inside the same event that re-renders
   // the card anyway, so making it state would only buy a second render. Progress
@@ -31,7 +43,9 @@ export function QueuePanel({ recipes }: { recipes: Recipe[] }) {
         startedAt.current[j.id] = Date.now();
       }
       setJobs(m => new Map(m).set(j.id, j));
-      if (j.status === "done" && !notified.current.has(j.id)) {
+      // The gate comes before the "already notified" mark, so the set tracks
+      // notifications actually sent — not jobs that finished while muted.
+      if (j.status === "done" && notify.current && !notified.current.has(j.id)) {
         notified.current.add(j.id);
         isPermissionGranted().then(async ok => {
           if (!ok) ok = (await requestPermission()) === "granted";
