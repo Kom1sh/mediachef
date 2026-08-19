@@ -137,7 +137,8 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
     // then stays `null` forever, and a blank preview pane with a live "Add to
     // queue" button would be worse than the engine's own error.
     if (modelParam && installed === null && !modelsError) return;
-    const t = setTimeout(() => {
+    // `timer`, not `t` — that name is the translator in this component now.
+    const timer = setTimeout(() => {
       previewCmd(recipe.id, input, params)
         // A whisper preview already carries its own binary as argv[0] (the queue
         // assembles that command, not the recipe) — prefixing "ffmpeg" would name
@@ -149,7 +150,7 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
         .then(argv => { setError(""); setHint(""); setCmd((isWhisper ? "" : "ffmpeg ") + argv.map(a => (/\s/.test(a) ? `"${a}"` : a)).join(" ")); })
         .catch(e => setError(String(e)));
     }, 150);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [recipe.id, input, params, isWhisper, modelParam, installed, modelsError]);
 
   // Both buttons and Retry go through here: an attempt is a list of inputs, and a

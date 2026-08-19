@@ -10,6 +10,11 @@
  *  2. The locale travels through React context, never through a module-level
  *     variable. A variable would make the Settings switch a no-op until the next
  *     restart: nothing re-renders when a module's local changes.
+ *  3. There is no plural machinery, and none is needed while every key keeps its
+ *     counted noun out of agreement position — «Добавить все файлы ({n})», not
+ *     «Добавить {n} файл(а/ов)»; Russian would otherwise need three forms for one
+ *     English "files". A key that genuinely cannot be phrased that way is the
+ *     signal to add a `plural(n, forms)` helper, not to guess one form.
  *
  * Text that comes from the catalog rather than from here — recipe titles,
  * descriptions, parameter labels, model notes — is a `{ en, ru }` pair on the
@@ -150,7 +155,7 @@ const RU: Record<TKey, string> = {
   navSettings: "Настройки",
 
   dropZone: "Перетащите файлы сюда или нажмите, чтобы выбрать",
-  dropHint: "Перетащите файлы, чтобы отобрать рецепты по типу.",
+  dropHint: "Перетащите файлы — рецепты отфильтруются по типу.",
   searchPlaceholder: "Поиск: «видео в мп3», «make gif»…",
   nothingFound: "Ничего не нашлось",
   popular: "Популярное",
@@ -162,7 +167,7 @@ const RU: Record<TKey, string> = {
   unitSeconds: "с",
   mt_video: "видео",
   mt_audio: "аудио",
-  mt_image: "картинка",
+  mt_image: "изображение",
   mt_subtitle: "субтитры",
   mt_any: "любой",
 
@@ -173,14 +178,16 @@ const RU: Record<TKey, string> = {
   addingN: "Добавляю {n}…",
   addAllN: "Добавить все файлы ({n})",
   retryOne: "Повторить",
-  retryN: "Повторить: {n}",
+  retryN: "Повторить ({n})",
   clickToCopy: "Нажмите, чтобы скопировать",
-  clickToCopyPreview: "Нажмите, чтобы скопировать — команда для наглядности, как есть не запустится",
+  clickToCopyPreview: "Нажмите, чтобы скопировать — команда только для наглядности, в таком виде она не запустится",
   copied: "Скопировано в буфер обмена",
-  previewOnly: "# только для наглядности — очередь сначала готовит WAV 16 кГц, поэтому как есть команда не запустится",
-  loadingModels: "Загружаю модели…",
+  previewOnly: "# только для наглядности — очередь сначала готовит WAV 16 кГц, поэтому в таком виде команда не запустится",
+  // "Получаю список", not "Загружаю": next to a «Скачать» button, "загружаю"
+  // reads as *downloading a model* rather than as fetching the list of them.
+  loadingModels: "Получаю список моделей…",
   openModels: "Открыть «Модели»",
-  downloadModelPrompt: "Скачайте модель → «Модели»",
+  downloadModelPrompt: "Скачать модель → «Модели»",
 
   queue: "Очередь",
   queueEmpty: "Здесь появятся задачи.",
@@ -200,7 +207,7 @@ const RU: Record<TKey, string> = {
   modelsBlurb: "Расшифровка идёт на вашем компьютере. Модель скачивается один раз.",
   download: "Скачать",
   deleteModel: "Удалить",
-  cancelling: "Отменяю…",
+  cancelling: "Отмена…",
   cancelDownload: "Отменить загрузку",
   cancelHint: "Отмена срабатывает на следующем чтении из сети — до 30 с, если соединение уже оборвалось.",
   noSpeech: "Речь не распознана",
@@ -213,7 +220,7 @@ const RU: Record<TKey, string> = {
   setLanguageHint: "«Как в системе» — язык вашей ОС.",
   setTheme: "Тема",
   setThemeHint: "Применяется сразу.",
-  setOutput: "Папка результата",
+  setOutput: "Папка для результатов",
   setOutputHint: "Куда складывать готовые файлы.",
   outBeside: "Рядом с исходным",
   outFixed: "Выбранная папка",
@@ -221,7 +228,10 @@ const RU: Record<TKey, string> = {
   setNotifications: "Уведомления",
   setNotificationsHint: "Уведомление на рабочем столе, когда задача готова.",
   setWorkers: "Параллельные конвертации",
-  setWorkersHint: "Сколько задач ffmpeg идут одновременно. Применится после перезапуска.",
+  // «Сколько задач … выполняется», singular: "сколько" + genitive plural takes a
+  // singular predicate. "Выполняется" is also the word st_running uses for a job
+  // that is running, so the setting and the queue name the same thing the same way.
+  setWorkersHint: "Сколько задач ffmpeg выполняется одновременно. Применится после перезапуска.",
 
   "cat_convert-video": "Конвертация видео",
   "cat_convert-audio": "Конвертация аудио",
@@ -235,7 +245,7 @@ const RU: Record<TKey, string> = {
   cat_speed: "Скорость",
   cat_transcribe: "Расшифровка",
   cat_translate: "Перевод",
-  cat_advanced: "Продвинутое",
+  cat_advanced: "Для продвинутых",
 };
 
 export const DICTS = { en: EN, ru: RU } as const;

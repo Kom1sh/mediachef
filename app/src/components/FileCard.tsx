@@ -33,8 +33,10 @@ export function FileCard({ path, info, probeError, active, onSelect, onClear }: 
             for a few more pixels of hit area. */}
         <button type="button" onClick={onSelect} className="min-w-0 flex-1 truncate text-left font-medium">{name}</button>
         {/* The way out of a chosen file. Without it the only path back to "no
-            file" was finishing a job or restarting the app. */}
-        <button onClick={onClear} title={t("clearFile")} aria-label={t("clearNamed", { name: name ?? "" })}
+            file" was finishing a job or restarting the app. No `title` beside the
+            `aria-label`: title is demoted to the description and announced after
+            the name, so the button said "Убрать отпуск.mp4, Убрать файл". */}
+        <button onClick={onClear} aria-label={t("clearNamed", { name: name ?? "" })}
           className="shrink-0 text-neutral-500 hover:text-neutral-300">✕</button>
       </div>
       {info && (
