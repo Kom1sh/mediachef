@@ -39,6 +39,29 @@ describe("search", () => {
   it("tolerates typo", () => {
     expect(search(index, "extrct audio").some(r => r.id === "extract-audio-mp3")).toBe(true);
   });
+
+  /* Russian says "перевод" for both *transcription* ("перевод аудио в текст" —
+     write down what was said) and *translation* ("перевод на английский" — say it
+     in another language), so the two recipe families compete for one word. An
+     alias parked on the wrong one silently hijacks the other's queries: this table
+     is the measured routing, pinned, because getting it wrong is invisible in the
+     Rust tests and costs the user the recipe they were looking for. */
+  const ROUTING: [string, string][] = [
+    ["перевод мп3 в текст", "transcribe-to-txt"],
+    ["перевод аудио в текст", "transcribe-to-txt"],
+    ["перевести аудио в текст", "transcribe-to-txt"],
+    ["перевод речи в текст", "transcribe-to-txt"],
+    ["текст из аудио", "transcribe-to-txt"],
+    ["перевод видео в текст", "video-to-text"],
+    ["перевести видео в текст", "video-to-text"],
+    ["текст из видео", "video-to-text"],
+    // the translation family keeps its own phrasings — "на английский" is the tell
+    ["перевести аудио на английский", "translate-to-en-txt"],
+    ["перевод аудио на английский текст", "translate-to-en-txt"],
+  ];
+  it.each(ROUTING)("routes %j to %s", (q, id) => {
+    expect(search(index, q)[0].id).toBe(id);
+  });
   it("filters by media type", () => {
     const audioOnly = search(index, "", "audio");
     expect(audioOnly.some(r => r.id === "convert-mp3-wav")).toBe(true);

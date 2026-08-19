@@ -3,7 +3,7 @@ category: transcribe
 title: {en: "Transcribe audio to text", ru: "Аудио в текст"}
 aliases:
   en: [mp3 to text, audio to text, transcribe audio, speech to text, audio to txt]
-  ru: [перевод мп3 в текст, расшифровка аудио, транскрибация, аудио в текст, речь в текст, мп3 в текст]
+  ru: [перевод мп3 в текст, расшифровка аудио, транскрибация, аудио в текст, речь в текст, мп3 в текст, перевод аудио в текст, перевод речи в текст, текст из аудио]
 description: {en: "Turns speech into plain text locally (Whisper).", ru: "Превращает речь в обычный текст локально (Whisper)."}
 input: {types: [audio, video]}
 params:

@@ -20,7 +20,7 @@ pub fn bundled() -> Vec<Recipe> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::recipe::Engine;
+    use crate::recipe::{Engine, ParamType};
     use std::path::{Path, PathBuf};
 
     /// The recipe the IPC golden file is cut from. `include_dir` sorts its
@@ -129,11 +129,29 @@ mod tests {
                         r.id,
                         r.output.ext
                     );
-                    for key in ["model", "language"] {
+                    // The type matters as much as the key: `type: string` would
+                    // resolve fine here and then render as a free-text box instead of
+                    // the model picker / language list, so pin both.
+                    for (key, want) in [
+                        ("model", ParamType::Model),
+                        ("language", ParamType::Language),
+                    ] {
                         assert!(
                             resolved.contains_key(key),
                             "{}: whisper recipe needs a `{key}` param with a default",
                             r.id
+                        );
+                        let p = r
+                            .params
+                            .iter()
+                            .find(|p| p.key == key)
+                            .expect("resolved key must come from a param");
+                        assert_eq!(
+                            p.r#type,
+                            want,
+                            "{}: param `{key}` must be `type: {}`",
+                            r.id,
+                            serde_json::to_string(&want).unwrap()
                         );
                     }
                 }
