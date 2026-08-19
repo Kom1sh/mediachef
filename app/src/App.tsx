@@ -7,6 +7,7 @@ import { RecipeList } from "./components/RecipeList";
 import { QueuePanel } from "./components/QueuePanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Sidebar, type Tab } from "./components/Sidebar";
+import { LocaleProvider, makeT, resolveLocale } from "./lib/i18n";
 import { getRecipes, getSettings, onJobUpdate, probeFile, setSettings as saveSettings } from "./lib/ipc";
 import { applicable, buildIndex, search } from "./lib/search";
 import { applyTheme } from "./lib/theme";
@@ -186,6 +187,21 @@ export default function App() {
       : undefined;
   }, [files, selected]);
 
+  // The language the whole UI is in, derived from the setting on every render
+  // rather than stored: `settings` is already the single source of truth, and a
+  // second copy of it in state is a second thing that can be stale. Until the
+  // first `settings_get` answers, "system" — the same guess the fresh-install
+  // default makes.
+  const locale = resolveLocale(settings?.language ?? "system");
+  // App *provides* the locale, so it cannot consume its own context: these three
+  // strings go through the same pure translator `useT` hands to everyone below.
+  const t = useMemo(() => makeT(locale), [locale]);
+
+  // Tells the browser (and through it a screen reader's pronunciation, and CSS
+  // `:lang()`) which language the interface is in. index.html ships `lang="en"`
+  // for the first paint; from here on this owns it.
+  useEffect(() => { document.documentElement.lang = locale; }, [locale]);
+
   const index = useMemo(() => buildIndex(recipes), [recipes]);
   const results = useMemo(
     () => search(index, query, activeInfo?.media_type),
@@ -193,57 +209,63 @@ export default function App() {
   );
 
   return (
-    // Rail · board · queue. `minmax(0, …)` on the row and the middle column, not
-    // plain `1fr`: the scrolling children below need a track that is allowed to be
-    // smaller than its content.
-    <main className="grid h-screen grid-cols-[80px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
-      <Sidebar tab={tab} onTab={setTab} />
-      {tab === "models" ? <ModelsPanel /> : tab === "settings" ? (
-        settings
-          ? <SettingsPanel settings={settings} onChange={changeSettings} error={settingsError} />
-          // Either the round trip is still in flight (milliseconds) or it failed,
-          // in which case the reason is the only thing this screen can honestly
-          // show — controls without settings behind them would be a lie.
-          : <section className="p-4 text-sm text-ink-2">{settingsError || "Loading settings…"}</section>
-      ) : (
-        <section className="flex min-h-0 flex-col gap-3 overflow-y-auto p-4">
-          {files.map((f, i) => (
-            <FileCard key={f.path} path={f.path} info={f.info} probeError={f.probeError}
-              // With a single card there is nothing to choose between, so a
-              // highlight would be pure decoration: it is there to answer "which of
-              // these drives the filter", a question only a list can raise.
-              active={files.length > 1 && i === active}
-              onSelect={() => setActive(i)} onClear={() => removeFile(f.path)} />
-          ))}
-          <DropZone onFiles={addFiles} />
-          <input
-            value={query} onChange={e => setQuery(e.target.value)}
-            placeholder="Search: «видео в мп3», «make gif»…"
-            className="w-full rounded-lg border border-line bg-card p-2 text-sm"
-          />
-          {/* `key` on the recipe id: the form seeds its params from the recipe once,
-              at mount, so a swap without a remount would run the new recipe with the
-              old recipe's params — along with a stale busy flag and enqueue error. */}
-          {selected && activeFile
-            ? <RecipeForm key={selected.id} recipe={selected} input={activeFile.path} batch={batch}
-                onQueued={() => setSelected(null)} onClose={() => setSelected(null)}
-                onOpenModels={() => setTab("models")} />
-            : <RecipeList recipes={results} onPick={r => setSelected(r)} />}
-          {files.length === 0 && <p className="text-xs text-ink-2">Drop files to filter recipes by type.</p>}
-        </section>
-      )}
-      {/* Always mounted: a queue that vanished on a tab switch would drop its
-          `job:update` listener and lose every finished job. The `grid` wrapper is
-          what gives the column its margin without reaching into the panel's own
-          classes (T6 restyles it): a single-cell grid stretches its child to the
-          full column height, which a padded block would not. */}
-      <div className="grid min-h-0 py-4 pr-4">
-        {/* Silence until the real setting arrives: no job can reach `done` in that
-            window (the queue starts empty and there is no UI to enqueue from yet),
-            so the choice only decides whose preference is guessed — and guessing
-            "off" cannot notify someone who switched notifications off. */}
-        <QueuePanel recipes={recipes} notificationsEnabled={settings?.notifications ?? false} />
-      </div>
-    </main>
+    // Every string below the provider comes from `useT`/`loc`, so switching the
+    // language in Settings re-renders the entire interface — the rail's labels, the
+    // queue's statuses and the recipes' own titles included. The alternative, a
+    // module-level locale, would have needed a restart to take effect.
+    <LocaleProvider locale={locale}>
+      {/* Rail · board · queue. `minmax(0, …)` on the row and the middle column, not
+          plain `1fr`: the scrolling children below need a track that is allowed to be
+          smaller than its content. */}
+      <main className="grid h-screen grid-cols-[80px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
+        <Sidebar tab={tab} onTab={setTab} />
+        {tab === "models" ? <ModelsPanel /> : tab === "settings" ? (
+          settings
+            ? <SettingsPanel settings={settings} onChange={changeSettings} error={settingsError} />
+            // Either the round trip is still in flight (milliseconds) or it failed,
+            // in which case the reason is the only thing this screen can honestly
+            // show — controls without settings behind them would be a lie.
+            : <section className="p-4 text-sm text-ink-2">{settingsError || t("loadingSettings")}</section>
+        ) : (
+          <section className="flex min-h-0 flex-col gap-3 overflow-y-auto p-4">
+            {files.map((f, i) => (
+              <FileCard key={f.path} path={f.path} info={f.info} probeError={f.probeError}
+                // With a single card there is nothing to choose between, so a
+                // highlight would be pure decoration: it is there to answer "which of
+                // these drives the filter", a question only a list can raise.
+                active={files.length > 1 && i === active}
+                onSelect={() => setActive(i)} onClear={() => removeFile(f.path)} />
+            ))}
+            <DropZone onFiles={addFiles} />
+            <input
+              value={query} onChange={e => setQuery(e.target.value)}
+              placeholder={t("searchPlaceholder")}
+              className="w-full rounded-lg border border-line bg-card p-2 text-sm"
+            />
+            {/* `key` on the recipe id: the form seeds its params from the recipe once,
+                at mount, so a swap without a remount would run the new recipe with the
+                old recipe's params — along with a stale busy flag and enqueue error. */}
+            {selected && activeFile
+              ? <RecipeForm key={selected.id} recipe={selected} input={activeFile.path} batch={batch}
+                  onQueued={() => setSelected(null)} onClose={() => setSelected(null)}
+                  onOpenModels={() => setTab("models")} />
+              : <RecipeList recipes={results} onPick={r => setSelected(r)} />}
+            {files.length === 0 && <p className="text-xs text-ink-2">{t("dropHint")}</p>}
+          </section>
+        )}
+        {/* Always mounted: a queue that vanished on a tab switch would drop its
+            `job:update` listener and lose every finished job. The `grid` wrapper is
+            what gives the column its margin without reaching into the panel's own
+            classes (T6 restyles it): a single-cell grid stretches its child to the
+            full column height, which a padded block would not. */}
+        <div className="grid min-h-0 py-4 pr-4">
+          {/* Silence until the real setting arrives: no job can reach `done` in that
+              window (the queue starts empty and there is no UI to enqueue from yet),
+              so the choice only decides whose preference is guessed — and guessing
+              "off" cannot notify someone who switched notifications off. */}
+          <QueuePanel recipes={recipes} notificationsEnabled={settings?.notifications ?? false} />
+        </div>
+      </main>
+    </LocaleProvider>
   );
 }

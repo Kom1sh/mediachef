@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Bell, FolderOpen, Gauge, Languages, Palette } from "lucide-react";
+import { useT } from "../lib/i18n";
 import { pickFolder } from "../lib/ipc";
 import type { AppSettings } from "../lib/types";
 import type { LucideIcon } from "lucide-react";
@@ -10,24 +11,8 @@ interface Choice<T extends string> {
   label: string;
 }
 
-// English for now, like the rail's labels: T3 replaces every string here with
-// `t()` once the dictionary exists. The language *names* stay in their own
-// language either way — a Russian speaker looking for the switch is looking for
-// "Русский", not for whatever the current UI calls it.
-const LANGUAGES: readonly Choice<AppSettings["language"]>[] = [
-  { value: "system", label: "System" },
-  { value: "en", label: "English" },
-  { value: "ru", label: "Русский" },
-];
-const THEMES: readonly Choice<AppSettings["theme"]>[] = [
-  { value: "system", label: "System" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-];
-const MODES: readonly Choice<AppSettings["output_mode"]>[] = [
-  { value: "beside", label: "Next to input" },
-  { value: "fixed", label: "Fixed folder" },
-];
+// The worker counts are numerals in both languages, so this one list can stay at
+// module scope; the other three are built inside the component, where `t` is.
 const WORKERS: readonly Choice<string>[] = [
   { value: "1", label: "1" },
   { value: "2", label: "2" },
@@ -157,7 +142,26 @@ export function SettingsPanel({
   /** A failed save, shown where the user just clicked. */
   error?: string;
 }) {
+  const t = useT();
   const [pickError, setPickError] = useState("");
+
+  // The language *names* stay in their own language: a Russian speaker looking for
+  // the switch is looking for "Русский", not for whatever the current UI calls it.
+  // "System" is the exception — it is a word about the setting, not a language.
+  const LANGUAGES: readonly Choice<AppSettings["language"]>[] = [
+    { value: "system", label: t("optSystem") },
+    { value: "en", label: "English" },
+    { value: "ru", label: "Русский" },
+  ];
+  const THEMES: readonly Choice<AppSettings["theme"]>[] = [
+    { value: "system", label: t("optSystem") },
+    { value: "light", label: t("themeLight") },
+    { value: "dark", label: t("themeDark") },
+  ];
+  const MODES: readonly Choice<AppSettings["output_mode"]>[] = [
+    { value: "beside", label: t("outBeside") },
+    { value: "fixed", label: t("outFixed") },
+  ];
 
   // Choosing a folder implies the fixed mode: picking a destination and then
   // having the files land somewhere else would be nonsense.
@@ -184,27 +188,27 @@ export function SettingsPanel({
   return (
     <section className="min-h-0 overflow-y-auto p-4">
       <div className="mx-auto flex w-full max-w-xl flex-col gap-3">
-        <h1 className="text-base font-bold text-ink">Settings</h1>
+        <h1 className="text-base font-bold text-ink">{t("navSettings")}</h1>
         {notice ? (
           <p className="rounded-lg border border-tomato bg-card p-2 text-xs text-tomato">{notice}</p>
         ) : null}
 
-        <Row icon={Languages} label="Language" hint="«System» follows your OS.">
+        <Row icon={Languages} label={t("setLanguage")} hint={t("setLanguageHint")}>
           <Segmented
-            name="mc-language" label="Language" value={s.language} choices={LANGUAGES}
+            name="mc-language" label={t("setLanguage")} value={s.language} choices={LANGUAGES}
             onPick={language => onChange({ ...s, language })}
           />
         </Row>
 
-        <Row icon={Palette} label="Theme" hint="Applies immediately.">
+        <Row icon={Palette} label={t("setTheme")} hint={t("setThemeHint")}>
           <Segmented
-            name="mc-theme" label="Theme" value={s.theme} choices={THEMES}
+            name="mc-theme" label={t("setTheme")} value={s.theme} choices={THEMES}
             onPick={theme => onChange({ ...s, theme })}
           />
         </Row>
 
         <Row
-          icon={FolderOpen} label="Output folder" hint="Where finished files are written."
+          icon={FolderOpen} label={t("setOutput")} hint={t("setOutputHint")}
           footer={
             s.output_mode === "fixed" ? (
               <div className="flex w-full items-center gap-2 border-t border-line pt-3">
@@ -218,33 +222,33 @@ export function SettingsPanel({
                   type="button" onClick={() => void choose()}
                   className="shrink-0 rounded-md border border-line bg-card-2 px-2 py-1 text-xs font-semibold text-ink hover:bg-paper"
                 >
-                  Change…
+                  {t("change")}
                 </button>
               </div>
             ) : undefined
           }
         >
           <Segmented
-            name="mc-output" label="Output folder" value={s.output_mode} choices={MODES}
+            name="mc-output" label={t("setOutput")} value={s.output_mode} choices={MODES}
             onPick={pickMode}
           />
         </Row>
 
-        <Row icon={Bell} label="Notifications" hint="A desktop alert when a job finishes.">
+        <Row icon={Bell} label={t("setNotifications")} hint={t("setNotificationsHint")}>
           <Switch
-            label="Notifications" on={s.notifications}
+            label={t("setNotifications")} on={s.notifications}
             onToggle={notifications => onChange({ ...s, notifications })}
           />
         </Row>
 
         <Row
-          icon={Gauge} label="Parallel conversions"
+          icon={Gauge} label={t("setWorkers")}
           // The one setting that is not live, and it says so where it is set
           // rather than in a release note: the workers are spawned once, at boot.
-          hint="How many ffmpeg jobs run at once. Takes effect after a restart."
+          hint={t("setWorkersHint")}
         >
           <Segmented
-            name="mc-workers" label="Parallel conversions" value={String(s.ffmpeg_workers)}
+            name="mc-workers" label={t("setWorkers")} value={String(s.ffmpeg_workers)}
             choices={WORKERS}
             onPick={v => onChange({ ...s, ffmpeg_workers: Number(v) })}
           />

@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
+import { loc, useLocale, useT } from "../lib/i18n";
 import { cancelModelDownload, deleteModel, downloadModel, getModels, onModelProgress } from "../lib/ipc";
 import type { ModelView } from "../lib/types";
 
-const GB = (b: number) => (b / 1e9 >= 1 ? `${(b / 1e9).toFixed(1)} GB` : `${Math.round(b / 1e6)} MB`);
+// Units as words, not as literals: "GB" is "ГБ" in Russian.
+const size = (b: number, gb: string, mb: string) =>
+  (b / 1e9 >= 1 ? `${(b / 1e9).toFixed(1)} ${gb}` : `${Math.round(b / 1e6)} ${mb}`);
 
 export function ModelsPanel() {
+  const t = useT();
+  const locale = useLocale();
   const [models, setModels] = useState<ModelView[]>([]);
   const [progress, setProgress] = useState<Record<string, number>>({});
   // Ids whose cancel has been requested but whose terminal event has not landed.
@@ -78,8 +83,8 @@ export function ModelsPanel() {
 
   return (
     <section className="mx-auto w-full max-w-xl space-y-2 overflow-y-auto p-2">
-      <h2 className="text-sm font-medium text-neutral-300">Whisper models</h2>
-      <p className="text-xs text-neutral-500">Transcription runs locally. A model is downloaded once.</p>
+      <h2 className="text-sm font-medium text-neutral-300">{t("modelsTitle")}</h2>
+      <p className="text-xs text-neutral-500">{t("modelsBlurb")}</p>
       {models.map(m => {
         // `downloading` covers the remount case: switching to Convert and back
         // unmounts this panel, and the map in Rust is what still knows.
@@ -87,10 +92,11 @@ export function ModelsPanel() {
         return (
           <div key={m.id} className="flex items-center justify-between gap-3 rounded-lg border border-neutral-700 p-3">
             <div className="min-w-0">
-              <div className="text-sm font-medium">{m.id} <span className="text-xs text-neutral-500">{GB(m.approx_bytes)}</span></div>
-              {/* The UI is English until wave 3 brings i18n; `note_ru` rides along
-                  in `ModelView` for it (see types.ts) and is deliberately unused. */}
-              <div className="text-xs text-neutral-400">{m.note_en}</div>
+              <div className="text-sm font-medium">{m.id} <span className="text-xs text-neutral-500">{size(m.approx_bytes, t("unitGB"), t("unitMB"))}</span></div>
+              {/* The note is written on the Rust side in both languages. Through
+                  `loc` rather than a ternary, so a model shipped without a Russian
+                  note reads English instead of reading blank. */}
+              <div className="text-xs text-neutral-400">{loc({ en: m.note_en, ru: m.note_ru }, locale)}</div>
             </div>
             {pct !== undefined ? (
               <div className="flex shrink-0 items-center gap-2">
@@ -99,17 +105,21 @@ export function ModelsPanel() {
                 </div>
                 <span className="w-8 text-right text-xs text-neutral-500">{Math.round(pct)}%</span>
                 {cancelling[m.id] ? (
-                  <span className="text-xs text-neutral-500" title="A cancel lands at the download's next read — up to 30s if the connection died.">Cancelling…</span>
+                  <span className="text-xs text-neutral-500" title={t("cancelHint")}>{t("cancelling")}</span>
                 ) : (
-                  <button onClick={() => cancel(m.id)} title="Cancel download" className="text-xs text-neutral-500 hover:text-red-400">✕</button>
+                  // `title` alone, as before: with no other labelling it is both the
+                  // tooltip and the accessible name, and adding an `aria-label` of the
+                  // same words would only make a screen reader say them twice.
+                  <button onClick={() => cancel(m.id)} title={t("cancelDownload")}
+                    className="text-xs text-neutral-500 hover:text-red-400">✕</button>
                 )}
               </div>
             ) : m.installed ? (
               <button onClick={() => { setError(""); deleteModel(m.id).then(refresh).catch(e => setError(String(e))); }}
-                className="shrink-0 text-xs text-neutral-500 hover:text-red-400">Delete</button>
+                className="shrink-0 text-xs text-neutral-500 hover:text-red-400">{t("deleteModel")}</button>
             ) : (
               <button onClick={() => download(m.id)}
-                className="shrink-0 rounded bg-blue-600 px-3 py-1 text-xs font-medium">Download</button>
+                className="shrink-0 rounded bg-blue-600 px-3 py-1 text-xs font-medium">{t("download")}</button>
             )}
           </div>
         );

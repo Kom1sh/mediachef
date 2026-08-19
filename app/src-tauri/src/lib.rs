@@ -174,9 +174,9 @@ fn sweep_parts(dir: &Path, downloads: &Downloads) {
 struct ModelView {
     id: String,
     note_en: String,
-    /// Unused by the UI, which is English-only until wave 3 brings i18n; it rides
-    /// across IPC so that wave has nothing to add on this side (the panel renders
-    /// `note_en` and says the same).
+    /// The Russian half of the pair. The Models panel picks a side with `loc()`
+    /// from the frontend's i18n module, falling back to `note_en` when this is
+    /// empty — so a model shipped without a Russian note still reads.
     note_ru: String,
     approx_bytes: u64,
     installed: bool,

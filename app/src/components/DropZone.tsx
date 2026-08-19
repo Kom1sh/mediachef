@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { useT } from "../lib/i18n";
 import { pickFiles } from "../lib/ipc";
 
 export function DropZone({ onFiles }: { onFiles: (paths: string[]) => void }) {
   const [hover, setHover] = useState(false);
+  const t = useT();
   useEffect(() => {
     const un = getCurrentWebview().onDragDropEvent(e => {
       // `enter` fires once as the drag crosses into the window, `over` on every
@@ -29,7 +31,7 @@ export function DropZone({ onFiles }: { onFiles: (paths: string[]) => void }) {
       onClick={async () => { const ps = await pickFiles(); if (ps.length > 0) onFiles(ps); }}
       className={`w-full rounded-xl border-2 border-dashed p-10 text-center text-sm ${hover ? "border-blue-500 bg-blue-500/10" : "border-neutral-600"}`}
     >
-      Drop files here or click to choose
+      {t("dropZone")}
     </button>
   );
 }

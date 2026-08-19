@@ -28,7 +28,8 @@ const MAX_WORKERS: u8 = 3;
 // fallback to defaults rather than a setting that silently does nothing.
 #[serde(default, deny_unknown_fields)]
 pub struct AppSettings {
-    /// "system" | "en" | "ru" — "system" follows the OS locale (T3 resolves it).
+    /// "system" | "en" | "ru" — "system" follows the OS locale, which the
+    /// frontend's `resolveLocale` reads off the webview's `navigator.language`.
     pub language: String,
     /// "system" | "light" | "dark". Applied by the frontend's `applyTheme`.
     pub theme: String,

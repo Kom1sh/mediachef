@@ -1,7 +1,17 @@
-import type { ProbeInfo } from "../lib/types";
+import { useT, type TKey } from "../lib/i18n";
+import type { MediaType, ProbeInfo } from "../lib/types";
 
-const fmtSize = (b: number | null) => (b == null ? "" : `${(b / 1024 / 1024).toFixed(1)} MB`);
-const fmtDur = (s: number | null) => (s == null ? "" : `${Math.round(s)}s`);
+// The unit arrives as a word rather than being spelled here: "MB" is "МБ" in
+// Russian, and a file card that says one and means the other is the kind of
+// detail a bilingual UI is judged by.
+const fmtSize = (b: number | null, mb: string) => (b == null ? "" : `${(b / 1024 / 1024).toFixed(1)} ${mb}`);
+const fmtDur = (s: number | null, sec: string) => (s == null ? "" : `${Math.round(s)} ${sec}`);
+
+/** The badge under the name. Exhaustive by type, so a media type added to the
+ *  catalog cannot reach the card without a word for it. */
+const MEDIA_KEY: Record<MediaType, TKey> = {
+  video: "mt_video", audio: "mt_audio", image: "mt_image", subtitle: "mt_subtitle", any: "mt_any",
+};
 
 export function FileCard({ path, info, probeError, active, onSelect, onClear }: {
   path: string;
@@ -12,6 +22,7 @@ export function FileCard({ path, info, probeError, active, onSelect, onClear }: 
   onSelect: () => void;
   onClear: () => void;
 }) {
+  const t = useT();
   const name = path.split("/").pop();
   return (
     <div className={`rounded-lg border p-3 text-sm ${active ? "border-blue-500 bg-blue-500/5" : "border-neutral-700"}`}>
@@ -23,14 +34,14 @@ export function FileCard({ path, info, probeError, active, onSelect, onClear }: 
         <button type="button" onClick={onSelect} className="min-w-0 flex-1 truncate text-left font-medium">{name}</button>
         {/* The way out of a chosen file. Without it the only path back to "no
             file" was finishing a job or restarting the app. */}
-        <button onClick={onClear} title="Clear file" aria-label={`Clear ${name}`}
+        <button onClick={onClear} title={t("clearFile")} aria-label={t("clearNamed", { name: name ?? "" })}
           className="shrink-0 text-neutral-500 hover:text-neutral-300">✕</button>
       </div>
       {info && (
         <div className="mt-1 flex gap-2 text-xs text-neutral-400">
-          <span className="rounded bg-neutral-700 px-1.5 py-0.5 uppercase">{info.media_type}</span>
-          <span>{fmtDur(info.duration_s)}</span>
-          <span>{fmtSize(info.size_bytes)}</span>
+          <span className="rounded bg-neutral-700 px-1.5 py-0.5 uppercase">{t(MEDIA_KEY[info.media_type])}</span>
+          <span>{fmtDur(info.duration_s, t("unitSeconds"))}</span>
+          <span>{fmtSize(info.size_bytes, t("unitMB"))}</span>
           <span className="truncate">{info.summary}</span>
         </div>
       )}

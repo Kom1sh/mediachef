@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { loc, useLocale, useT } from "../lib/i18n";
 import { enqueueJob, getModels, previewCmd } from "../lib/ipc";
 import type { Param, Recipe } from "../lib/types";
 
@@ -12,7 +13,12 @@ const LANGS = ["auto", "ru", "en", "de", "es", "fr", "it", "pt", "uk", "kk"];
 const FIELD_CLASS = "mt-1 w-full rounded border border-neutral-600 bg-transparent p-1.5 text-sm";
 
 function Field({ p, value, onChange }: { p: Param; value: string; onChange: (v: string) => void }) {
-  const label = <span className="text-xs text-neutral-400">{p.label.en}{p.unit ? ` (${p.unit})` : ""}</span>;
+  // Parameter labels ride in the recipe as an { en, ru } pair, like its title.
+  // `p.unit` stays as written — the recipes spell units in symbols (kbit/s, °),
+  // which are the same in both languages.
+  const locale = useLocale();
+  const name = loc(p.label, locale);
+  const label = <span className="text-xs text-neutral-400">{name}{p.unit ? ` (${p.unit})` : ""}</span>;
   if (p.type === "language") {
     return (
       <label className="block">{label}
@@ -37,7 +43,7 @@ function Field({ p, value, onChange }: { p: Param; value: string; onChange: (v: 
     return (
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={value === "true"} onChange={e => onChange(String(e.target.checked))} />
-        {p.label.en}
+        {name}
       </label>
     );
   }
@@ -65,6 +71,8 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
     onClose: () => void;
     onOpenModels: () => void;
   }) {
+  const t = useT();
+  const locale = useLocale();
   const initial = useMemo(() => Object.fromEntries(recipe.params.map(p => [p.key, String(p.default ?? "")])), [recipe]);
   const [params, setParams] = useState<Record<string, string>>(initial);
   const [cmd, setCmd] = useState<string>("");
@@ -180,7 +188,7 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
   const copyCmd = () => {
     if (!cmd) return;
     navigator.clipboard.writeText(cmd)
-      .then(() => setHint("Copied to clipboard"))
+      .then(() => setHint(t("copied")))
       .catch(e => setHint(String(e)));
   };
 
@@ -206,7 +214,7 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
     // click the one button there is to click.
     return (
       <label key={p.key} className="block">
-        <span className="text-xs text-neutral-400">{p.label.en}</span>
+        <span className="text-xs text-neutral-400">{loc(p.label, locale)}</span>
         {modelsError
           // The error alone is a dead end: the field has no select to offer and
           // no button either, and the Models screen is where a stuck model list
@@ -215,18 +223,18 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
               <p className="mt-1 break-words text-xs text-red-400">{modelsError}</p>
               <button onClick={onOpenModels}
                 className="mt-1 w-full rounded border border-blue-600 p-1.5 text-sm text-blue-400 hover:bg-blue-600/10">
-                Open Models
+                {t("openModels")}
               </button>
             </>
           : installed === null
-            ? <p className="mt-1 text-xs text-neutral-500">Loading models…</p>
+            ? <p className="mt-1 text-xs text-neutral-500">{t("loadingModels")}</p>
             : installed.length === 0
               // No select to offer, and no honest default either — the preview
               // pane says the same thing in the engine's words and keeps "Add to
               // queue" disabled. This is the way out of that dead end.
               ? <button onClick={onOpenModels}
                   className="mt-1 w-full rounded border border-blue-600 p-1.5 text-sm text-blue-400 hover:bg-blue-600/10">
-                  Download a model → Models
+                  {t("downloadModelPrompt")}
                 </button>
               : <select value={params[p.key] ?? ""} onChange={e => onChange(e.target.value)} className={FIELD_CLASS}>
                   {installed.map(id => <option key={id} value={id}>{id}</option>)}
@@ -238,13 +246,17 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
   return (
     <div className="rounded-xl border border-neutral-700 p-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-medium">{recipe.title.en}</h2>
-        <button onClick={onClose} className="text-neutral-500 hover:text-neutral-300">✕</button>
+        <h2 className="font-medium">{loc(recipe.title, locale)}</h2>
+        {/* The glyph is not a name: without `aria-label` this button announces
+            itself as "✕" or as nothing at all, depending on the screen reader. No
+            `title` next to it — same text twice is announced twice. */}
+        <button onClick={onClose} aria-label={t("close")}
+          className="text-neutral-500 hover:text-neutral-300">✕</button>
       </div>
       <div className="mt-3 space-y-3">
         {main.map(field)}
         {advanced.length > 0 && (
-          <details><summary className="cursor-pointer text-xs text-neutral-500">Advanced</summary>
+          <details><summary className="cursor-pointer text-xs text-neutral-500">{t("advanced")}</summary>
             <div className="mt-2 space-y-3">
               {advanced.map(field)}
             </div>
@@ -254,10 +266,10 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
       {/* The marker line is a child of the <pre>, not part of `cmd`: click-to-copy
           copies the state, so the note never lands in the user's clipboard. */}
       <pre onClick={copyCmd}
-        title={cmd ? (isWhisper ? "Click to copy — illustrative, not runnable as-is" : "Click to copy") : undefined}
+        title={cmd ? t(isWhisper ? "clickToCopyPreview" : "clickToCopy") : undefined}
         className="mt-3 overflow-x-auto rounded bg-neutral-900 p-2 text-xs text-neutral-400 [&:not(:empty)]:cursor-pointer">{error || cmd}
         {cmd && isWhisper
-          ? <span className="mt-1 block text-neutral-600"># preview only — the queue decodes a 16 kHz WAV first, so this is not runnable as-is</span>
+          ? <span className="mt-1 block text-neutral-600">{t("previewOnly")}</span>
           : null}</pre>
       {hint ? <p className="mt-1 text-xs text-neutral-500">{hint}</p> : null}
       {enqueueError ? (
@@ -270,7 +282,7 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
               an open form, or when the model the params name leaves the disk. */}
           <button onClick={() => run(failed)} disabled={busy || !!error}
             className="shrink-0 rounded bg-red-600 px-2 py-1 text-xs disabled:opacity-50">
-            {failed.length > 1 ? `Retry ${failed.length}` : "Retry"}
+            {failed.length > 1 ? t("retryN", { n: failed.length }) : t("retryOne")}
           </button>
         </div>
       ) : null}
@@ -278,7 +290,7 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
         onClick={() => run([input])}
         disabled={!!error || busy}
         className="mt-3 w-full rounded-lg bg-blue-600 p-2 text-sm font-medium disabled:opacity-50">
-        {running?.length === 1 ? "Adding…" : "Add to queue"}
+        {running?.length === 1 ? t("adding") : t("addToQueue")}
       </button>
       {batch && batch.length > 1 ? (
         // Secondary styling deliberately: N jobs from one press is the larger action,
@@ -288,7 +300,9 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
           onClick={() => run(batch)}
           disabled={!!error || busy}
           className="mt-2 w-full rounded-lg border border-blue-600 p-2 text-sm font-medium text-blue-400 hover:bg-blue-600/10 disabled:opacity-50">
-          {running && running.length > 1 ? `Adding ${running.length}…` : `Add all ${batch.length} files`}
+          {running && running.length > 1
+            ? t("addingN", { n: running.length })
+            : t("addAllN", { n: batch.length })}
         </button>
       ) : null}
     </div>

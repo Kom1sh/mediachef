@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
+import { loc, useLocale, useT, type TKey } from "../lib/i18n";
 import { cancelJob, listJobs, onJobUpdate, revealFile } from "../lib/ipc";
 import type { JobView, Recipe } from "../lib/types";
 
 const COLOR: Record<JobView["status"], string> = {
   queued: "text-neutral-400", running: "text-blue-400", done: "text-green-400",
   error: "text-red-400", cancelled: "text-neutral-500",
+};
+
+/** The five words a job can be. Exhaustive by type: a status added on the Rust
+ *  side cannot reach the card without a word for it in both languages. */
+const STATUS_KEY: Record<JobView["status"], TKey> = {
+  queued: "st_queued", running: "st_running", done: "st_done",
+  error: "st_error", cancelled: "st_cancelled",
 };
 
 const mmss = (s: number) => {
@@ -20,9 +28,17 @@ export function QueuePanel({
   recipes: Recipe[];
   notificationsEnabled: boolean;
 }) {
+  const t = useT();
+  const locale = useLocale();
   const [jobs, setJobs] = useState<Map<number, JobView>>(new Map());
   const [actionError, setActionError] = useState<string>("");
   const notified = useRef(new Set<number>());
+  // Mirrored for the same reason as `notify` below: the desktop notification is
+  // composed inside the once-registered listener, so reading `t` from this render's
+  // closure would keep sending "Done: …" to someone who switched to Russian an hour
+  // ago. The switch has to reach the notification, not just the window.
+  const translate = useRef(t);
+  useEffect(() => { translate.current = t; }, [t]);
   // Mirrored into a ref because the `job:update` listener below is registered
   // once for the panel's lifetime: read through the prop, its closure would keep
   // answering with the value from the first render and the toggle would only take
@@ -49,7 +65,12 @@ export function QueuePanel({
         notified.current.add(j.id);
         isPermissionGranted().then(async ok => {
           if (!ok) ok = (await requestPermission()) === "granted";
-          if (ok) sendNotification({ title: "MediaChef", body: `Done: ${j.output.split("/").pop()}` });
+          if (ok) {
+            sendNotification({
+              title: translate.current("appName"),
+              body: translate.current("notifyDone", { name: j.output.split("/").pop() ?? "" }),
+            });
+          }
         }).catch(() => {});
       }
     });
@@ -58,7 +79,12 @@ export function QueuePanel({
     return () => { un.then(f => f()).catch(() => {}); };
   }, []);
 
-  const title = (id: string) => recipes.find(r => r.id === id)?.title.en ?? id;
+  // The id is the fallback for a job whose recipe is no longer in the catalog —
+  // untranslatable by nature, and better than a blank row.
+  const title = (id: string) => {
+    const r = recipes.find(x => x.id === id);
+    return r ? loc(r.title, locale) : id;
+  };
   const list = [...jobs.values()].sort((a, b) => b.id - a.id);
 
   // Naive linear extrapolation, and deliberately so — the alternative is to model
@@ -69,19 +95,19 @@ export function QueuePanel({
     const t0 = startedAt.current[j.id];
     if (t0 === undefined || j.percent < 3) return "—";
     const elapsed = (Date.now() - t0) / 1000;
-    return `~${mmss((elapsed * (100 - j.percent)) / Math.max(j.percent, 1))} left`;
+    return t("etaLeft", { time: mmss((elapsed * (100 - j.percent)) / Math.max(j.percent, 1)) });
   };
 
   return (
     <aside className="flex min-h-0 flex-col rounded-xl border border-neutral-800 p-3">
-      <h2 className="mb-2 text-sm font-medium text-neutral-300">Queue</h2>
+      <h2 className="mb-2 text-sm font-medium text-neutral-300">{t("queue")}</h2>
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
-        {list.length === 0 && <p className="text-xs text-neutral-500">Jobs will appear here.</p>}
+        {list.length === 0 && <p className="text-xs text-neutral-500">{t("queueEmpty")}</p>}
         {list.map(j => (
           <div key={j.id} className="rounded-lg border border-neutral-800 p-2 text-xs">
             <div className="flex items-center justify-between gap-2">
               <span className="truncate">{title(j.recipe_id)}</span>
-              <span className={COLOR[j.status]}>{j.status}</span>
+              <span className={COLOR[j.status]}>{t(STATUS_KEY[j.status])}</span>
             </div>
             <div className="mt-1 truncate text-neutral-500">{j.input.split("/").pop()}</div>
             {(j.status === "running" || j.status === "queued") && (
@@ -90,19 +116,19 @@ export function QueuePanel({
                   <div className="h-1.5 rounded bg-blue-500" style={{ width: `${j.percent}%` }} />
                 </div>
                 <div className="mt-1 flex items-center justify-between gap-2">
-                  <button onClick={() => cancelJob(j.id)} className="text-neutral-500 hover:text-red-400">Cancel</button>
+                  <button onClick={() => cancelJob(j.id)} className="text-neutral-500 hover:text-red-400">{t("cancel")}</button>
                   {j.status === "running" ? <span className="tabular-nums text-neutral-500">{eta(j)}</span> : null}
                 </div>
               </>
             )}
             {j.status === "done" && (
-              <button onClick={() => revealFile(j.output).then(() => setActionError("")).catch(e => setActionError(String(e)))} className="mt-1 text-blue-400 hover:underline">Show in Finder</button>
+              <button onClick={() => revealFile(j.output).then(() => setActionError("")).catch(e => setActionError(String(e)))} className="mt-1 text-blue-400 hover:underline">{t("showInFinder")}</button>
             )}
             {j.status === "error" && (
               <details className="mt-1">
-                <summary className="cursor-pointer text-red-400">{j.error ?? "Failed"}</summary>
+                <summary className="cursor-pointer text-red-400">{j.error ?? t("failed")}</summary>
                 <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap text-neutral-500">{j.error_detail}</pre>
-                <button onClick={() => navigator.clipboard.writeText(j.error_detail ?? "").then(() => setActionError("")).catch(e => setActionError(String(e)))} className="mt-1 text-neutral-400">Copy log</button>
+                <button onClick={() => navigator.clipboard.writeText(j.error_detail ?? "").then(() => setActionError("")).catch(e => setActionError(String(e)))} className="mt-1 text-neutral-400">{t("copyLog")}</button>
               </details>
             )}
           </div>
