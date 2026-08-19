@@ -295,6 +295,40 @@ impl Queue {
         }
     }
 
+    /// Cancels every job that is not already terminal — the quit path's "stop
+    /// everything" (see `lib.rs::shutdown`). Terminal jobs (`done`, `error`,
+    /// `cancelled`) are left exactly as they are: their row is the session's
+    /// history, and rewriting it would tell the user a finished job was killed.
+    ///
+    /// Returns how many of them were **running**, i.e. how many child processes
+    /// are being killed right now. That is the number the caller has to wait for
+    /// before the process may exit: a queued job owns nothing (it flips to
+    /// `cancelled` right here), while a running one only had its token tripped —
+    /// its worker settles the status once ffmpeg/whisper-cli is actually dead,
+    /// and `Drop`-ing the process out from under that thread is what orphans
+    /// children and leaks tempdirs.
+    pub fn cancel_all_active(&self) -> usize {
+        // Collect under the lock, cancel after releasing it: `cancel` takes the
+        // same mutex, so cancelling inside the iteration would deadlock. Nothing
+        // can appear in between that we would want to miss — the only way a new
+        // job arrives is an `enqueue` IPC call, and by the time this runs the
+        // event loop that serves them is on its way out.
+        let active: Vec<(u64, bool)> = {
+            let g = self.inner.lock().unwrap();
+            g.jobs
+                .iter()
+                .filter(|j| matches!(j.view.status.as_str(), "queued" | "running"))
+                .map(|j| (j.view.id, j.view.status == "running"))
+                .collect()
+        };
+        for (id, _) in &active {
+            // Reused rather than reimplemented: `cancel` is the one place that
+            // knows the status flip, the reservation release and the emit.
+            self.cancel(*id);
+        }
+        active.iter().filter(|(_, running)| *running).count()
+    }
+
     pub fn view(&self, id: u64) -> Option<JobView> {
         self.inner
             .lock()
@@ -643,6 +677,61 @@ output: {ext: mp4, suffix: compressed}
         let (q, _rx) = Queue::new_for_test();
         let id = q.push_test_job_kind("whisper");
         assert_eq!(q.view(id).unwrap().kind, "whisper");
+    }
+
+    // The quit path (`lib.rs::shutdown`): everything still in flight is cancelled,
+    // everything already finished is left alone. The distinction the return value
+    // draws is what the caller waits on — a queued job is over the moment it is
+    // cancelled, a running one still has a child to kill.
+    #[test]
+    fn cancel_all_active_takes_queued_and_running_only() {
+        let (q, _rx) = Queue::new_for_test();
+        let done = q.push_test_job();
+        let failed = q.push_test_job();
+        let running = q.push_test_job();
+        let a = q.push_test_job();
+        let b = q.push_test_job();
+        // Two jobs into terminal states, then the third into `running` — taken
+        // without a runner, so it stays there like a real job whose whisper-cli is
+        // still chewing.
+        q.run_next(|_j, _p| Ok(TestOutcome::Done));
+        q.run_next(|_j, _p| Err("boom".to_string()));
+        let taken = q
+            .take_next(Lane::Ffmpeg)
+            .expect("the third job must be next");
+        assert_eq!(taken.id, running);
+        assert_eq!(q.view(running).unwrap().status, "running");
+
+        assert_eq!(
+            q.cancel_all_active(),
+            1,
+            "one child process to wait for, not the queued jobs"
+        );
+
+        // Queued jobs are terminal immediately: nothing was ever spawned for them.
+        assert_eq!(q.view(a).unwrap().status, "cancelled");
+        assert_eq!(q.view(b).unwrap().status, "cancelled");
+        // The running one keeps its status until its worker settles it — all this
+        // can do is trip the token the watchdog watches.
+        assert!(
+            taken.cancel.is_cancelled(),
+            "a running job whose token is not tripped orphans its child"
+        );
+        assert_eq!(q.view(running).unwrap().status, "running");
+        // Terminal jobs are history, not something to cancel.
+        assert_eq!(q.view(done).unwrap().status, "done");
+        assert_eq!(q.view(failed).unwrap().status, "error");
+        assert_eq!(q.view(failed).unwrap().error.unwrap(), "FFmpeg failed");
+
+        // Safe to run twice, because both quit paths can reach it (ExitRequested
+        // then Exit). The second pass finds the queued jobs terminal and stops
+        // counting them, but still counts the running one — deliberately: if its
+        // child outlived the first wait, the second must wait for it again rather
+        // than wave the exit through.
+        assert_eq!(q.cancel_all_active(), 1);
+        // Once the worker has settled it, there is nothing left to wait for.
+        q.finish(running, "cancelled", None, None);
+        assert_eq!(q.cancel_all_active(), 0);
     }
 
     // `unreserve` is the escape hatch for enqueue failing after planning (a bad

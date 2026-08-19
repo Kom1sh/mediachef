@@ -15,6 +15,24 @@ use tauri::{AppHandle, Emitter, Manager, State};
 /// Idle poll of a worker thread when its lane is empty.
 const WORKER_IDLE_MS: u64 = 200;
 
+/// How long a quit waits for the jobs it just cancelled to let go of their
+/// children.
+///
+/// Cancelling only trips a token. The kill lands at the next turn of
+/// `process::run_streaming`'s watchdog (150ms), and only *after* that does the
+/// runner reap the child and — in whisper's case — drop the tempdir holding the
+/// 16kHz WAV. All of it runs on worker threads, which a process exit takes down
+/// where they stand: the child is reparented to launchd and keeps burning CPU,
+/// and its tempdir stays in `/tmp` forever, because `Drop` does not run on exit.
+/// So the quit blocks until the queue reports nothing `running` — typically under
+/// 200ms — with this as the cap, on the theory that a wedged child should delay a
+/// quit, not prevent it.
+const SHUTDOWN_GRACE_MS: u64 = 2_000;
+/// Poll of the "is anything still running?" wait. Deliberately much finer than
+/// the 150ms watchdog tick it is waiting on, so the quit costs the kill's real
+/// latency instead of a rounded-up multiple of it.
+const SHUTDOWN_POLL_MS: u64 = 20;
+
 /// Where whisper's `ggml-*.bin` files live. Owned by the app, not core: only
 /// Tauri knows the per-platform data dir. The Models screen writes here, the
 /// whisper enqueue path reads.
@@ -410,15 +428,53 @@ fn jobs(state: State<AppState>) -> Vec<queue::JobView> {
     state.queue.views()
 }
 
+/// Stops everything this process started, and waits for it. Registered on the
+/// quit path in [`run`]; nothing else calls it.
+///
+/// Without this a quit mid-job orphans the child: `whisper-cli` and `ffmpeg` are
+/// spawned as plain children, so they survive their parent, and a transcription
+/// keeps a core busy for minutes on a file nobody is waiting for any more. Its
+/// tempdir survives too — `TempDir::drop` is what unlinks it, and a worker thread
+/// killed by process exit never gets there.
+///
+/// Downloads are tripped but **not** waited for, and that asymmetry is deliberate.
+/// A download's cancel is noticed at its next socket read, which on a dead
+/// connection is up to the 30s read timeout — far too long to hold a quit — and it
+/// leaves behind only a `.part` file, which the next `models_list` sweeps (that is
+/// exactly the "garbage from a hard kill" case `stale_parts` exists for). An
+/// orphaned child process has no such janitor.
+fn shutdown(queue: &Queue, downloads: &Downloads) {
+    for cancel in downloads.lock().unwrap().values() {
+        cancel.cancel();
+    }
+    if queue.cancel_all_active() == 0 {
+        return; // no child was running: nothing to wait for
+    }
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(SHUTDOWN_GRACE_MS);
+    // A job leaves `running` only when its worker has returned from
+    // `run_ffmpeg`/`run_whisper`, which happens after the child is dead and
+    // reaped. That is why this waits on the queue's own status rather than
+    // sleeping a fixed span: the queue already knows.
+    while queue.views().iter().any(|v| v.status == "running")
+        && std::time::Instant::now() < deadline
+    {
+        std::thread::sleep(std::time::Duration::from_millis(SHUTDOWN_POLL_MS));
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let (tx, rx) = channel::<queue::JobView>();
     let q = Queue::new(tx);
+    let downloads = Downloads::default();
     let state = AppState {
         queue: q.clone(),
         recipes: catalog::bundled(),
-        downloads: Downloads::default(),
+        downloads: downloads.clone(),
     };
+    // Handles for the exit hook at the bottom: `state` is about to be handed to
+    // `manage`, and the setup closure below takes `q` by move.
+    let (shutdown_q, shutdown_dl) = (q.clone(), downloads);
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -509,8 +565,38 @@ pub fn run() {
             models_cancel_download,
             models_delete
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        // `build` + `run(callback)` rather than plain `run(context)`, which is the
+        // same thing with an empty callback — the callback is the only place a
+        // Tauri app can see the quit coming.
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(move |_app, event| {
+            // Both arms, because neither covers every way out on its own (tauri
+            // 2.11 / tauri-runtime-wry 2.11 / tao 0.35):
+            //
+            // * closing the last window and `AppHandle::exit` raise
+            //   `ExitRequested` first, then `Exit`;
+            // * macOS Cmd+Q (and the Dock's Quit, and an Apple "quit" event) go
+            //   through AppKit's `terminate:` → `applicationWillTerminate` → tao's
+            //   `Event::LoopDestroyed`, which is `Exit` with NO `ExitRequested`
+            //   before it.
+            //
+            // `Exit` alone would therefore do, but catching `ExitRequested` too
+            // starts the kill a moment earlier on the paths that have it, while the
+            // event loop is still up. Running twice is free: `shutdown` finds
+            // nothing left the second time.
+            //
+            // Neither arm can help against SIGKILL or macOS "Force Quit", and this
+            // app installs no signal handler, so a plain `kill`/SIGTERM does not
+            // reach it either. Those are precisely the cases the `.part` sweep in
+            // `models_list` is there to clean up after.
+            if matches!(
+                event,
+                tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
+            ) {
+                shutdown(&shutdown_q, &shutdown_dl);
+            }
+        });
 }
 
 #[cfg(test)]
@@ -679,6 +765,101 @@ mod tests {
             "a cancelled download must leave nothing behind"
         );
         downloads.lock().unwrap().remove("tiny");
+    }
+
+    /// The quit hook against a real child process. A transcription that is running
+    /// when the user hits Cmd+Q must be *dead* before `shutdown` returns, because
+    /// what follows it is the process exit — and a `whisper-cli` that survives that
+    /// is reparented to launchd and keeps a core busy on a file nobody wants.
+    ///
+    /// `/bin/sleep` stands in for whisper-cli: a child that would far outlive the
+    /// app if nothing killed it. The load-bearing assertion is the job's status —
+    /// `run_next_lane` writes `cancelled` only after its runner returned, and
+    /// `run_streaming` returns only once the child has been killed *and* reaped. A
+    /// `shutdown` that returned a moment too early cannot produce it.
+    #[cfg(unix)]
+    #[test]
+    fn shutdown_kills_a_running_child_and_trips_downloads() {
+        use mediachef_core::process::run_streaming;
+
+        let (q, _rx) = Queue::new_for_test();
+        let running = q.push_test_job();
+        let queued = q.push_test_job();
+        // A model download in flight at the same time: its thread has no child to
+        // kill, but its token must still be tripped.
+        let downloads = Downloads::default();
+        let token = CancelToken::new();
+        assert!(claim_download(&downloads, "tiny", &token));
+
+        let worker = {
+            let q = q.clone();
+            std::thread::spawn(move || {
+                q.run_next_lane(queue::Lane::Ffmpeg, |job, _on_p| {
+                    run_streaming(
+                        Path::new("/bin/sleep"),
+                        &["30".into()],
+                        &job.cancel,
+                        |_, _| {},
+                    )
+                    .map(|_| TestOutcome::Done)
+                    .map_err(|e| e.to_string())
+                })
+            })
+        };
+
+        // The job has to be genuinely in flight first: cancelling it while still
+        // queued would prove nothing about child processes.
+        let t0 = std::time::Instant::now();
+        while q.view(running).unwrap().status != "running" {
+            assert!(
+                t0.elapsed() < std::time::Duration::from_secs(5),
+                "the worker never picked the job up"
+            );
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+
+        let t1 = std::time::Instant::now();
+        shutdown(&q, &downloads);
+        let waited = t1.elapsed();
+
+        assert_eq!(
+            q.view(running).unwrap().status,
+            "cancelled",
+            "shutdown returned while the child was still alive (waited {waited:?})"
+        );
+        assert_eq!(
+            q.view(queued).unwrap().status,
+            "cancelled",
+            "a queued job left behind would be resurrected by nothing at all"
+        );
+        assert!(
+            token.is_cancelled(),
+            "a live model download survived the quit"
+        );
+        assert!(worker.join().unwrap(), "the worker never ran the job");
+        // And it waited for the kill rather than for the cap: the grace period is
+        // an upper bound, not the price of every quit.
+        assert!(
+            waited < std::time::Duration::from_millis(SHUTDOWN_GRACE_MS),
+            "the wait ran into its cap instead of noticing the child had died: {waited:?}"
+        );
+    }
+
+    /// A quit with an empty queue must not pay the grace period — the wait exists
+    /// for children, and with nothing running there are none.
+    #[test]
+    fn shutdown_of_an_idle_app_returns_at_once() {
+        let (q, _rx) = Queue::new_for_test();
+        let done = q.push_test_job();
+        q.run_next_lane(queue::Lane::Ffmpeg, |_j, _p| Ok(TestOutcome::Done));
+        let t0 = std::time::Instant::now();
+        shutdown(&q, &Downloads::default());
+        assert!(
+            t0.elapsed() < std::time::Duration::from_millis(SHUTDOWN_GRACE_MS / 4),
+            "an idle app waited for children it does not have"
+        );
+        // …and a finished job is not rewritten into a cancelled one.
+        assert_eq!(q.view(done).unwrap().status, "done");
     }
 
     /// With nothing downloading every `.part` is garbage — including one whose
