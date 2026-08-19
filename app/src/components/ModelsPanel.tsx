@@ -118,7 +118,14 @@ export function ModelsPanel() {
               </div>
               {pct !== undefined ? (
                 <div className="flex shrink-0 items-center gap-2">
-                  <div className="h-2 w-24 overflow-hidden rounded-full bg-card-2">
+                  {/* Same gauge shape as the queue card's bar: the role sits on the
+                      track, which is the thing that spans 0–100. `valuenow` is
+                      rounded to agree with the numeral beside it — a reader saying
+                      "41%" next to a printed "40%" is the kind of mismatch that
+                      makes a user distrust both. */}
+                  <div role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}
+                    aria-label={t("downloadProgressNamed", { name: m.id })}
+                    className="h-2 w-24 overflow-hidden rounded-full bg-card-2">
                     <div className="h-full rounded-full bg-amber" style={{ width: `${pct}%` }} />
                   </div>
                   <span className="w-9 text-right text-xs text-ink-2 tabular-nums">{Math.round(pct)}%</span>

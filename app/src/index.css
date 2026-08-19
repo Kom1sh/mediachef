@@ -19,7 +19,15 @@
   --paper: #FAF7F1; --card: #FFFFFF; --card-2: #F3EEE5;
   --ink: #2A231C; --ink-2: #7A6F61; --line: #E8E0D2;
   --basil: #3D7A46; --basil-ink: #FFFFFF;
-  --amber: #D98E2B; --tomato: #BC4B37; --focus: #3D7A46;
+  /* Light `--amber` is darker than a designer's amber would be, and the reason is
+     that it is never decoration: it draws the running-status ring and the progress
+     fill, which are non-text graphics and owe 3:1 against whatever they sit on
+     (WCAG 1.4.11). At the design table's #D98E2B those measured 2.67 on `card` and
+     2.31 on `card-2` — a bar you could lose against its own card. #BD7614 is the
+     same hue carried down to 3.64 / 3.15 (3.41 on `paper`). The queue counter chip
+     is unaffected: its wash is amber/15 and its numeral is `ink`, still 13.05 /
+     11.50. Dark keeps `--dark-amber`, which was never short (6.18–7.79). */
+  --amber: #BD7614; --tomato: #BC4B37; --focus: #3D7A46;
 
   /* Category tints: tile background + glyph, one pair per hue family. Recipe
      categories map onto these in `lib/icons.ts`, so a component only ever knows

@@ -744,7 +744,14 @@ output: {ext: mp4, suffix: compressed}
         let v = q.view(w).unwrap();
         assert_eq!(v.status, "error");
         assert_eq!(v.error.unwrap(), "No speech detected in the file.");
-        assert!(v.error_detail.unwrap().contains("no_speech"));
+        // `starts_with`, not `contains`, and the colon is part of it: QueuePanel's
+        // predicate is `startsWith("no_speech:")`, and a test that only asked
+        // whether the marker appears *somewhere* would keep passing on the day the
+        // marker stopped leading the text — which is the day the Russian sentence
+        // silently stops appearing. It matters because `error_detail` ends in engine
+        // output that quotes the user's file name, so a clip called `no_speech.mp4`
+        // that failed to decode must not be told it has no speech in it.
+        assert!(v.error_detail.unwrap().starts_with("no_speech:"));
     }
 
     // `kind` — это то, по чему UI отличает транскрибацию от конвертации; поле

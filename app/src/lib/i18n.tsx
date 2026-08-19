@@ -98,6 +98,11 @@ const EN = {
   st_error: "error",
   st_cancelled: "cancelled",
   cancel: "Cancel",
+  // The progress bar's accessible name. Named, not bare: several cards can be in
+  // flight at once, and "Progress, 40%" three times over says nothing about which
+  // job is where. The percentage itself is not in the string — `aria-valuenow`
+  // carries it, and a screen reader speaks the two together.
+  jobProgressNamed: "Job progress: {name}",
   etaLeft: "~{time} left",
   showInFinder: "Show in Finder",
   copyLog: "Copy log",
@@ -109,6 +114,9 @@ const EN = {
   modelsBlurb: "Transcription runs locally. A model is downloaded once.",
   download: "Download",
   deleteModel: "Delete",
+  // Same shape as `jobProgressNamed`, and named for the same reason: the models
+  // list can have more than one row downloading.
+  downloadProgressNamed: "Download progress: {name}",
   cancelling: "Cancelling…",
   cancelDownload: "Cancel download",
   cancelHint: "A cancel lands at the download's next read — up to 30s if the connection died.",
@@ -222,6 +230,9 @@ const RU: Record<TKey, string> = {
   st_error: "ошибка",
   st_cancelled: "отменено",
   cancel: "Отменить",
+  // «Ход задачи», а не «Прогресс задачи»: по-русски о выполняющемся процессе
+  // говорят «ход», и слово согласуется с `st_running` — «выполняется».
+  jobProgressNamed: "Ход задачи: {name}",
   etaLeft: "осталось ~{time}",
   showInFinder: "Показать в Finder",
   copyLog: "Скопировать лог",
@@ -232,6 +243,8 @@ const RU: Record<TKey, string> = {
   modelsBlurb: "Расшифровка идёт на вашем компьютере. Модель скачивается один раз.",
   download: "Скачать",
   deleteModel: "Удалить",
+  // «Загрузки» здесь — скачивание модели, тем же словом, что и `cancelDownload`.
+  downloadProgressNamed: "Ход загрузки: {name}",
   cancelling: "Отмена…",
   cancelDownload: "Отменить загрузку",
   // «При следующем обращении к сети», а не «на следующем чтении из сети»: второе —

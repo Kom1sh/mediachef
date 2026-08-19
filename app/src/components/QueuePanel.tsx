@@ -137,9 +137,9 @@ export function QueuePanel({
         {/* Only while something is in flight: a zero would be a badge saying
             nothing is happening, which the empty list below already says.
             The amber wash carries the "working" colour; the numeral itself is
-            `ink`, because amber-on-amber/15 measures 2.3:1 in the light theme —
+            `ink`, because amber-on-amber/15 measures 3.1:1 in the light theme —
             the plan's own floor for small text on amber is 4.5:1, and `ink` is
-            the only token that clears it in both themes (13.5 / 9.7).
+            the only token that clears it in both themes (13.1 / 9.7).
 
             The bare numeral needs a name in words twice over: `aria-label` is what
             a screen reader reads instead of "2" (a `title` on a plain span is not
@@ -199,9 +199,19 @@ export function QueuePanel({
                 <p className="mt-1 truncate text-xs text-ink-2" title={j.input}>{j.input.split("/").pop()}</p>
               )}
               {bar && (
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-card-2">
+                // The gauge is the track, not the fill: the track is the element
+                // that spans 0–100, and `aria-valuenow` is read against its
+                // `min`/`max`. Both bounds are spelled out even though 0 and 100 are
+                // the ARIA defaults — a progressbar missing them is a common enough
+                // bug that readers differ on what they assume, and the pair costs
+                // two attributes.
+                <div role="progressbar" aria-valuenow={j.percent} aria-valuemin={0} aria-valuemax={100}
+                  aria-label={t("jobProgressNamed", { name: title(j.recipe_id) })}
+                  className="mt-2 h-2 w-full overflow-hidden rounded-full bg-card-2">
                   {/* `percent` is 100 on done (queue.rs `finish`), so the width is
-                      the job's own number in every state the bar is shown in. */}
+                      the job's own number in every state the bar is shown in.
+                      `aria-hidden` is not needed and not wanted: the fill has no
+                      text, and a progressbar's own children are not read. */}
                   <div className={`h-full rounded-full ${j.status === "done" ? "bg-basil" : "bg-amber"}`}
                     style={{ width: `${j.percent}%` }} />
                 </div>
