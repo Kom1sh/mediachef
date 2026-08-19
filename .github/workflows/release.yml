@@ -104,6 +104,10 @@ jobs:
           # rc-теги публикуются как pre-release: первый прогон нового workflow
           # обкатывается на выбрасываемом релизе, не пугая пользователей.
           prerelease: ${{ contains(github.ref_name, '-rc') }}
+          # Тело релиза пишет только эта job (как и loose NOTICE.md — один
+          # писатель, без гонок). Файл версионируется вместе с тегом: что лежит
+          # в docs/RELEASE_NOTES.md тегнутого коммита, то и есть ноты релиза.
+          body_path: docs/RELEASE_NOTES.md
           files: |
             out/*.dmg
             out/*.zip
