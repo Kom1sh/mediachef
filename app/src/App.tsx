@@ -5,13 +5,11 @@ import { ModelsPanel } from "./components/ModelsPanel";
 import { RecipeForm } from "./components/RecipeForm";
 import { RecipeList } from "./components/RecipeList";
 import { QueuePanel } from "./components/QueuePanel";
+import { Sidebar, type Tab } from "./components/Sidebar";
 import { getRecipes, onJobUpdate, probeFile } from "./lib/ipc";
 import { applicable, buildIndex, search } from "./lib/search";
 import type { ProbeInfo, Recipe } from "./lib/types";
 import "./index.css";
-
-const TABS = ["main", "models"] as const;
-const TAB_LABEL: Record<(typeof TABS)[number], string> = { main: "Convert", models: "Models" };
 
 /** One dropped file: its path, what ffprobe said, or why ffprobe would not say. */
 interface Entry { path: string; info: ProbeInfo | null; probeError: string }
@@ -30,7 +28,7 @@ export default function App() {
   // Owned here, not in a child, so anything on the Convert side can send the user
   // to Models: T8 threads `onOpenModels={() => setTab("models")}` into RecipeForm
   // for the "no model downloaded yet" case.
-  const [tab, setTab] = useState<(typeof TABS)[number]>("main");
+  const [tab, setTab] = useState<Tab>("main");
 
   // A mirror of `files`, written synchronously with every state write. The
   // `job:update` listener below is registered once for the app's lifetime, so its
@@ -154,19 +152,15 @@ export default function App() {
   );
 
   return (
-    // `minmax(0, 1fr)` on the content row, not plain `1fr`: the scrolling children
-    // below need a row that is allowed to be shorter than its content.
-    <main className="grid h-screen grid-cols-[1fr_360px] grid-rows-[auto_minmax(0,1fr)] gap-4 bg-neutral-950 p-4 text-neutral-100">
-      <nav className="col-span-2 flex gap-2 text-sm">
-        {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`rounded px-3 py-1 ${tab === t ? "bg-neutral-800 text-white" : "text-neutral-500"}`}>
-            {TAB_LABEL[t]}
-          </button>
-        ))}
-      </nav>
-      {tab === "models" ? <ModelsPanel /> : (
-        <section className="flex min-h-0 flex-col gap-3 overflow-y-auto">
+    // Rail · board · queue. `minmax(0, …)` on the row and the middle column, not
+    // plain `1fr`: the scrolling children below need a track that is allowed to be
+    // smaller than its content.
+    <main className="grid h-screen grid-cols-[72px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
+      <Sidebar tab={tab} onTab={setTab} />
+      {/* Settings is a hole in the shell until T2 lands the screen — the nav item
+          is here now so the rail is not rebuilt twice. */}
+      {tab === "models" ? <ModelsPanel /> : tab === "settings" ? <div /> : (
+        <section className="flex min-h-0 flex-col gap-3 overflow-y-auto p-4">
           {files.map((f, i) => (
             <FileCard key={f.path} path={f.path} info={f.info} probeError={f.probeError}
               // With a single card there is nothing to choose between, so a
@@ -179,7 +173,7 @@ export default function App() {
           <input
             value={query} onChange={e => setQuery(e.target.value)}
             placeholder="Search: «видео в мп3», «make gif»…"
-            className="w-full rounded-lg border border-neutral-700 bg-transparent p-2 text-sm"
+            className="w-full rounded-lg border border-line bg-card p-2 text-sm"
           />
           {/* `key` on the recipe id: the form seeds its params from the recipe once,
               at mount, so a swap without a remount would run the new recipe with the
@@ -189,12 +183,17 @@ export default function App() {
                 onQueued={() => setSelected(null)} onClose={() => setSelected(null)}
                 onOpenModels={() => setTab("models")} />
             : <RecipeList recipes={results} onPick={r => setSelected(r)} />}
-          {files.length === 0 && <p className="text-xs text-neutral-500">Drop files to filter recipes by type.</p>}
+          {files.length === 0 && <p className="text-xs text-ink-2">Drop files to filter recipes by type.</p>}
         </section>
       )}
       {/* Always mounted: a queue that vanished on a tab switch would drop its
-          `job:update` listener and lose every finished job. */}
-      <QueuePanel recipes={recipes} />
+          `job:update` listener and lose every finished job. The `grid` wrapper is
+          what gives the column its margin without reaching into the panel's own
+          classes (T6 restyles it): a single-cell grid stretches its child to the
+          full column height, which a padded block would not. */}
+      <div className="grid min-h-0 py-4 pr-4">
+        <QueuePanel recipes={recipes} />
+      </div>
     </main>
   );
 }

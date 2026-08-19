@@ -1,1 +1,71 @@
 @import "tailwindcss";
+
+/* «Тёплая кухня»: light — warm paper, dark — warm espresso, never #000.
+   Every colour in the app derives from these tokens; no raw hex in components.
+
+   The dark values are spelled out twice on purpose — once for the explicit
+   `data-theme="dark"` (the Settings choice) and once for the system default,
+   where no attribute is present. CSS has no way to share a declaration block
+   across a selector and a media query, so the two blocks MUST be kept
+   byte-identical by hand; they are written in the same order to make a diff of
+   the pair readable. */
+:root {
+  --paper: #FAF7F1; --card: #FFFFFF; --card-2: #F3EEE5;
+  --ink: #2A231C; --ink-2: #7A6F61; --line: #E8E0D2;
+  --basil: #3D7A46; --basil-ink: #FFFFFF;
+  --amber: #D98E2B; --tomato: #BC4B37; --focus: #3D7A46;
+
+  /* Category tints: tile background + glyph, one pair per hue family. Recipe
+     categories map onto these in `lib/icons.ts`, so a component only ever knows
+     its category — never which hue it drew. */
+  --tint-green-bg: #E7EFE8; --tint-green-fg: #3D7A46;
+  --tint-ochre-bg: #F2E9DB; --tint-ochre-fg: #9A6B22;
+  --tint-tomato-bg: #F5E8E4; --tint-tomato-fg: #BC4B37;
+  --tint-blue-bg: #E9EBF2; --tint-blue-fg: #4C5B8F;
+  --tint-purple-bg: #F1E7F0; --tint-purple-fg: #8F4C82;
+  --tint-neutral-bg: #F3EEE5; --tint-neutral-fg: #7A6F61;
+}
+[data-theme="dark"] {
+  --paper: #211B15; --card: #2B241D; --card-2: #352D24;
+  --ink: #F2EBE1; --ink-2: #A99C8B; --line: #3E352A;
+  --basil: #5FA96B; --basil-ink: #1C2B1F;
+  --amber: #E8A13D; --tomato: #D97862; --focus: #5FA96B;
+
+  --tint-green-bg: #2C3A2F; --tint-green-fg: #7DC489;
+  --tint-ochre-bg: #3A3125; --tint-ochre-fg: #E8A13D;
+  --tint-tomato-bg: #3B2D2A; --tint-tomato-fg: #E08D79;
+  --tint-blue-bg: #2C3242; --tint-blue-fg: #A2ADE4;
+  --tint-purple-bg: #382B37; --tint-purple-fg: #D79AC9;
+  --tint-neutral-bg: #352D24; --tint-neutral-fg: #A99C8B;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --paper: #211B15; --card: #2B241D; --card-2: #352D24;
+    --ink: #F2EBE1; --ink-2: #A99C8B; --line: #3E352A;
+    --basil: #5FA96B; --basil-ink: #1C2B1F;
+    --amber: #E8A13D; --tomato: #D97862; --focus: #5FA96B;
+
+    --tint-green-bg: #2C3A2F; --tint-green-fg: #7DC489;
+    --tint-ochre-bg: #3A3125; --tint-ochre-fg: #E8A13D;
+    --tint-tomato-bg: #3B2D2A; --tint-tomato-fg: #E08D79;
+    --tint-blue-bg: #2C3242; --tint-blue-fg: #A2ADE4;
+    --tint-purple-bg: #382B37; --tint-purple-fg: #D79AC9;
+    --tint-neutral-bg: #352D24; --tint-neutral-fg: #A99C8B;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper); --color-card: var(--card); --color-card-2: var(--card-2);
+  --color-ink: var(--ink); --color-ink-2: var(--ink-2); --color-line: var(--line);
+  --color-basil: var(--basil); --color-basil-ink: var(--basil-ink);
+  --color-amber: var(--amber); --color-tomato: var(--tomato);
+  --font-display: "Unbounded", "Manrope", sans-serif;
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
