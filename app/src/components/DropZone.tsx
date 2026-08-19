@@ -14,7 +14,9 @@ export function DropZone({ onFile }: { onFile: (path: string) => void }) {
         if (p) onFile(p);
       }
     });
-    return () => { un.then(f => f()); };
+    // .catch: tauri 2.11.5's unlisten script is unguarded and StrictMode double-mounts,
+    // so unlisten can reject for an already-removed registry entry (upstream bug).
+    return () => { un.then(f => f()).catch(() => {}); };
   }, [onFile]);
   return (
     <button

@@ -25,7 +25,9 @@ export function QueuePanel({ recipes }: { recipes: Recipe[] }) {
         }).catch(() => {});
       }
     });
-    return () => { un.then(f => f()); };
+    // .catch: tauri 2.11.5's unlisten script is unguarded and StrictMode double-mounts,
+    // so unlisten can reject for an already-removed registry entry (upstream bug).
+    return () => { un.then(f => f()).catch(() => {}); };
   }, []);
 
   const title = (id: string) => recipes.find(r => r.id === id)?.title.en ?? id;
