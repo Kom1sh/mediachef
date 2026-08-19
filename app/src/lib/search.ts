@@ -31,7 +31,17 @@ export function buildIndex(recipes: Recipe[]): SearchIndex {
   return { fuse, all: recipes };
 }
 
-function applicable(r: Recipe, mt?: MediaType): boolean {
+/**
+ * Does this recipe accept that media type? Exported because the batch-enqueue gate
+ * asks the same question of every file in the list, and two answers to "can this
+ * recipe run on this file" — one filtering the list, one arming the button — would
+ * eventually disagree.
+ *
+ * `mt` undefined means "no type to check against" and answers `true`: for the
+ * recipe list that is the unfiltered state. A caller that needs a *promise* about
+ * a file (the batch gate) must therefore establish the type itself first.
+ */
+export function applicable(r: Recipe, mt?: MediaType): boolean {
   if (!mt) return true;
   return r.input.types.includes("any") || r.input.types.includes(mt);
 }

@@ -23,8 +23,11 @@ export const cancelModelDownload = (id: string) => invoke<void>("models_cancel_d
 export const deleteModel = (id: string) => invoke<void>("models_delete", { id });
 export const onModelProgress = (cb: (p: ModelProgress) => void): Promise<UnlistenFn> =>
   listen<ModelProgress>("model:progress", e => cb(e.payload));
-export const pickFile = async (): Promise<string | null> => {
-  const r = await open({ multiple: false });
-  return typeof r === "string" ? r : null;
+// Always a list, even for a one-file pick: the drop path already hands App an
+// array, and two shapes for the same "here are the files" message would only mean
+// two code paths in App that have to stay in step.
+export const pickFiles = async (): Promise<string[]> => {
+  const r = await open({ multiple: true });
+  return Array.isArray(r) ? r : typeof r === "string" ? [r] : [];
 };
 export const revealFile = (path: string) => revealItemInDir(path);

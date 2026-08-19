@@ -50,8 +50,21 @@ function Field({ p, value, onChange }: { p: Param; value: string; onChange: (v: 
   );
 }
 
-export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
-  { recipe: Recipe; input: string; onQueued: () => void; onClose: () => void; onOpenModels: () => void }) {
+export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenModels }:
+  {
+    recipe: Recipe;
+    /** The active card's path — the one file "Add to queue" is about. */
+    input: string;
+    /**
+     * Every path the batch button should queue, or `undefined` when there is no
+     * batch to offer. App decides that, because deciding it means knowing each
+     * file's media type and App is what holds the probes.
+     */
+    batch?: string[];
+    onQueued: () => void;
+    onClose: () => void;
+    onOpenModels: () => void;
+  }) {
   const initial = useMemo(() => Object.fromEntries(recipe.params.map(p => [p.key, String(p.default ?? "")])), [recipe]);
   const [params, setParams] = useState<Record<string, string>>(initial);
   const [cmd, setCmd] = useState<string>("");
@@ -62,17 +75,24 @@ export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
   // and the attempt failed (input moved, ffprobe gone, disk full). That is a
   // retryable condition, so it must not disable the button that retries it.
   const [enqueueError, setEnqueueError] = useState<string>("");
+  // Which inputs of the last attempt did not make it into the queue. Retry re-sends
+  // exactly these: re-running a whole batch after three of its four files were
+  // accepted would put those three in a second time.
+  const [failed, setFailed] = useState<string[]>([]);
   const [hint, setHint] = useState<string>("");
   // Which whisper models are on disk. `null` = the list has not answered yet, and
   // it is a state of its own: rendering the empty-state "Download a model" prompt
   // during that gap would tell the user to fetch a model they may already have.
   const [installed, setInstalled] = useState<string[] | null>(null);
   const [modelsError, setModelsError] = useState<string>("");
-  // In-flight guard (spec §7 "never silently overwrite"): a double-click used to
-  // fire two enqueues for one intent. The queue now hands the second job its own
-  // output path, so the duplicate would produce a real second file — the user
-  // asked once, so we send once.
-  const [busy, setBusy] = useState(false);
+  // The in-flight attempt, held as the list of inputs it is queueing — `null` when
+  // idle. It is the in-flight guard first (spec §7 "never silently overwrite": a
+  // double-click used to fire two enqueues for one intent, and the queue hands the
+  // second job its own output path, so the duplicate would be a real second file on
+  // disk). It is a list rather than a flag because there are two submit buttons now,
+  // and a flag cannot say which of them is the one working.
+  const [running, setRunning] = useState<string[] | null>(null);
+  const busy = running !== null;
 
   const modelParam = useMemo(() => recipe.params.find(p => p.type === "model"), [recipe]);
   const isWhisper = recipe.engine === "whisper";
@@ -124,17 +144,37 @@ export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
     return () => clearTimeout(t);
   }, [recipe.id, input, params, isWhisper, modelParam, installed, modelsError]);
 
-  // Both the button and Retry go through here: one attempt per press, and the
-  // previous failure is cleared before the new one starts so the red line always
+  // Both buttons and Retry go through here: an attempt is a list of inputs, and a
+  // single "Add to queue" is the one-element case. One attempt per press, and the
+  // previous failure is cleared before the new one starts so the red block always
   // describes the latest try.
-  const submit = () => {
-    if (busy) return;
-    setBusy(true);
+  //
+  // Sequential rather than Promise.all: `enqueue` is what reserves each job's output
+  // name, so overlapping calls for one recipe could both find the same name free —
+  // and this is the order the queue drains in anyway, so nothing is gained by
+  // firing them together.
+  const run = async (paths: string[]) => {
+    if (busy || paths.length === 0) return;
+    setRunning(paths);
     setEnqueueError("");
-    enqueueJob(recipe.id, input, params)
-      .then(onQueued)
-      .catch(e => setEnqueueError(String(e)))
-      .finally(() => setBusy(false));
+    const errs: string[] = [];
+    const bad: string[] = [];
+    for (const p of paths) {
+      try {
+        await enqueueJob(recipe.id, p, params);
+      } catch (e) {
+        bad.push(p);
+        // One line per failure, named when there is more than one file in play:
+        // "the input has moved" says nothing useful without saying which input.
+        errs.push(paths.length > 1 ? `${p.split("/").pop()}: ${String(e)}` : String(e));
+      }
+    }
+    setRunning(null);
+    setFailed(bad);
+    // A partial batch keeps the form open on purpose — the error block and its Retry
+    // are the only way back to the files that did not make it.
+    if (errs.length > 0) setEnqueueError(errs.join("\n"));
+    else onQueued();
   };
 
   const copyCmd = () => {
@@ -150,7 +190,16 @@ export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
   // The `model` control cannot live in `Field` with the other types: its options
   // are not in the recipe, they are whatever `models_list` says is on disk.
   const field = (p: Param) => {
-    const onChange = (v: string) => setParams(s => ({ ...s, [p.key]: v }));
+    const onChange = (v: string) => {
+      // A red block about an attempt made with the *previous* parameters is no longer
+      // about anything the form is showing, and its Retry would re-send that stale
+      // intent. The message and the retry list are one record of one attempt, so
+      // they clear together. The auto-pick effect above writes `params` directly and
+      // therefore does not clear anything — it is not the user changing their mind.
+      setEnqueueError("");
+      setFailed([]);
+      setParams(s => ({ ...s, [p.key]: v }));
+    };
     if (p.type !== "model") return <Field key={p.key} p={p} value={params[p.key] ?? ""} onChange={onChange} />;
     // A `label` in every branch, like the other field types: in the select case it
     // is the implicit association, and in the empty-state case it makes the label
@@ -213,16 +262,35 @@ export function RecipeForm({ recipe, input, onQueued, onClose, onOpenModels }:
       {hint ? <p className="mt-1 text-xs text-neutral-500">{hint}</p> : null}
       {enqueueError ? (
         <div className="mt-2 flex items-center justify-between gap-2 rounded border border-red-900 bg-red-950/40 p-2">
-          <span className="break-words text-xs text-red-400">{enqueueError}</span>
-          <button onClick={submit} disabled={busy} className="shrink-0 rounded bg-red-600 px-2 py-1 text-xs disabled:opacity-50">Retry</button>
+          {/* `whitespace-pre-wrap`: a batch reports one line per failed file. */}
+          <span className="whitespace-pre-wrap break-words text-xs text-red-400">{enqueueError}</span>
+          {/* Also disabled on a preview error: the command can no longer be built, so
+              there is nothing left to re-send. Reachable without a parameter edit —
+              which would have cleared this block — when the active card changes under
+              an open form, or when the model the params name leaves the disk. */}
+          <button onClick={() => run(failed)} disabled={busy || !!error}
+            className="shrink-0 rounded bg-red-600 px-2 py-1 text-xs disabled:opacity-50">
+            {failed.length > 1 ? `Retry ${failed.length}` : "Retry"}
+          </button>
         </div>
       ) : null}
       <button
-        onClick={submit}
+        onClick={() => run([input])}
         disabled={!!error || busy}
         className="mt-3 w-full rounded-lg bg-blue-600 p-2 text-sm font-medium disabled:opacity-50">
-        {busy ? "Adding…" : "Add to queue"}
+        {running?.length === 1 ? "Adding…" : "Add to queue"}
       </button>
+      {batch && batch.length > 1 ? (
+        // Secondary styling deliberately: N jobs from one press is the larger action,
+        // and the wrong one if the user meant only the file they are looking at. The
+        // count is in the label so the press is never a surprise.
+        <button
+          onClick={() => run(batch)}
+          disabled={!!error || busy}
+          className="mt-2 w-full rounded-lg border border-blue-600 p-2 text-sm font-medium text-blue-400 hover:bg-blue-600/10 disabled:opacity-50">
+          {running && running.length > 1 ? `Adding ${running.length}…` : `Add all ${batch.length} files`}
+        </button>
+      ) : null}
     </div>
   );
 }
