@@ -1,0 +1,39 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- MediaChef app icon — «тёплая кухня»: кастрюля варит медиа, пар = звуковая волна.
+       Токены дизайн-системы: paper #FAF7F1 / card-2 #F3EEE5 / ink #2A231C / basil #3D7A46 / amber #D98E2B. -->
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCFAF5"/>
+      <stop offset="1" stop-color="#F0EADD"/>
+    </linearGradient>
+    <linearGradient id="pot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#33291F"/>
+      <stop offset="1" stop-color="#241D16"/>
+    </linearGradient>
+  </defs>
+
+  <!-- macOS squircle: 824×824 в кадре 1024, r≈185 -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#paper)"/>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="none" stroke="#E4DBC9" stroke-width="6"/>
+
+  <!-- Пар-волна: пять скруглённых столбиков (базилик; единственный акцент — янтарная ручка крышки) -->
+  <g>
+    <rect x="357" y="304" width="46" height="112" rx="23" fill="#3D7A46"/>
+    <rect x="432" y="252" width="46" height="164" rx="23" fill="#3D7A46"/>
+    <rect x="507" y="204" width="46" height="212" rx="23" fill="#3D7A46"/>
+    <rect x="582" y="252" width="46" height="164" rx="23" fill="#3D7A46"/>
+    <rect x="657" y="304" width="46" height="112" rx="23" fill="#3D7A46"/>
+  </g>
+
+  <!-- Крышка: линия с янтарной ручкой -->
+  <circle cx="530" cy="452" r="30" fill="#D98E2B"/>
+  <rect x="266" y="482" width="528" height="34" rx="17" fill="url(#pot)"/>
+
+  <!-- Кастрюля -->
+  <path d="M 296 542 L 764 542 L 764 700 Q 764 786 678 786 L 382 786 Q 296 786 296 700 Z" fill="url(#pot)"/>
+  <!-- Ручки -->
+  <rect x="216" y="556" width="64" height="36" rx="18" fill="#241D16"/>
+  <rect x="780" y="556" width="64" height="36" rx="18" fill="#241D16"/>
+  <!-- Блик на кастрюле: тонкая тёплая полоска -->
+  <rect x="332" y="586" width="30" height="120" rx="15" fill="#4A3B2C" opacity="0.85"/>
+</svg>
