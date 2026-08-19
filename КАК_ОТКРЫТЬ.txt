@@ -1,0 +1,37 @@
+MediaChef 0.3.0 (macOS, Apple Silicon)
+======================================
+
+ПЕРВЫЙ ЗАПУСК — СНЯТИЕ КАРАНТИНА
+--------------------------------
+Приложение не подписано сертификатом Apple (подпись — $99/год, появится к публичному
+релизу), поэтому macOS ставит на скачанный файл «карантин» и пугает при открытии.
+
+Способ 1 (обычно достаточно):
+  1. Перетащи MediaChef.app в «Программы» (или любую папку).
+  2. Клик ПРАВОЙ кнопкой по MediaChef.app → «Открыть».
+  3. В диалоге снова нажми «Открыть». (Понадобится один раз.)
+
+Способ 2 (если система всё равно блокирует — «повреждено» и т.п.):
+  Открой Терминал и выполни:
+      xattr -cr /Applications/MediaChef.app
+  (замени путь, если положил приложение в другое место), затем открой как обычно.
+
+ТРЕБОВАНИЯ
+----------
+MediaChef использует установленные в системе ffmpeg и whisper-cli:
+      brew install ffmpeg whisper-cpp
+Модели распознавания речи скачиваются прямо из приложения (вкладка «Модели»).
+
+---
+
+FIRST LAUNCH — REMOVING QUARANTINE (EN)
+---------------------------------------
+The app is not notarized by Apple yet, so macOS quarantines the download.
+
+Way 1: Right-click MediaChef.app → "Open" → "Open" (needed once).
+Way 2 (if still blocked): run in Terminal:
+      xattr -cr /Applications/MediaChef.app
+
+Requires ffmpeg and whisper-cli from Homebrew:
+      brew install ffmpeg whisper-cpp
+Speech models are downloaded inside the app (Models tab).
