@@ -3,13 +3,19 @@
 /* «Тёплая кухня»: light — warm paper, dark — warm espresso, never #000.
    Every colour in the app derives from these tokens; no raw hex in components.
 
-   The dark values are spelled out twice on purpose — once for the explicit
-   `data-theme="dark"` (the Settings choice) and once for the system default,
-   where no attribute is present. CSS has no way to share a declaration block
-   across a selector and a media query, so the two blocks MUST be kept
-   byte-identical by hand; they are written in the same order to make a diff of
-   the pair readable. */
+   Shape of this file: the light palette is declared straight onto the tokens,
+   the dark palette is declared once as `--dark-*` and then *mapped* onto the
+   same tokens by the two dark scopes below (the explicit `data-theme="dark"` of
+   the Settings choice, and the system default where no attribute is present).
+   CSS cannot share a declaration block between a selector and a media query, so
+   the mapping lines are duplicated — but a colour value exists in exactly one
+   place, which is the part that could silently drift. */
 :root {
+  /* Native chrome follows the palette: scrollbars, text-field carets, spinner
+     buttons and checkboxes are drawn by the OS, and without this they stay in
+     light dress on the espresso theme. */
+  color-scheme: light;
+
   --paper: #FAF7F1; --card: #FFFFFF; --card-2: #F3EEE5;
   --ink: #2A231C; --ink-2: #7A6F61; --line: #E8E0D2;
   --basil: #3D7A46; --basil-ink: #FFFFFF;
@@ -17,40 +23,67 @@
 
   /* Category tints: tile background + glyph, one pair per hue family. Recipe
      categories map onto these in `lib/icons.ts`, so a component only ever knows
-     its category — never which hue it drew. */
+     its category — never which hue it drew.
+
+     Light values are the design table verbatim (glyph-on-tile 3.88–5.51:1). The
+     dark pairs are derived: the tile keeps its hue and drops to the ~#332C24
+     depth band, and the glyph is lifted until every pair clears 5:1 — a floor
+     the palette's own dark accents miss on these tiles (basil #5FA96B on the
+     green tile is 4.21, tomato #D97862 on the red tile 4.27). So `ochre` and
+     `neutral` do land exactly on `--dark-amber` / `--dark-ink-2` (5.83 / 5.03),
+     while green, tomato, blue and purple are lifts above the palette:
+     5.78 / 5.18 / 5.87 / 5.96. */
   --tint-green-bg: #E7EFE8; --tint-green-fg: #3D7A46;
   --tint-ochre-bg: #F2E9DB; --tint-ochre-fg: #9A6B22;
   --tint-tomato-bg: #F5E8E4; --tint-tomato-fg: #BC4B37;
   --tint-blue-bg: #E9EBF2; --tint-blue-fg: #4C5B8F;
   --tint-purple-bg: #F1E7F0; --tint-purple-fg: #8F4C82;
   --tint-neutral-bg: #F3EEE5; --tint-neutral-fg: #7A6F61;
+
+  /* The dark palette, defined once. Nothing reads these directly — the two dark
+     scopes below map them onto the tokens above. */
+  --dark-paper: #211B15; --dark-card: #2B241D; --dark-card-2: #352D24;
+  --dark-ink: #F2EBE1; --dark-ink-2: #A99C8B; --dark-line: #3E352A;
+  --dark-basil: #5FA96B; --dark-basil-ink: #1C2B1F;
+  --dark-amber: #E8A13D; --dark-tomato: #D97862; --dark-focus: #5FA96B;
+
+  --dark-tint-green-bg: #2C3A2F; --dark-tint-green-fg: #7DC489;
+  --dark-tint-ochre-bg: #3A3125; --dark-tint-ochre-fg: #E8A13D;
+  --dark-tint-tomato-bg: #3B2D2A; --dark-tint-tomato-fg: #E08D79;
+  --dark-tint-blue-bg: #2C3242; --dark-tint-blue-fg: #A2ADE4;
+  --dark-tint-purple-bg: #382B37; --dark-tint-purple-fg: #D79AC9;
+  --dark-tint-neutral-bg: #352D24; --dark-tint-neutral-fg: #A99C8B;
 }
 [data-theme="dark"] {
-  --paper: #211B15; --card: #2B241D; --card-2: #352D24;
-  --ink: #F2EBE1; --ink-2: #A99C8B; --line: #3E352A;
-  --basil: #5FA96B; --basil-ink: #1C2B1F;
-  --amber: #E8A13D; --tomato: #D97862; --focus: #5FA96B;
+  color-scheme: dark;
 
-  --tint-green-bg: #2C3A2F; --tint-green-fg: #7DC489;
-  --tint-ochre-bg: #3A3125; --tint-ochre-fg: #E8A13D;
-  --tint-tomato-bg: #3B2D2A; --tint-tomato-fg: #E08D79;
-  --tint-blue-bg: #2C3242; --tint-blue-fg: #A2ADE4;
-  --tint-purple-bg: #382B37; --tint-purple-fg: #D79AC9;
-  --tint-neutral-bg: #352D24; --tint-neutral-fg: #A99C8B;
+  --paper: var(--dark-paper); --card: var(--dark-card); --card-2: var(--dark-card-2);
+  --ink: var(--dark-ink); --ink-2: var(--dark-ink-2); --line: var(--dark-line);
+  --basil: var(--dark-basil); --basil-ink: var(--dark-basil-ink);
+  --amber: var(--dark-amber); --tomato: var(--dark-tomato); --focus: var(--dark-focus);
+
+  --tint-green-bg: var(--dark-tint-green-bg); --tint-green-fg: var(--dark-tint-green-fg);
+  --tint-ochre-bg: var(--dark-tint-ochre-bg); --tint-ochre-fg: var(--dark-tint-ochre-fg);
+  --tint-tomato-bg: var(--dark-tint-tomato-bg); --tint-tomato-fg: var(--dark-tint-tomato-fg);
+  --tint-blue-bg: var(--dark-tint-blue-bg); --tint-blue-fg: var(--dark-tint-blue-fg);
+  --tint-purple-bg: var(--dark-tint-purple-bg); --tint-purple-fg: var(--dark-tint-purple-fg);
+  --tint-neutral-bg: var(--dark-tint-neutral-bg); --tint-neutral-fg: var(--dark-tint-neutral-fg);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
-    --paper: #211B15; --card: #2B241D; --card-2: #352D24;
-    --ink: #F2EBE1; --ink-2: #A99C8B; --line: #3E352A;
-    --basil: #5FA96B; --basil-ink: #1C2B1F;
-    --amber: #E8A13D; --tomato: #D97862; --focus: #5FA96B;
+    color-scheme: dark;
 
-    --tint-green-bg: #2C3A2F; --tint-green-fg: #7DC489;
-    --tint-ochre-bg: #3A3125; --tint-ochre-fg: #E8A13D;
-    --tint-tomato-bg: #3B2D2A; --tint-tomato-fg: #E08D79;
-    --tint-blue-bg: #2C3242; --tint-blue-fg: #A2ADE4;
-    --tint-purple-bg: #382B37; --tint-purple-fg: #D79AC9;
-    --tint-neutral-bg: #352D24; --tint-neutral-fg: #A99C8B;
+    --paper: var(--dark-paper); --card: var(--dark-card); --card-2: var(--dark-card-2);
+    --ink: var(--dark-ink); --ink-2: var(--dark-ink-2); --line: var(--dark-line);
+    --basil: var(--dark-basil); --basil-ink: var(--dark-basil-ink);
+    --amber: var(--dark-amber); --tomato: var(--dark-tomato); --focus: var(--dark-focus);
+
+    --tint-green-bg: var(--dark-tint-green-bg); --tint-green-fg: var(--dark-tint-green-fg);
+    --tint-ochre-bg: var(--dark-tint-ochre-bg); --tint-ochre-fg: var(--dark-tint-ochre-fg);
+    --tint-tomato-bg: var(--dark-tint-tomato-bg); --tint-tomato-fg: var(--dark-tint-tomato-fg);
+    --tint-blue-bg: var(--dark-tint-blue-bg); --tint-blue-fg: var(--dark-tint-blue-fg);
+    --tint-purple-bg: var(--dark-tint-purple-bg); --tint-purple-fg: var(--dark-tint-purple-fg);
+    --tint-neutral-bg: var(--dark-tint-neutral-bg); --tint-neutral-fg: var(--dark-tint-neutral-fg);
   }
 }
 
@@ -59,6 +92,9 @@
   --color-ink: var(--ink); --color-ink-2: var(--ink-2); --color-line: var(--line);
   --color-basil: var(--basil); --color-basil-ink: var(--basil-ink);
   --color-amber: var(--amber); --color-tomato: var(--tomato);
+  /* Exposed as a colour too, so a component that draws its own ring
+     (`ring-focus`, `outline-focus`) agrees with the global `:focus-visible`. */
+  --color-focus: var(--focus);
   --font-display: "Unbounded", "Manrope", sans-serif;
   --font-sans: "Manrope", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;

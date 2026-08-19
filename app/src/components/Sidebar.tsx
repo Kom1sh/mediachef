@@ -9,10 +9,13 @@ const ORDER: readonly Tab[] = ["main", "models", "settings"];
 const LABEL: Record<Tab, string> = { main: "Convert", models: "Models", settings: "Settings" };
 
 /**
- * The 72px rail. Icons carry the navigation; the labels under them are a
- * courtesy that gets out of the way when the window is narrow (≤800px), where a
- * 72px column and a word are competing for the same pixels. `title` keeps the
- * name reachable in that state, and the icons never move.
+ * The 80px rail. Icons carry the navigation; the labels under them are a
+ * courtesy that gets out of the way below 800px, where a rail and a word are
+ * competing for the same pixels — so every button states its name in
+ * `aria-label` unconditionally: a `display:none` span contributes nothing to the
+ * accessible name, and `title` alone is a weak, inconsistently announced
+ * fallback. The width and the two-line allowance are sized for Russian
+ * («Конвертация» arrives with T3), not for the English labels below.
  */
 export function Sidebar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
   const Logo = APP_ICON;
@@ -31,14 +34,16 @@ export function Sidebar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
         const on = tab === t;
         return (
           <button
-            key={t} type="button" onClick={() => onTab(t)} title={LABEL[t]}
+            key={t} type="button" onClick={() => onTab(t)} title={LABEL[t]} aria-label={LABEL[t]}
             aria-current={on ? "page" : undefined}
-            className={`flex w-14 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium ${
+            className={`flex w-16 flex-col items-center gap-1 rounded-lg px-1 py-2 text-center text-[10px] font-medium leading-tight ${
               on ? "bg-card-2 text-ink" : "text-ink-2 hover:bg-card-2 hover:text-ink"
             }`}
           >
-            <Icon className="size-5" aria-hidden />
-            <span className="max-[800px]:hidden">{LABEL[t]}</span>
+            <Icon className="size-5 shrink-0" aria-hidden />
+            {/* Breaking inside a word is the lesser evil at this width: a long
+                Russian label would otherwise push out of the rail. */}
+            <span className="[overflow-wrap:anywhere] max-[800px]:hidden">{LABEL[t]}</span>
           </button>
         );
       })}

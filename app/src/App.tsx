@@ -155,7 +155,7 @@ export default function App() {
     // Rail · board · queue. `minmax(0, …)` on the row and the middle column, not
     // plain `1fr`: the scrolling children below need a track that is allowed to be
     // smaller than its content.
-    <main className="grid h-screen grid-cols-[72px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
+    <main className="grid h-screen grid-cols-[80px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
       <Sidebar tab={tab} onTab={setTab} />
       {/* Settings is a hole in the shell until T2 lands the screen — the nav item
           is here now so the rail is not rebuilt twice. */}
