@@ -9,6 +9,12 @@ use crate::process::CancelToken;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
+/// How long a single socket read may stall before the download errors out.
+/// Not a total budget — a 1.6GB model legitimately takes minutes — just a floor
+/// on progress, so a dead connection fails instead of parking the thread (which
+/// would also make the cancel check below unreachable).
+const READ_TIMEOUT_SECS: u64 = 30;
+
 /// One offerable model. `approx_bytes` is for the UI's "how big is this"
 /// estimate only; the real size comes from the response's Content-Length.
 pub struct ModelInfo {
@@ -74,9 +80,15 @@ pub fn installed(dir: &Path) -> Vec<(&'static ModelInfo, bool)> {
         .collect()
 }
 
+/// Removes an installed model. Idempotent: an already-absent file is success,
+/// since the caller's goal — "this model is not installed" — already holds.
 pub fn delete(dir: &Path, id: &str) -> Result<(), String> {
     let m = known().iter().find(|m| m.id == id).ok_or("unknown model")?;
-    std::fs::remove_file(dir.join(m.file_name)).map_err(|e| e.to_string())
+    match std::fs::remove_file(dir.join(m.file_name)) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 /// Downloads model `id` into `dir`, reporting percent-complete as it goes.
@@ -90,8 +102,39 @@ pub fn download(
     download_from(m.url, dir, m.file_name, cancel, on_progress)
 }
 
+/// Deletes the `.part` file unless the download reached a successful rename.
+/// Every failure exit — cancel, read, write, flush, rename — unwinds through
+/// this, because a stranded `.part` is the worst kind of garbage: up to 1.6GB,
+/// invisible to `installed()` and unreachable by `delete()`.
+struct PartGuard {
+    path: PathBuf,
+    defused: bool,
+}
+
+impl PartGuard {
+    fn new(path: PathBuf) -> Self {
+        Self {
+            path,
+            defused: false,
+        }
+    }
+    /// Called only once the bytes live under their final name.
+    fn defuse(&mut self) {
+        self.defused = true;
+    }
+}
+
+impl Drop for PartGuard {
+    fn drop(&mut self) {
+        if !self.defused {
+            let _ = std::fs::remove_file(&self.path);
+        }
+    }
+}
+
 /// Writes to `{file_name}.part` and renames on success, so a half-finished or
-/// cancelled download can never masquerade as an installed model.
+/// cancelled download can never masquerade as an installed model — and, via
+/// [`PartGuard`], cannot linger on disk either.
 fn download_from(
     url: &str,
     dir: &Path,
@@ -102,18 +145,23 @@ fn download_from(
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let dest = dir.join(file_name);
     let part = dir.join(format!("{file_name}.part"));
-    let resp = ureq::get(url)
+    let agent = ureq::AgentBuilder::new()
+        .timeout_read(std::time::Duration::from_secs(READ_TIMEOUT_SECS))
+        .build();
+    let resp = agent
+        .get(url)
         .call()
         .map_err(|e| format!("download: {e}"))?;
     let total: Option<u64> = resp.header("Content-Length").and_then(|v| v.parse().ok());
     let mut reader = resp.into_reader();
+    // Declared before the file handle so it drops *after* it: an open handle
+    // blocks the unlink on Windows.
+    let mut guard = PartGuard::new(part.clone());
     let mut out = std::fs::File::create(&part).map_err(|e| e.to_string())?;
     let mut buf = [0u8; 64 * 1024];
     let mut done: u64 = 0;
     loop {
         if cancel.is_cancelled() {
-            drop(out);
-            let _ = std::fs::remove_file(&part);
             return Err("cancelled".into());
         }
         let n = reader
@@ -125,12 +173,13 @@ fn download_from(
         out.write_all(&buf[..n]).map_err(|e| e.to_string())?;
         done += n as u64;
         if let Some(t) = total.filter(|t| *t > 0) {
-            on_progress(((done as f64 / t as f64) * 100.0) as f32);
+            on_progress(((done as f64 / t as f64) * 100.0).clamp(0.0, 100.0) as f32);
         }
     }
     out.flush().map_err(|e| e.to_string())?;
     drop(out);
     std::fs::rename(&part, &dest).map_err(|e| e.to_string())?;
+    guard.defuse();
     on_progress(100.0);
     Ok(dest)
 }
@@ -141,6 +190,14 @@ mod tests {
     use std::io::Write;
 
     fn one_shot_server(body: Vec<u8>) -> String {
+        let declared = body.len();
+        serve_once(declared, body)
+    }
+
+    /// Serves one request, declaring `declared_len` in Content-Length while
+    /// sending exactly `body` and then hanging up. A `declared_len` larger than
+    /// `body` reproduces a connection that dies mid-transfer.
+    fn serve_once(declared_len: usize, body: Vec<u8>) -> String {
         let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = l.local_addr().unwrap();
         std::thread::spawn(move || {
@@ -149,8 +206,7 @@ mod tests {
             use std::io::Read;
             let _ = s.read(&mut buf);
             let hdr = format!(
-                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                body.len()
+                "HTTP/1.1 200 OK\r\nContent-Length: {declared_len}\r\nConnection: close\r\n\r\n"
             );
             s.write_all(hdr.as_bytes()).unwrap();
             s.write_all(&body).unwrap();
@@ -186,6 +242,30 @@ mod tests {
         assert_eq!(std::fs::read(&p).unwrap().len(), 4096);
         assert_eq!(*seen.last().unwrap(), 100.0);
         assert!(!dir.path().join("ggml-test.bin.part").exists());
+    }
+
+    /// A download that dies mid-transfer must fail loudly and take its `.part`
+    /// with it — no unreachable multi-GB leftovers.
+    #[test]
+    fn truncated_download_errors_and_leaves_no_part() {
+        let dir = tempfile::tempdir().unwrap();
+        // Promises 8192 bytes, hangs up after 4096.
+        let url = serve_once(8192, vec![7u8; 4096]);
+        let err = download_from(
+            &url,
+            dir.path(),
+            "ggml-test.bin",
+            &crate::process::CancelToken::new(),
+            |_| {},
+        )
+        .unwrap_err();
+        assert!(err.contains("download read"), "unexpected error: {err}");
+        assert!(!dir.path().join("ggml-test.bin.part").exists());
+        assert_eq!(
+            std::fs::read_dir(dir.path()).unwrap().count(),
+            0,
+            "a failed download must leave nothing behind at all"
+        );
     }
 
     #[test]
