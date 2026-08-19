@@ -2,9 +2,10 @@
 //! can read into the 16kHz mono WAV whisper insists on, run `whisper-cli` over
 //! it, and land the subtitle/text file at the caller's chosen path.
 //!
-//! Both children write into a tempdir, so a run that dies part-way leaves
-//! nothing behind: the caller's output path is only ever written once, at the
-//! very end, from a finished file.
+//! Both children write into a tempdir, so a run that dies part-way leaves nothing
+//! behind. The caller's output path is never opened for writing at all — it is
+//! only ever the destination of a rename from an already-finished file, so no
+//! failure anywhere in the run can truncate what an earlier run put there.
 
 use crate::process::{run_streaming, CancelToken, Pipe};
 use crate::runner::{Outcome, RunError};
@@ -51,6 +52,7 @@ impl WhisperFormat {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct WhisperJob {
     pub input: PathBuf,
     pub output: PathBuf,
@@ -83,6 +85,16 @@ fn err(message: impl Into<String>, tail: &[String]) -> RunError {
         message: message.into(),
         stderr_tail: tail.join("\n"),
     }
+}
+
+/// Where the finished transcript is staged before it takes the caller's path.
+///
+/// A *sibling* of `output`, so it lands on the same volume and the final
+/// [`std::fs::rename`] is an atomic swap — the caller's path is never opened for
+/// writing, so no failure mid-delivery (a yanked external drive, a full disk) can
+/// truncate a transcript an earlier run left there.
+fn part_path(output: &Path, format: WhisperFormat) -> PathBuf {
+    output.with_extension(format!("{}.part", format.ext()))
 }
 
 fn push_tail(tail: &mut Vec<String>, line: &str) {
@@ -182,6 +194,13 @@ pub fn run_whisper(
         ));
     }
 
+    // A cancel can land between whisper's clean exit and the delivery below. The
+    // user asked for the job to stop, so it must stop — not quietly finish and
+    // drop a new file at the output path.
+    if cancel.is_cancelled() {
+        return Ok(Outcome::Cancelled);
+    }
+
     // Шаг 3: перенос результата на планируемый путь
     let produced = tmp.path().join(format!("result.{}", job.format.ext()));
     if !produced.exists() {
@@ -191,15 +210,25 @@ pub fn run_whisper(
         ));
     }
     if let Some(parent) = job.output.parent() {
-        let _ = std::fs::create_dir_all(parent);
+        std::fs::create_dir_all(parent)
+            .map_err(|e| err(format!("create output dir: {e}"), &tail))?;
     }
-    // rename может не пройти между томами (tmp -> пользовательская папка) — копия+удаление
+    // rename может не пройти между томами (tmp -> пользовательская папка).
     if std::fs::rename(&produced, &job.output).is_err() {
-        // The one path that can leave a partial file at the caller's path, so it
-        // is also the one that has to clean up after itself.
-        if let Err(e) = std::fs::copy(&produced, &job.output) {
-            let _ = std::fs::remove_file(&job.output);
+        // Cross-volume, so the bytes have to be copied. They go to a sibling of
+        // the output first and are renamed into place: copying straight onto
+        // `job.output` would truncate it up front, and a copy that then died
+        // half-way — external drive unplugged, disk full — would have destroyed
+        // the transcript an earlier run left there. Only the sibling is ever
+        // cleaned up; `job.output` is never touched except by the atomic rename.
+        let part = part_path(&job.output, job.format);
+        if let Err(e) = std::fs::copy(&produced, &part) {
+            let _ = std::fs::remove_file(&part);
             return Err(err(format!("copy result: {e}"), &tail));
+        }
+        if let Err(e) = std::fs::rename(&part, &job.output) {
+            let _ = std::fs::remove_file(&part);
+            return Err(err(format!("place result: {e}"), &tail));
         }
     }
     on_progress(100.0);
@@ -231,6 +260,31 @@ mod tests {
         assert_eq!(
             parse_whisper_progress("[00:00:00.000 --> 00:00:02.000]  hello"),
             None
+        );
+    }
+
+    /// The staging file must be a *sibling* of the output — same directory means
+    /// same volume, which is what makes the final rename atomic. Pins the naming
+    /// so a refactor cannot quietly move it to a tempdir and reintroduce the
+    /// cross-volume truncation this pattern exists to prevent.
+    #[test]
+    fn part_path_is_a_sibling_of_the_output() {
+        let out = Path::new("/x/a.transcript.srt");
+        let part = part_path(out, WhisperFormat::Srt);
+        assert_eq!(part, Path::new("/x/a.transcript.srt.part"));
+        assert_eq!(part.parent(), out.parent(), "must stay on the same volume");
+        assert_ne!(part, out, "must never be the output path itself");
+
+        // Output extension need not match the format; the sibling rule still holds.
+        let odd = Path::new("/x/y/note.txt");
+        let part = part_path(odd, WhisperFormat::Json);
+        assert_eq!(part, Path::new("/x/y/note.json.part"));
+        assert_eq!(part.parent(), odd.parent());
+
+        // No extension at all.
+        assert_eq!(
+            part_path(Path::new("/x/plain"), WhisperFormat::Vtt),
+            Path::new("/x/plain.vtt.part")
         );
     }
 
