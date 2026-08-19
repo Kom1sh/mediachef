@@ -1,12 +1,15 @@
 pub mod queue;
 
+use mediachef_core::process::CancelToken;
 use mediachef_core::recipe::{Engine, Recipe};
 use mediachef_core::transcribe::{WhisperFormat, WhisperJob};
 use mediachef_core::{catalog, locate, models, naming, probe, template};
 use queue::{Queue, TestOutcome};
-use std::collections::HashMap;
+use serde::Serialize;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
+use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager, State};
 
 /// Idle poll of a worker thread when its lane is empty.
@@ -19,9 +22,214 @@ fn models_dir(app: &AppHandle) -> PathBuf {
     app.path().app_data_dir().unwrap().join("models")
 }
 
+/// Model downloads in flight, keyed by model id. Two jobs: it is the guard that
+/// stops a second `models_download` for the same id from starting a rival thread
+/// onto the same `.part` file, and it is the authority the `.part` sweep asks
+/// before deleting anything.
+type Downloads = Arc<Mutex<HashMap<String, CancelToken>>>;
+
 struct AppState {
     queue: Queue,
     recipes: Vec<Recipe>,
+    downloads: Downloads,
+}
+
+impl AppState {
+    /// A handle the download thread can outlive the command with.
+    fn downloads_arc(&self) -> Downloads {
+        self.downloads.clone()
+    }
+}
+
+/// Throttle between core's byte-level progress and the IPC channel.
+///
+/// `models::download` calls back every 64KB — ~25 000 times for the 1.6GB
+/// large-v3-turbo model. Forwarding those 1:1 would flood the webview with
+/// events describing states nobody can tell apart: the progress bar has about a
+/// hundred of them. So a tick passes only when the *whole* percent changes,
+/// which bounds one download to at most 101 progress events.
+struct PercentGate(i32);
+
+impl PercentGate {
+    /// `-1` rather than `0`, so a download that opens at 0% still gets its first
+    /// event through.
+    fn new() -> Self {
+        Self(-1)
+    }
+
+    fn admit(&mut self, percent: f32) -> bool {
+        let p = percent as i32;
+        if p == self.0 {
+            return false;
+        }
+        self.0 = p;
+        true
+    }
+}
+
+/// Claims `id` for a new download, storing `cancel` so a later
+/// `models_cancel_download` can find it. `false` means a download of that id is
+/// already in flight.
+///
+/// The check and the claim happen inside ONE critical section: two clicks racing
+/// on the same id must not both be told "go ahead" and start rival threads
+/// writing the same `.part` file. Lock-then-insert, never contains-then-lock —
+/// which is also why this is a function and not two lines in the command: the
+/// atomicity is what the test hammers.
+fn claim_download(downloads: &Downloads, id: &str, cancel: &CancelToken) -> bool {
+    let mut dl = downloads.lock().unwrap();
+    if dl.contains_key(id) {
+        return false;
+    }
+    dl.insert(id.to_string(), cancel.clone());
+    true
+}
+
+/// The model id a `{file_name}.part` belongs to, or `None` when no model we know
+/// of claims that name.
+fn part_owner(part: &str) -> Option<&'static str> {
+    let base = part.strip_suffix(".part")?;
+    models::known()
+        .iter()
+        .find(|m| m.file_name == base)
+        .map(|m| m.id)
+}
+
+/// Which entries of a models-dir listing are `.part` garbage.
+///
+/// Pure, so the decision is testable without a filesystem or a running app.
+/// `names` is the directory listing; `downloading` the ids whose download thread
+/// is alive right now — their `.part` files are being written to and must be left
+/// alone. Everything else that ends in `.part` is garbage from a hard kill (core's
+/// `PartGuard` cleans up every ordinary failure, but `Drop` does not run on
+/// SIGKILL), and unreachable garbage at that: `installed()` cannot see it and
+/// `delete()` cannot remove it. A `.part` naming a model we no longer offer counts
+/// too — no live download can own it, and nothing but this app writes here.
+fn stale_parts<'a>(names: &'a [String], downloading: &HashSet<&str>) -> Vec<&'a str> {
+    names
+        .iter()
+        .map(|s| s.as_str())
+        .filter(|n| n.ends_with(".part"))
+        .filter(|n| part_owner(n).is_none_or(|id| !downloading.contains(id)))
+        .collect()
+}
+
+/// Deletes the stale `.part` files in `dir`.
+///
+/// The downloads lock is held across the whole sweep on purpose: it makes "this
+/// id is downloading" and "this `.part` may be deleted" one atomic decision, so a
+/// download that starts mid-sweep cannot have its freshly created `.part` swept
+/// out from under it. Nothing is locked inside, so there is no ordering hazard.
+fn sweep_parts(dir: &Path, downloads: &Downloads) {
+    let live = downloads.lock().unwrap();
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return; // no models dir yet — nothing to sweep
+    };
+    let names: Vec<String> = rd
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .collect();
+    let ids: HashSet<&str> = live.keys().map(|s| s.as_str()).collect();
+    for n in stale_parts(&names, &ids) {
+        let _ = std::fs::remove_file(dir.join(n));
+    }
+}
+
+/// One row of the Models screen. `installed` and `downloading` are the two states
+/// the UI switches on; `approx_bytes` is the table's estimate, not the real
+/// Content-Length.
+#[derive(Serialize)]
+struct ModelView {
+    id: String,
+    note_en: String,
+    note_ru: String,
+    approx_bytes: u64,
+    installed: bool,
+    /// True while a download thread for this id is alive. Lets the panel come
+    /// back from a tab switch showing a progress row instead of a Download button
+    /// that would only answer "already downloading".
+    downloading: bool,
+}
+
+#[tauri::command]
+fn models_list(app: AppHandle, state: State<AppState>) -> Vec<ModelView> {
+    let dir = models_dir(&app);
+    sweep_parts(&dir, &state.downloads);
+    let live: HashSet<String> = state.downloads.lock().unwrap().keys().cloned().collect();
+    models::installed(&dir)
+        .into_iter()
+        .map(|(m, inst)| ModelView {
+            id: m.id.into(),
+            note_en: m.note_en.into(),
+            note_ru: m.note_ru.into(),
+            approx_bytes: m.approx_bytes,
+            installed: inst,
+            downloading: live.contains(m.id),
+        })
+        .collect()
+}
+
+/// Starts a download in its own thread and returns immediately; progress arrives
+/// as `model:progress` events. The only synchronous failure is the duplicate
+/// guard.
+#[tauri::command(async)]
+fn models_download(app: AppHandle, state: State<AppState>, id: String) -> Result<(), String> {
+    let dir = models_dir(&app);
+    let cancel = CancelToken::new();
+    if !claim_download(&state.downloads, &id, &cancel) {
+        return Err("already downloading".into());
+    }
+    let downloads = state.downloads_arc();
+    let app2 = app.clone();
+    let id2 = id.clone();
+    std::thread::spawn(move || {
+        let emit = |percent: f32, done: bool, error: Option<String>| {
+            let _ = app2.emit(
+                "model:progress",
+                serde_json::json!({"id": id2, "percent": percent, "done": done, "error": error}),
+            );
+        };
+        let mut gate = PercentGate::new();
+        let res = models::download(&dir, &id2, &cancel, |p| {
+            if gate.admit(p) {
+                emit(p, false, None);
+            }
+        });
+        // Release the claim BEFORE announcing the end, in that order for two
+        // reasons. It cannot be earlier: the sweep trusts that while a `.part`
+        // exists its id is in the map, and `download` returns only once the
+        // `.part` is renamed (success) or unlinked (failure, core's `PartGuard`),
+        // so this is the first safe moment. It must not be later: the panel
+        // re-lists on the terminal event, and a lingering entry would answer
+        // `downloading: true` for a download that is already over.
+        downloads.lock().unwrap().remove(&id2);
+        // The terminal event is never gated — the panel keeps its progress row
+        // until this arrives, which is also what makes "Cancelling…" resolve.
+        match res {
+            Ok(_) => emit(100.0, true, None),
+            // Humanized like every other error that reaches the webview: a full
+            // disk is a real download failure and reads far better than the raw
+            // `os error 28`. "cancelled" is not in the table and passes through.
+            Err(e) => emit(0.0, true, Some(human(e))),
+        }
+    });
+    Ok(())
+}
+
+/// Trips the token; the download thread notices at its next loop turn. With a
+/// dead connection that is the next socket read, so up to the 30s read timeout —
+/// the UI says "Cancelling…" until the terminal event lands rather than pretending
+/// the download is already gone.
+#[tauri::command]
+fn models_cancel_download(state: State<AppState>, id: String) {
+    if let Some(c) = state.downloads.lock().unwrap().get(&id) {
+        c.cancel();
+    }
+}
+
+#[tauri::command]
+fn models_delete(app: AppHandle, id: String) -> Result<(), String> {
+    models::delete(&models_dir(&app), &id)
 }
 
 #[tauri::command]
@@ -205,6 +413,7 @@ pub fn run() {
     let state = AppState {
         queue: q.clone(),
         recipes: catalog::bundled(),
+        downloads: Downloads::default(),
     };
 
     tauri::Builder::default()
@@ -285,8 +494,203 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            recipes, probe_file, preview, enqueue, cancel, jobs
+            recipes,
+            probe_file,
+            preview,
+            enqueue,
+            cancel,
+            jobs,
+            models_list,
+            models_download,
+            models_cancel_download,
+            models_delete
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The whole point of the gate: `models::download` reports every 64KB, which
+    /// for the 1.6GB large-v3-turbo model is ~25 000 callbacks. A progress bar has
+    /// ~100 distinguishable states, so the IPC channel must see ~100 events, not
+    /// 25 000.
+    #[test]
+    fn percent_gate_bounds_progress_events() {
+        const TICKS: usize = 25_000;
+        let mut gate = PercentGate::new();
+        let emitted = (0..TICKS)
+            .filter(|i| gate.admit(*i as f32 * 100.0 / TICKS as f32))
+            .count();
+        // 0…99 — the terminal 100 is emitted outside the gate, unconditionally.
+        assert_eq!(
+            emitted, 100,
+            "one event per whole percent expected, got {emitted} of {TICKS} ticks"
+        );
+    }
+
+    /// Two properties the download thread relies on: the very first tick is never
+    /// swallowed (a 0% start must show up), and a percent that has already been
+    /// sent is never sent twice.
+    #[test]
+    fn percent_gate_admits_first_tick_and_dedupes() {
+        let mut gate = PercentGate::new();
+        assert!(gate.admit(0.0), "the first tick must reach the UI");
+        assert!(!gate.admit(0.4), "same whole percent, no new information");
+        assert!(gate.admit(1.0));
+        assert!(!gate.admit(1.9));
+        assert!(gate.admit(100.0));
+        assert!(!gate.admit(100.0));
+    }
+
+    /// The duplicate-download guard, hammered. Two rival clicks on one Download
+    /// button must not both start a thread onto the same `.part` file, and the
+    /// only thing standing between them is that the check and the claim share a
+    /// single critical section. Sixteen threads, exactly one winner.
+    #[test]
+    fn only_one_racing_claim_wins() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let downloads = Downloads::default();
+        let winners = AtomicUsize::new(0);
+        std::thread::scope(|s| {
+            for _ in 0..16 {
+                s.spawn(|| {
+                    if claim_download(&downloads, "tiny", &CancelToken::new()) {
+                        winners.fetch_add(1, Ordering::SeqCst);
+                    }
+                });
+            }
+        });
+        assert_eq!(winners.load(Ordering::SeqCst), 1, "rival downloads started");
+        // The winner's token has to be reachable, or the ✕ button cancels nothing.
+        assert!(downloads.lock().unwrap().contains_key("tiny"));
+        // And the claim is a lease: releasing it lets the next download in.
+        downloads.lock().unwrap().remove("tiny");
+        assert!(claim_download(&downloads, "tiny", &CancelToken::new()));
+    }
+
+    /// A `.part` file survives an app kill (`Drop` never runs, so core's
+    /// `PartGuard` cannot clean up) and is then unreachable: `installed()` cannot
+    /// see it and `delete()` cannot remove it. The sweep is the only thing that
+    /// can — but it must not touch the `.part` of a download that is running right
+    /// now, which is exactly what the downloads map knows.
+    #[test]
+    fn sweep_spares_live_downloads_and_takes_the_rest() {
+        let names: Vec<String> = [
+            "ggml-tiny.bin.part",
+            "ggml-small.bin.part",
+            "ggml-base.bin",
+            "ggml-large-v3-turbo.bin.part",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        let live: HashSet<&str> = ["small"].into_iter().collect();
+
+        let stale = stale_parts(&names, &live);
+        assert!(
+            !stale.contains(&"ggml-small.bin.part"),
+            "swept a live download's .part: {stale:?}"
+        );
+        assert!(
+            !stale.contains(&"ggml-base.bin"),
+            "swept an installed model: {stale:?}"
+        );
+        assert_eq!(
+            stale,
+            vec!["ggml-tiny.bin.part", "ggml-large-v3-turbo.bin.part"]
+        );
+    }
+
+    /// The whole model-manager story against the real Hugging Face endpoint, which
+    /// is the only place the throttle's actual numbers can be observed: download
+    /// the 78MB tiny model, sweep, delete, then re-download and cancel mid-flight.
+    /// Opt-in because it needs the network and moves 156MB:
+    ///
+    /// ```text
+    /// cargo test --manifest-path app/src-tauri/Cargo.toml -- --ignored --nocapture
+    /// ```
+    ///
+    /// One admitted tick is exactly one `app.emit`, so the printed counts are the
+    /// IPC event counts.
+    #[test]
+    #[ignore = "network: downloads the real 78MB tiny model twice"]
+    fn real_tiny_download_sweep_delete_and_cancel() {
+        let dir = tempfile::tempdir().unwrap();
+        let downloads = Downloads::default();
+
+        // 1. Download, with the production gate in the callback.
+        let cancel = CancelToken::new();
+        assert!(claim_download(&downloads, "tiny", &cancel));
+        let (mut ticks, mut emitted) = (0usize, 0usize);
+        let mut gate = PercentGate::new();
+        let t0 = std::time::Instant::now();
+        let installed = models::download(dir.path(), "tiny", &cancel, |p| {
+            ticks += 1;
+            if gate.admit(p) {
+                emitted += 1;
+            }
+        })
+        .expect("download tiny");
+        println!(
+            "tiny: {ticks} core ticks -> {emitted} IPC events in {:?}",
+            t0.elapsed()
+        );
+        assert!(installed.exists());
+        assert!(emitted <= 101, "throttle let {emitted} events through");
+        assert!(ticks > emitted, "{ticks} ticks were not throttled at all");
+        downloads.lock().unwrap().remove("tiny");
+
+        // 2. A finished download leaves no `.part`, and the sweep does not eat the
+        //    model it just installed.
+        sweep_parts(dir.path(), &downloads);
+        assert!(installed.exists(), "sweep deleted an installed model");
+        assert!(!dir.path().join("ggml-tiny.bin.part").exists());
+
+        // 3. Delete.
+        models::delete(dir.path(), "tiny").unwrap();
+        assert!(models::model_path(dir.path(), "tiny").is_none());
+
+        // 4. Re-download, cancelled at ~5% — from inside the progress callback, so
+        //    the cancel lands mid-transfer no matter how fast the link is.
+        let cancel2 = CancelToken::new();
+        assert!(claim_download(&downloads, "tiny", &cancel2));
+        let err = models::download(dir.path(), "tiny", &cancel2, |p| {
+            if p > 5.0 {
+                cancel2.cancel();
+            }
+        })
+        .unwrap_err();
+        println!("cancelled mid-download -> {err:?}");
+        assert_eq!(err, "cancelled");
+        assert!(
+            models::model_path(dir.path(), "tiny").is_none(),
+            "a cancelled download must not install a truncated model"
+        );
+        assert_eq!(
+            std::fs::read_dir(dir.path()).unwrap().count(),
+            0,
+            "a cancelled download must leave nothing behind"
+        );
+        downloads.lock().unwrap().remove("tiny");
+    }
+
+    /// With nothing downloading every `.part` is garbage — including one whose
+    /// model id we no longer offer (an older build's leftover). No live download
+    /// can own it, and nothing else writes to this directory.
+    #[test]
+    fn sweep_takes_unknown_and_orphaned_parts() {
+        let names: Vec<String> = ["ggml-medium.bin.part", "ggml-tiny.bin.part"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert_eq!(
+            stale_parts(&names, &HashSet::new()),
+            vec!["ggml-medium.bin.part", "ggml-tiny.bin.part"]
+        );
+        // …and an empty directory listing is not an error case.
+        assert!(stale_parts(&[], &HashSet::new()).is_empty());
+    }
 }

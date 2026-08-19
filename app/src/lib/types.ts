@@ -45,6 +45,30 @@ export interface JobView {
   error_detail?: string | null;
 }
 
+/** One row of the Models screen (mirrors `ModelView` in lib.rs). */
+export interface ModelView {
+  id: string;
+  note_en: string;
+  note_ru: string;
+  // The table's estimate, not the real Content-Length — a label, not a budget.
+  approx_bytes: number;
+  installed: boolean;
+  // True while a download thread for this id is alive, so the panel can be
+  // remounted (tab switch) mid-download without offering a Download button that
+  // would only answer "already downloading".
+  downloading: boolean;
+}
+
+/** Payload of the `model:progress` event. */
+export interface ModelProgress {
+  id: string;
+  percent: number;
+  // Terminal tick: the download either finished, failed or was cancelled. Sent
+  // unthrottled — the panel keeps its progress row until it arrives.
+  done: boolean;
+  error?: string | null;
+}
+
 export interface ProbeInfo {
   duration_s: number | null;
   media_type: MediaType;

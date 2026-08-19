@@ -11,6 +11,13 @@ pub fn humanize(stderr_tail: &str) -> Option<String> {
     // Must stay ABOVE the "no such file" arm: a failed spawn reports
     // "spawn: No such file or directory", which would otherwise be blamed on the
     // user's INPUT file instead of the missing binary.
+    } else if s.contains("whisper-cli not found") {
+        // Sits next to the FFmpeg arm because it is the same kind of failure —
+        // a missing binary, not a bad file — but it must never fall INTO it:
+        // "brew install ffmpeg" does not put whisper-cli on the PATH. The text
+        // shares no substring with any other arm, so the position is for the
+        // reader's benefit, not the matcher's.
+        "whisper-cli is not installed — brew install whisper-cpp."
     } else if s.contains("ffmpeg not found")
         || s.contains("ffprobe not found")
         || s.contains("spawn: ")
@@ -62,6 +69,21 @@ mod tests {
         assert!(humanize("i.mp4: No such file or directory")
             .unwrap()
             .contains("Input file"));
+    }
+
+    // The other half of the whisper lane's "cannot even start" pair: the model is
+    // there but the binary is not. Left unmapped (T6 carry) this surfaced as the
+    // lane's bare "Transcription failed" fallback, which sends the user looking at
+    // their file instead of at Homebrew — and it must not borrow the FFmpeg arm's
+    // text either, since installing ffmpeg would not fix it.
+    #[test]
+    fn maps_missing_whisper_binary() {
+        let m = humanize("whisper-cli not found (brew install whisper-cpp)").unwrap();
+        assert!(m.contains("whisper-cpp"), "got: {m}");
+        assert!(
+            !m.contains("FFmpeg"),
+            "a missing whisper-cli must not read as a missing FFmpeg: {m}"
+        );
     }
 
     // The whisper lane's one enqueue-time refusal: the app cannot start a
