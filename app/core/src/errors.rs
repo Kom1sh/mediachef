@@ -11,12 +11,18 @@ pub fn humanize(stderr_tail: &str) -> Option<String> {
     // Must stay ABOVE the "no such file" arm: a failed spawn reports
     // "spawn: No such file or directory", which would otherwise be blamed on the
     // user's INPUT file instead of the missing binary.
-    } else if s.contains("whisper-cli not found") {
+    //
+    // Two ways to learn that whisper-cli is missing, one message. `not found` is
+    // the enqueue-time lookup (`locate::whisper` came back empty); `whisper spawn:`
+    // is the run-time failure — `transcribe` tags its child's spawn error with the
+    // binary's name precisely so it can be told apart here. Unlike the arm above,
+    // THIS one's position is load-bearing: "whisper spawn: " contains "spawn: ",
+    // so below the FFmpeg arm it would be answered with "brew install ffmpeg",
+    // which installs the wrong thing.
+    } else if s.contains("whisper-cli not found") || s.contains("whisper spawn: ") {
         // Sits next to the FFmpeg arm because it is the same kind of failure —
         // a missing binary, not a bad file — but it must never fall INTO it:
-        // "brew install ffmpeg" does not put whisper-cli on the PATH. The text
-        // shares no substring with any other arm, so the position is for the
-        // reader's benefit, not the matcher's.
+        // "brew install ffmpeg" does not put whisper-cli on the PATH.
         "whisper-cli is not installed — brew install whisper-cpp."
     } else if s.contains("ffmpeg not found")
         || s.contains("ffprobe not found")
@@ -84,6 +90,30 @@ mod tests {
             !m.contains("FFmpeg"),
             "a missing whisper-cli must not read as a missing FFmpeg: {m}"
         );
+    }
+
+    // The same failure, discovered a step later: whisper-cli was on the PATH when
+    // the worker thread looked it up and gone (or unreadable) by the time the job
+    // ran, so it surfaces as a spawn error rather than a lookup miss. It carries
+    // "spawn: " and would be swallowed by the FFmpeg arm — which is why
+    // `transcribe` tags it with the binary name and this arm sits above.
+    #[test]
+    fn maps_failed_whisper_spawn_to_whisper_not_ffmpeg() {
+        let m = humanize("whisper spawn: No such file or directory (os error 2)").unwrap();
+        assert!(m.contains("whisper-cpp"), "got: {m}");
+        assert!(
+            !m.contains("FFmpeg"),
+            "a failed whisper-cli spawn blamed on FFmpeg: {m}"
+        );
+        // Permission denied on a half-installed binary is the same story.
+        assert!(humanize("whisper spawn: Permission denied (os error 13)")
+            .unwrap()
+            .contains("whisper-cpp"));
+        // And the ffmpeg-side spawn (the WAV prep step, untagged) still answers
+        // with ffmpeg: the tag is what separates the two, so both must hold.
+        assert!(humanize("spawn: No such file or directory")
+            .unwrap()
+            .contains("FFmpeg"));
     }
 
     // The whisper lane's one enqueue-time refusal: the app cannot start a

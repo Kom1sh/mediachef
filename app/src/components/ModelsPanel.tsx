@@ -79,7 +79,7 @@ export function ModelsPanel() {
   return (
     <section className="mx-auto w-full max-w-xl space-y-2 overflow-y-auto p-2">
       <h2 className="text-sm font-medium text-neutral-300">Whisper models</h2>
-      <p className="text-xs text-neutral-500">Транскрибация работает локально. Модель скачивается один раз.</p>
+      <p className="text-xs text-neutral-500">Transcription runs locally. A model is downloaded once.</p>
       {models.map(m => {
         // `downloading` covers the remount case: switching to Convert and back
         // unmounts this panel, and the map in Rust is what still knows.
@@ -88,7 +88,9 @@ export function ModelsPanel() {
           <div key={m.id} className="flex items-center justify-between gap-3 rounded-lg border border-neutral-700 p-3">
             <div className="min-w-0">
               <div className="text-sm font-medium">{m.id} <span className="text-xs text-neutral-500">{GB(m.approx_bytes)}</span></div>
-              <div className="text-xs text-neutral-400">{m.note_ru}</div>
+              {/* The UI is English until wave 3 brings i18n; `note_ru` rides along
+                  in `ModelView` for it (see types.ts) and is deliberately unused. */}
+              <div className="text-xs text-neutral-400">{m.note_en}</div>
             </div>
             {pct !== undefined ? (
               <div className="flex shrink-0 items-center gap-2">

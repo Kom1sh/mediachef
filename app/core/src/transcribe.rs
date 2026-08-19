@@ -177,7 +177,11 @@ pub fn run_whisper(
             push_tail(&mut tail, line);
         }
     });
-    let exit = exit.map_err(|e| err(e.to_string(), &tail))?;
+    // Tagged with the binary that failed, unlike the prep step above: a bare
+    // `spawn: No such file or directory` is humanized as "FFmpeg binary not
+    // found", which for THIS spawn would send the user to the wrong Homebrew
+    // formula. `whisper spawn: ` has its own arm in `errors`.
+    let exit = exit.map_err(|e| err(format!("whisper {e}"), &tail))?;
     // No cleanup of `job.output` on either exit: whisper writes only under
     // `out_prefix` in the tempdir, so a file at the caller's path is somebody
     // else's — deleting it would destroy an earlier good transcript.
