@@ -1,0 +1,16 @@
+id: translate-to-en-txt
+category: transcribe
+title: {en: "Translate speech to English text", ru: "Перевод речи в английский текст"}
+aliases:
+  en: [translate audio to english, translate speech to english, audio translation to text, translate mp3 to english]
+  ru: [перевести аудио на английский, перевод речи на английский, аудио на английский текст, перевод аудио в текст]
+description: {en: "Any language in, English text out — one pass, locally (Whisper).", ru: "На входе любой язык, на выходе английский текст — за один проход, локально (Whisper)."}
+input: {types: [audio, video]}
+params:
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
+  - {key: language, type: language, default: "auto", label: {en: "Source language", ru: "Язык источника"}}
+engine: whisper
+args: []
+whisper: {translate: true}
+output: {ext: txt, suffix: english}
+seo: {slug: translate-audio-to-english, priority: medium}

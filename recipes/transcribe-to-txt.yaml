@@ -1,0 +1,15 @@
+id: transcribe-to-txt
+category: transcribe
+title: {en: "Transcribe audio to text", ru: "Аудио в текст"}
+aliases:
+  en: [mp3 to text, audio to text, transcribe audio, speech to text, audio to txt]
+  ru: [перевод мп3 в текст, расшифровка аудио, транскрибация, аудио в текст, речь в текст, мп3 в текст]
+description: {en: "Turns speech into plain text locally (Whisper).", ru: "Превращает речь в обычный текст локально (Whisper)."}
+input: {types: [audio, video]}
+params:
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+engine: whisper
+args: []
+output: {ext: txt, suffix: transcript}
+seo: {slug: audio-to-text, priority: high}

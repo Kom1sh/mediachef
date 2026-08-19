@@ -1,0 +1,15 @@
+id: transcribe-to-vtt
+category: transcribe
+title: {en: "Transcribe audio to WebVTT", ru: "Аудио в субтитры WebVTT"}
+aliases:
+  en: [audio to vtt, webvtt subtitles, vtt from audio, transcribe to vtt, mp3 to vtt]
+  ru: [аудио в vtt, субтитры vtt, сделать vtt, вебвтт субтитры, субтитры для сайта]
+description: {en: "Writes WebVTT captions for web players from speech (Whisper).", ru: "Пишет субтитры WebVTT для веб-плееров по речи (Whisper)."}
+input: {types: [audio, video]}
+params:
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+engine: whisper
+args: []
+output: {ext: vtt, suffix: captions}
+seo: {slug: audio-to-vtt, priority: medium}

@@ -76,6 +76,14 @@ pub enum ParamType {
     Bool,
     String,
     Path,
+    /// A whisper model id. Deliberately not an `Enum`: the choices are whichever
+    /// models are on disk right now, so the list lives in the UI and the check
+    /// lives at enqueue (a model that is not downloaded is a user-facing error,
+    /// not a recipe bug). `values:` stays empty.
+    Model,
+    /// A whisper language code, or `auto` to let whisper detect it. Same reasoning
+    /// as [`ParamType::Model`] — the table is whisper's, not the recipe's.
+    Language,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -126,6 +134,18 @@ pub struct OutputSpec {
     pub suffix: Option<String>,
 }
 
+/// Engine knobs for `engine: whisper` that are not command-line arguments — a
+/// whisper recipe's `args:` is empty, since the queue assembles that command from
+/// the model, the language param and the output extension.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WhisperOpts {
+    /// `true` runs whisper's translate task: speech in any language out as
+    /// English. The `language` param still names the *source* language.
+    #[serde(default)]
+    pub translate: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Seo {
@@ -148,6 +168,8 @@ pub struct Recipe {
     pub engine: Engine,
     #[serde(default)]
     pub args: Vec<String>,
+    #[serde(default)]
+    pub whisper: Option<WhisperOpts>,
     pub output: OutputSpec,
     #[serde(default)]
     pub seo: Option<Seo>,
@@ -296,6 +318,56 @@ seo: {slug: video-to-mp3, priority: high}
         // Sanity: the untouched sample still parses, so the cases above fail for
         // the added key and not for a botched string replace.
         assert!(Recipe::from_yaml(SAMPLE).is_ok());
+    }
+
+    // `whisper:` carries the engine knobs that are not command-line arguments —
+    // today just `translate`, which is what separates the two English-output
+    // recipes from the six transcription ones. Absent for every ffmpeg recipe.
+    #[test]
+    fn whisper_opts_parse() {
+        let y = SAMPLE.replace(
+            "engine: ffmpeg",
+            "engine: whisper\nwhisper: {translate: true}",
+        );
+        let r = Recipe::from_yaml(&y).unwrap();
+        assert!(matches!(r.engine, Engine::Whisper));
+        assert!(r.whisper.unwrap().translate);
+
+        // `whisper: {}` means "whisper, no translation" — same as omitting the key.
+        let y = SAMPLE.replace("engine: ffmpeg", "engine: whisper\nwhisper: {}");
+        let empty = Recipe::from_yaml(&y).unwrap();
+        assert!(!empty.whisper.unwrap().translate);
+        assert!(Recipe::from_yaml(SAMPLE).unwrap().whisper.is_none());
+
+        // A hopeful key inside `whisper:` (a knob someone expects to exist) must
+        // fail the load like every other unknown field, not be dropped.
+        let bogus = SAMPLE.replace(
+            "engine: ffmpeg",
+            "engine: whisper\nwhisper: {translate: true, beam_size: 5}",
+        );
+        let e = Recipe::from_yaml(&bogus).expect_err("unknown whisper key must be rejected");
+        assert!(e.to_string().contains("unknown field"), "unexpected: {e}");
+    }
+
+    // `model` and `language` are filled from live lists — the models actually
+    // downloaded and whisper's language table — so a recipe declares the type and
+    // no `values:`. The enum branch's static list would be stale the moment a
+    // model is downloaded, hence two separate types instead.
+    #[test]
+    fn model_and_language_param_types_parse() {
+        for (wire, expected) in [
+            ("model", ParamType::Model),
+            ("language", ParamType::Language),
+        ] {
+            let y = SAMPLE.replace(
+                "    type: enum\n    values: [\"128k\", \"192k\", \"320k\"]\n",
+                &format!("    type: {wire}\n"),
+            );
+            assert!(!y.contains("values:"), "replace missed the values list");
+            let r = Recipe::from_yaml(&y).unwrap_or_else(|e| panic!("type {wire}: {e}"));
+            assert_eq!(r.params[0].r#type, expected);
+            assert!(r.params[0].values.is_none(), "{wire} needs no values list");
+        }
     }
 
     // Ruling 21 follow-up: user-facing text renders media types lowercase, and

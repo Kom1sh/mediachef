@@ -1,0 +1,16 @@
+id: translate-to-en-srt
+category: transcribe
+title: {en: "Translate speech to English subtitles", ru: "Перевод речи в английские субтитры"}
+aliases:
+  en: [translate subtitles to english, english subtitles from audio, translate to english srt, english srt from video]
+  ru: [английские субтитры, перевести субтитры на английский, субтитры на английском, перевод видео в английские субтитры]
+description: {en: "Any language in, timed English SRT out — one pass, locally (Whisper).", ru: "На входе любой язык, на выходе английский SRT с таймингами — за один проход, локально (Whisper)."}
+input: {types: [audio, video]}
+params:
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
+  - {key: language, type: language, default: "auto", label: {en: "Source language", ru: "Язык источника"}}
+engine: whisper
+args: []
+whisper: {translate: true}
+output: {ext: srt, suffix: english}
+seo: {slug: translate-subtitles-to-english, priority: medium}

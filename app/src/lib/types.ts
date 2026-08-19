@@ -3,7 +3,9 @@ export type Loc = { en: string; ru: string };
 
 export interface Param {
   key: string;
-  type: "enum" | "int" | "float" | "bool" | "string" | "path";
+  // "model" and "language" carry no `values` list — the choices are the models
+  // actually downloaded and whisper's language table, both filled at render time.
+  type: "enum" | "int" | "float" | "bool" | "string" | "path" | "model" | "language";
   values?: string[] | null;
   default: unknown;
   label: Loc;
@@ -23,6 +25,8 @@ export interface Recipe {
   params: Param[];
   engine: "ffmpeg" | "whisper" | "pipeline";
   args: string[];
+  // Only present for engine "whisper"; `null` on every ffmpeg recipe.
+  whisper?: { translate: boolean } | null;
   output: { ext: string; suffix?: string | null };
   seo?: { slug: string; priority?: string | null } | null;
 }

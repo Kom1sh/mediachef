@@ -69,5 +69,6 @@
   "title": {
     "en": "Compress video (quality preset)",
     "ru": "Сжать видео (пресет качества)"
-  }
+  },
+  "whisper": null
 }

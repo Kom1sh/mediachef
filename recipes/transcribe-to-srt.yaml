@@ -1,0 +1,15 @@
+id: transcribe-to-srt
+category: transcribe
+title: {en: "Transcribe audio to SRT subtitles", ru: "Аудио в субтитры SRT"}
+aliases:
+  en: [mp3 to srt, audio to srt, subtitles from audio, transcribe to subtitles, srt from audio]
+  ru: [аудио в srt, субтитры из аудио, расшифровка аудио в субтитры, сделать srt, мп3 в srt]
+description: {en: "Writes timed SRT subtitles from speech locally (Whisper).", ru: "Пишет субтитры SRT с таймингами по речи, локально (Whisper)."}
+input: {types: [audio, video]}
+params:
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+engine: whisper
+args: []
+output: {ext: srt, suffix: subtitles}
+seo: {slug: audio-to-srt, priority: high}

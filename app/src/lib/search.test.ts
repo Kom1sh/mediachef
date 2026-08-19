@@ -30,6 +30,12 @@ describe("search", () => {
   it("puts video-to-gif first for the acceptance query", () => {
     expect(search(index, "video to gif")[0].id).toBe("video-to-gif");
   });
+  // Spec §5/§14 acceptance query, verbatim: the phrase a Russian user actually
+  // types when they want a transcript has to land on the transcription recipe
+  // first — normalize() latinises "мп3", the alias carries the rest.
+  it("finds transcription by the spec's acceptance query", () => {
+    expect(search(index, "перевод мп3 в текст")[0].id).toBe("transcribe-to-txt");
+  });
   it("tolerates typo", () => {
     expect(search(index, "extrct audio").some(r => r.id === "extract-audio-mp3")).toBe(true);
   });

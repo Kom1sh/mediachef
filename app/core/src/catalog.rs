@@ -84,27 +84,74 @@ mod tests {
                 r.id
             );
             assert!(!r.aliases.ru.is_empty(), "{} needs ru aliases", r.id);
+            // `whisper: {translate: true}` on an ffmpeg recipe reads as wired and
+            // does nothing — the same class of bug `deny_unknown_fields` exists for.
+            assert!(
+                matches!(r.engine, Engine::Whisper) || r.whisper.is_none(),
+                "{}: `whisper:` on a non-whisper recipe would be ignored",
+                r.id
+            );
         }
     }
 
-    // Every bundled ffmpeg recipe must build a real argv from its own defaults.
-    // Catches a typo'd param placeholder or an enum default outside its `values`
-    // list — neither of which the placeholder grep above can see. No ffmpeg needed.
+    // Every bundled recipe must survive its own defaults. For ffmpeg that means a
+    // real argv — catches a typo'd param placeholder or an enum default outside its
+    // `values` list, neither of which the placeholder grep above can see. Whisper
+    // recipes carry no `args:` at all: the queue assembles that command from the
+    // output extension plus the model/language params, so those are what has to
+    // hold up here. Nothing external is needed either way — no ffmpeg, no models.
     #[test]
     fn all_recipes_resolve_to_argv() {
         use crate::template::{build_argv, resolve_params};
+        use crate::transcribe::WhisperFormat;
         use std::collections::HashMap;
 
         for r in bundled() {
-            if !matches!(r.engine, Engine::Ffmpeg) {
-                continue;
-            }
             let resolved = resolve_params(&r, &HashMap::new())
                 .unwrap_or_else(|e| panic!("{}: resolve_params failed: {e}", r.id));
-            let argv = build_argv(&r, "/tmp/in file.mp4", "/tmp/out.mp4", &resolved)
-                .unwrap_or_else(|e| panic!("{}: build_argv failed: {e}", r.id));
-            assert!(!argv.is_empty(), "{}: built an empty argv", r.id);
+            match r.engine {
+                Engine::Ffmpeg => {
+                    let argv = build_argv(&r, "/tmp/in file.mp4", "/tmp/out.mp4", &resolved)
+                        .unwrap_or_else(|e| panic!("{}: build_argv failed: {e}", r.id));
+                    assert!(!argv.is_empty(), "{}: built an empty argv", r.id);
+                }
+                Engine::Whisper => {
+                    // Nothing consumes `args:` for whisper, so a token written there
+                    // would be dead text that looks like a flag being passed.
+                    assert!(
+                        r.args.is_empty(),
+                        "{}: whisper builds its own command — `args:` is ignored",
+                        r.id
+                    );
+                    assert!(
+                        WhisperFormat::from_ext(&r.output.ext).is_some(),
+                        "{}: whisper cannot write .{} — output.ext must be txt/srt/vtt/json",
+                        r.id,
+                        r.output.ext
+                    );
+                    for key in ["model", "language"] {
+                        assert!(
+                            resolved.contains_key(key),
+                            "{}: whisper recipe needs a `{key}` param with a default",
+                            r.id
+                        );
+                    }
+                }
+                Engine::Pipeline => {}
+            }
         }
+    }
+
+    // Wave 2's product surface is these eight transcription recipes; the search
+    // index and the SEO slugs are cut from them, so losing one is a silent feature
+    // regression rather than a broken build.
+    #[test]
+    fn whisper_recipes_present() {
+        let n = bundled()
+            .iter()
+            .filter(|r| matches!(r.engine, Engine::Whisper))
+            .count();
+        assert!(n >= 8, "expected >=8 whisper recipes, got {n}");
     }
 
     // Two recipes with DISTINCT ids but the SAME seo.slug must be rejected —

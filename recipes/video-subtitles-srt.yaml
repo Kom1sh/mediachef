@@ -1,0 +1,15 @@
+id: video-subtitles-srt
+category: transcribe
+title: {en: "Make SRT subtitles for a video", ru: "Субтитры к видео (SRT)"}
+aliases:
+  en: [video to srt, subtitles for video, generate subtitles, srt from video, subtitle a video]
+  ru: [субтитры к видео, видео в субтитры, сделать сабы, субтитры из видео, сгенерировать субтитры]
+description: {en: "Listens to the video's audio and writes an SRT next to it (Whisper).", ru: "Слушает звук видео и кладёт рядом файл SRT (Whisper)."}
+input: {types: [video]}
+params:
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+engine: whisper
+args: []
+output: {ext: srt, suffix: subs}
+seo: {slug: video-to-srt, priority: high}

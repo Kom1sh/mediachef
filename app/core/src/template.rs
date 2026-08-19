@@ -42,6 +42,9 @@ pub fn resolve_params(
                     });
                 }
             }
+            // Bool/String/Path carry no constraint to check, and Model/Language are
+            // checked against live state at enqueue (is that model downloaded?), not
+            // against anything the recipe declares — so both pass through as typed.
             _ => {}
         }
         out.insert(p.key.clone(), val);
@@ -255,6 +258,28 @@ output: {{ext: mp4}}
     fn unknown_placeholder_is_error() {
         let r = recipe(&["{nope}"], BITRATE);
         assert!(build_argv(&r, "i", "o", &resolve_params(&r, &HashMap::new()).unwrap()).is_err());
+    }
+
+    // `model` and `language` are checked against live state (which models are on
+    // disk, which languages whisper knows) at enqueue time, not here — the recipe
+    // carries no list to check them against. So this layer must pass any value
+    // through untouched, including the defaults.
+    #[test]
+    fn model_and_language_pass_through_unvalidated() {
+        const WHISPER: &str = r#"  - {key: model, type: model, default: "small", label: {en: M, ru: М}}
+  - {key: language, type: language, default: "auto", label: {en: L, ru: Я}}"#;
+        let r = recipe(&["{input}", "{output}"], WHISPER);
+
+        let defaults = resolve_params(&r, &HashMap::new()).unwrap();
+        assert_eq!(defaults["model"], "small");
+        assert_eq!(defaults["language"], "auto");
+
+        let mut p = HashMap::new();
+        p.insert("model".to_string(), "large-v3-turbo".to_string());
+        p.insert("language".to_string(), "ru".to_string());
+        let got = resolve_params(&r, &p).unwrap();
+        assert_eq!(got["model"], "large-v3-turbo");
+        assert_eq!(got["language"], "ru");
     }
 
     #[test]

@@ -1,0 +1,15 @@
+id: video-to-text
+category: transcribe
+title: {en: "Get text from a video", ru: "Видео в текст"}
+aliases:
+  en: [video to text, text from video, transcribe video, get text from video, mp4 to text]
+  ru: [видео в текст, текст из видео, расшифровка видео, транскрибация видео, мп4 в текст]
+description: {en: "Writes down everything said in the video as plain text (Whisper).", ru: "Записывает всё сказанное в видео обычным текстом (Whisper)."}
+input: {types: [video]}
+params:
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+engine: whisper
+args: []
+output: {ext: txt, suffix: transcript}
+seo: {slug: video-to-text, priority: high}

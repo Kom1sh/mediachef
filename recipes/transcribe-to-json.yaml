@@ -1,0 +1,15 @@
+id: transcribe-to-json
+category: transcribe
+title: {en: "Transcribe audio to JSON with timings", ru: "Аудио в JSON с таймингами"}
+aliases:
+  en: [audio to json, json transcript, transcription with timestamps, transcript json, mp3 to json]
+  ru: [аудио в json, расшифровка в json, транскрипт с таймкодами, json с таймингами, текст с временем]
+description: {en: "Machine-readable transcript: segments with start and end times (Whisper).", ru: "Расшифровка для машин: отрезки речи с временем начала и конца (Whisper)."}
+input: {types: [audio, video]}
+params:
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+engine: whisper
+args: []
+output: {ext: json, suffix: transcript}
+seo: {slug: transcribe-json, priority: low}
