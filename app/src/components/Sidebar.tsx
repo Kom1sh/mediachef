@@ -10,7 +10,7 @@ const ORDER: readonly Tab[] = ["main", "models", "settings"];
 const LABEL: Record<Tab, TKey> = { main: "navConvert", models: "navModels", settings: "navSettings" };
 
 /**
- * The 80px rail. Icons carry the navigation; the labels under them are a
+ * The 88px rail. Icons carry the navigation; the labels under them are a
  * courtesy that gets out of the way below 800px, where a rail and a word are
  * competing for the same pixels — so every button states its name in
  * `aria-label` unconditionally: a `display:none` span contributes nothing to the
@@ -22,8 +22,11 @@ const LABEL: Record<Tab, TKey> = { main: "navConvert", models: "navModels", sett
  * already visible, and hidden only at a width where the tooltip is the least of
  * the user's problems.
  *
- * The width and the two-line allowance are sized for Russian («Конвертация»),
- * not for the shorter English labels.
+ * The width is set by the longest Russian label, measured rather than guessed:
+ * «Конвертация» is 63.4px at 10px Manrope-500, so the button is `w-20` (80px,
+ * 72px inside its padding) and the rail 88px around it — room for the ring the
+ * global focus rule draws 2px outside the button, too. The 80px rail this
+ * started as left 56px and broke the word across two lines as «Конвертац/ия».
  */
 export function Sidebar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
   const t = useT();
@@ -47,13 +50,15 @@ export function Sidebar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
           <button
             key={id} type="button" onClick={() => onTab(id)} aria-label={label}
             aria-current={on ? "page" : undefined}
-            className={`flex w-16 flex-col items-center gap-1 rounded-lg px-1 py-2 text-center text-[10px] font-medium leading-tight ${
+            className={`flex w-20 flex-col items-center gap-1 rounded-lg px-1 py-2 text-center text-[10px] font-medium leading-tight ${
               on ? "bg-card-2 text-ink" : "text-ink-2 hover:bg-card-2 hover:text-ink"
             }`}
           >
             <Icon className="size-5 shrink-0" aria-hidden />
-            {/* Breaking inside a word is the lesser evil at this width: a long
-                Russian label would otherwise push out of the rail. */}
+            {/* The rail is wide enough for every label this app has, so the break
+                rule is a backstop rather than the normal case: a longer word in a
+                future locale should fold inside itself rather than push the rail
+                out of shape. */}
             <span className="[overflow-wrap:anywhere] max-[800px]:hidden">{label}</span>
           </button>
         );

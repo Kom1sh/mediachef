@@ -120,9 +120,9 @@ export const NAV: Record<NavKey, LucideIcon> = {
 export const APP_ICON: LucideIcon = ChefHat;
 
 /** Queue statuses. `running` is `LoaderCircle` — the ring that reads as motion
- *  once the caller adds `animate-spin`; the spin stays in the component so
- *  `prefers-reduced-motion` and static uses (a legend, a test) are free to skip
- *  it. */
+ *  once the caller adds `.spin-indicator` (index.css: the app's one animation, and
+ *  the one exception to the reduced-motion switch-off); the spin stays in the
+ *  component so static uses — a legend, a test — are free to skip it. */
 export const STATUS_ICON: Record<JobView["status"], LucideIcon> = {
   queued: Clock4,
   running: LoaderCircle,

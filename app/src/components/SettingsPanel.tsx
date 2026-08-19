@@ -56,8 +56,13 @@ function Segmented<T extends string>({
             // `:focus-visible` rule — and not a `ring`, which would draw basil
             // directly against the basil chip of the option that is already
             // selected, i.e. exactly the option keyboard focus lands on first.
+            // The unpicked options are `ink` rather than `ink-2`: they sit on the
+            // group's own `card-2` well, where `ink-2` measures 4.25:1 in the light
+            // theme — under the 4.5 this 12px semibold text has to clear. What
+            // says "picked" is the basil chip, not a difference in text weight of
+            // the words beside it.
             className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
-              on ? "bg-basil text-basil-ink" : "text-ink-2 hover:bg-card hover:text-ink"
+              on ? "bg-basil text-basil-ink" : "text-ink hover:bg-card"
             }`}
           >
             <input

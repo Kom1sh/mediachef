@@ -218,7 +218,7 @@ export default function App() {
       {/* Rail · board · queue. `minmax(0, …)` on the row and the middle column, not
           plain `1fr`: the scrolling children below need a track that is allowed to be
           smaller than its content. */}
-      <main className="grid h-screen grid-cols-[80px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
+      <main className="grid h-screen grid-cols-[88px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
         <Sidebar tab={tab} onTab={setTab} />
         {tab === "models" ? <ModelsPanel /> : tab === "settings" ? (
           settings
@@ -239,7 +239,9 @@ export default function App() {
               // `my-auto` rather than `justify-center` on the section: auto margins
               // collapse to zero when the content is taller than the track, so a
               // short window scrolls to the top of the hero instead of clipping it.
-              <div className="my-auto flex w-full flex-col items-center gap-5 self-center text-center">
+              // (No `self-center` beside it: the box is already `w-full`, so there
+              // is no slack on the cross axis for an alignment to take up.)
+              <div className="my-auto flex w-full flex-col items-center gap-5 text-center">
                 <div className="max-w-md">
                   {/* Unbounded, second and last use in the app (the rail's wordmark
                       is the other): a display face earns its keep on the one line

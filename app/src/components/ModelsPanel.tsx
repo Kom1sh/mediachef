@@ -125,10 +125,16 @@ export function ModelsPanel() {
                   {cancelling[m.id] ? (
                     <span className="text-xs text-ink-2 italic" title={t("cancelHint")}>{t("cancelling")}</span>
                   ) : (
-                    // `title` alone, as before: with no other labelling it is both the
-                    // tooltip and the accessible name, and adding an `aria-label` of the
-                    // same words would only make a screen reader say them twice.
-                    <button onClick={() => cancel(m.id)} title={t("cancelDownload")}
+                    // `aria-label`, not `title` — and the reason is the ✕ itself.
+                    // A title only becomes a button's accessible name when the
+                    // button has no content to take one from; this one has the
+                    // glyph, so the name a screen reader announced was "✕" and the
+                    // words were demoted to a description. Same shape as the other
+                    // two ✕ in the app (the file card's and the form's): the glyph
+                    // is text, so the name has to be an `aria-label`, and there is
+                    // no `title` beside it because identical name-and-description
+                    // is announced twice.
+                    <button onClick={() => cancel(m.id)} aria-label={t("cancelDownload")}
                       className="text-xs text-ink-2 transition hover:text-tomato">✕</button>
                   )}
                 </div>

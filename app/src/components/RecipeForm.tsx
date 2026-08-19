@@ -183,7 +183,10 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
           setError(""); setHint("");
           setCmd((isWhisper ? "" : "ffmpeg ") + argv.map(a => (/\s/.test(a) ? `"${a}"` : a)).join(" "));
         })
-        .catch(e => { if (gen === previewGen.current) setError(String(e)); });
+        // The hint goes with it: "Copied to clipboard" described a command that
+        // can no longer be built, and the preview it was printed under is not on
+        // screen any more (the `error` branch replaces it, not joins it).
+        .catch(e => { if (gen === previewGen.current) { setError(String(e)); setHint(""); } });
     }, 150);
     // The bump is what makes an unmount count as a change too — the timer is
     // cleared, but an `invoke` already in flight would otherwise still resolve
@@ -319,7 +322,12 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
       ) : cmd ? (
         <div className="mt-3 rounded-lg bg-card-2 p-3">
           <div className="flex items-start gap-2">
-            <pre className="min-w-0 flex-1 overflow-x-auto font-mono text-xs text-ink-2">{cmd}</pre>
+            {/* `text-ink` on the `card-2` pane: this is output to be read
+                character by character, and `ink-2` there measures 4.25:1 in the
+                light theme — under the floor, and at 12px mono the least
+                forgiving place to be under it. The queue's error log is the same
+                pair for the same reason. */}
+            <pre className="min-w-0 flex-1 overflow-x-auto font-mono text-xs text-ink">{cmd}</pre>
             {/* `title` alone is both the tooltip and the accessible name of an
                 icon-only button — an `aria-label` of the same words would only
                 make a screen reader say them twice. The whisper wording carries
@@ -344,8 +352,16 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
       {hint ? <p className="mt-1.5 text-xs text-ink-2">{hint}</p> : null}
       {enqueueError ? (
         <div className="mt-2 flex items-start justify-between gap-2 rounded-lg border border-tomato/30 bg-tomato/10 p-2">
-          <p className="flex min-w-0 items-start gap-1.5 text-xs text-tomato">
-            <CircleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
+          {/* The wash, the border and the glyph carry the alarm; the words are
+              `ink`. Tomato text *on* the tomato/10 wash measures 4.36:1 light and
+              4.32:1 dark — under the floor in both themes, and the one place in
+              the app where a red-on-red pair was actually reachable. Same rule the
+              queue's amber counter follows: the colour is the surface, the text is
+              ink. The glyph stays tomato (4.36:1 clears the 3:1 a non-text mark
+              needs), and so does the Retry button beside it — that one sits on
+              `card`, where tomato measures 5.0. */}
+          <p className="flex min-w-0 items-start gap-1.5 text-xs text-ink">
+            <CircleAlert className="mt-px size-3.5 shrink-0 text-tomato" aria-hidden />
             {/* `whitespace-pre-wrap`: a batch reports one line per failed file. */}
             <span className="min-w-0 whitespace-pre-wrap break-words">{enqueueError}</span>
           </p>
@@ -369,7 +385,7 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
             the button that is actually working, though: during a batch both
             buttons are disabled, and a spinner here would claim the press that
             the one below owns. */}
-        {running?.length === 1 ? <LoaderCircle className="size-4 shrink-0 animate-spin" aria-hidden /> : null}
+        {running?.length === 1 ? <LoaderCircle className="size-4 shrink-0 spin-indicator" aria-hidden /> : null}
         {running?.length === 1 ? t("adding") : t("addToQueue")}
       </button>
       {batch && batch.length > 1 ? (
@@ -380,7 +396,7 @@ export function RecipeForm({ recipe, input, batch, onQueued, onClose, onOpenMode
           onClick={() => run(batch)}
           disabled={!!error || busy}
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-basil py-2.5 text-sm font-semibold text-basil transition hover:bg-basil/10 disabled:opacity-50">
-          {running && running.length > 1 ? <LoaderCircle className="size-4 shrink-0 animate-spin" aria-hidden /> : null}
+          {running && running.length > 1 ? <LoaderCircle className="size-4 shrink-0 spin-indicator" aria-hidden /> : null}
           {running && running.length > 1
             ? t("addingN", { n: running.length })
             : t("addAllN", { n: batch.length })}

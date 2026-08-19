@@ -53,11 +53,11 @@ const EN = {
   emptySub: "Put a file on the board and pick a recipe.",
 
   // ── File card ────────────────────────────────────────────────────────────
-  clearFile: "Clear file",
   clearNamed: "Clear {name}",
   unitMB: "MB",
   unitGB: "GB",
-  // The badge on a probed file. "any" is the catalog's wildcard and never the
+  // What a probed file's tile glyph is called — read out, not written out (the
+  // card shows the icon alone). "any" is the catalog's wildcard and never the
   // answer to "what is this file", but the map is exhaustive by type.
   mt_video: "video",
   mt_audio: "audio",
@@ -178,7 +178,6 @@ const RU: Record<TKey, string> = {
   emptyTitle: "Что готовим?",
   emptySub: "Положите файл на доску и выберите рецепт.",
 
-  clearFile: "Убрать файл",
   clearNamed: "Убрать {name}",
   unitMB: "МБ",
   unitGB: "ГБ",
@@ -229,7 +228,9 @@ const RU: Record<TKey, string> = {
   deleteModel: "Удалить",
   cancelling: "Отмена…",
   cancelDownload: "Отменить загрузку",
-  cancelHint: "Отмена срабатывает на следующем чтении из сети — до 30 с, если соединение уже оборвалось.",
+  // «При следующем обращении к сети», а не «на следующем чтении из сети»: второе —
+  // калька с английского read, по-русски так о загрузке не говорят.
+  cancelHint: "Отмена применится при следующем обращении к сети — на зависшем соединении это может занять до 30 с.",
   // «Не обнаружена», а не «не распознана»: распознать не удалось бы плохую запись,
   // а здесь речи в файле нет вовсе — и это не ошибка пользователя.
   noSpeech: "Речь в файле не обнаружена",

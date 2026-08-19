@@ -137,11 +137,19 @@ export function QueuePanel({
         {/* Only while something is in flight: a zero would be a badge saying
             nothing is happening, which the empty list below already says.
             The amber wash carries the "working" colour; the numeral itself is
-            `ink`, because amber-on-amber/15 measures 2.2:1 in the light theme —
+            `ink`, because amber-on-amber/15 measures 2.3:1 in the light theme —
             the plan's own floor for small text on amber is 4.5:1, and `ink` is
-            the only token that clears it in both themes (12.7 / 10.9). */}
+            the only token that clears it in both themes (13.5 / 9.7).
+
+            The bare numeral needs a name in words twice over: `aria-label` is what
+            a screen reader reads instead of "2" (a `title` on a plain span is not
+            an accessible name and several readers ignore it outright), and
+            `role="status"` is what makes a change from 2 to 3 announce itself
+            without stealing focus. The `title` stays for the pointer — the same
+            words in both is deliberate here, where the double announcement that
+            rules it out on a button cannot happen: nothing focuses a chip. */}
         {active > 0 ? (
-          <span title={t("activeN", { n: active })}
+          <span role="status" aria-label={t("activeN", { n: active })} title={t("activeN", { n: active })}
             className="rounded-full bg-amber/15 px-2 py-0.5 text-xs font-semibold text-ink tabular-nums">
             {active}
           </span>
@@ -165,12 +173,15 @@ export function QueuePanel({
           return (
             <div key={j.id} className="rounded-xl border border-line bg-card p-3">
               <div className="flex items-start gap-2">
-                {/* The icon *is* the status word: amber ring for running (spinning
-                    where the platform allows it), basil tick for done, tomato
-                    circle for a failure. `role="img"` + the word as its label is
-                    what keeps that legible to a screen reader. */}
+                {/* The icon *is* the status word: amber ring for running (spinning,
+                    and still spinning — slower — under `prefers-reduced-motion`,
+                    where `.spin-indicator` is index.css's one exception, because a
+                    frozen ring beside a live progress bar would be the wrong
+                    story), basil tick for done, tomato circle for a failure.
+                    `role="img"` + the word as its label is what keeps that legible
+                    to a screen reader. */}
                 <Status role="img" aria-label={t(STATUS_KEY[j.status])}
-                  className={`mt-px size-4 shrink-0 ${STATUS_TINT[j.status]} ${j.status === "running" ? "animate-spin" : ""}`} />
+                  className={`mt-px size-4 shrink-0 ${STATUS_TINT[j.status]} ${j.status === "running" ? "spin-indicator" : ""}`} />
                 <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{title(j.recipe_id)}</span>
                 {/* Which lane ran it. The lanes drain independently, so a queued
                     transcription beside a running conversion is the queue working

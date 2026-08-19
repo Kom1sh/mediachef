@@ -102,6 +102,30 @@
 
 body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* The one animation in the app: the ring that says a job is being worked on right
+   now (a queue card, the button that is adding to it). Its own class rather than
+   Tailwind's `animate-spin`, because the reduced-motion rule below needs
+   something to make an exception of — and one selector is easier to keep honest
+   than a utility plus an override of it. */
+@keyframes spin-indicator { to { transform: rotate(360deg); } }
+.spin-indicator { animation: spin-indicator 1s linear infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+  /* …except the running indicator, which is information and not decoration: the
+     plan's design law keeps it («спиннеры остаются — это индикация»). What
+     "reduced" buys here is a period slow enough to read as breathing rather than
+     whirring, well under the speed that triggers vestibular trouble on a 16px
+     glyph.
+
+     Nothing hangs on the rotation being seen at all, which is what makes the
+     exception safe: running is told apart from queued by three cues that do not
+     move — an amber `LoaderCircle` against a grey `Clock4`, an advancing bar, and
+     an ETA line the queued card has no room for — and a screen reader gets the
+     status word from the icon's `aria-label`.
+
+     Beats the blanket rule above on specificity (0,1,0 against 0,0,0), which is
+     how one `!important` overrules another. */
+  .spin-indicator { animation: spin-indicator 2.4s linear infinite !important; }
 }

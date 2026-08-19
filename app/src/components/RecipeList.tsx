@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { Flame, SearchX, type LucideIcon } from "lucide-react";
 import { categoryIcon, categoryTint } from "../lib/icons";
 import { categoryLabel, loc, useLocale, useT } from "../lib/i18n";
@@ -53,23 +54,32 @@ function Section({ icon: Icon, label, recipes, onPick }: {
   recipes: Recipe[];
   onPick: (r: Recipe) => void;
 }) {
+  // A `<section>` is only a landmark once it has a name, and until it has one it is
+  // a plain box: the shelves would be an undifferentiated run of buttons to anyone
+  // navigating by region. Pointing the section at its own heading names it without
+  // writing the label twice — and `useId` is what keeps the reference unique when
+  // fourteen of these render on one screen.
+  const headingId = useId();
   return (
-    <section className="flex flex-col gap-2">
-      <h3 className="flex items-center gap-2 text-xs font-semibold text-ink-2">
+    <section className="flex flex-col gap-2" aria-labelledby={headingId}>
+      <h3 id={headingId} className="flex items-center gap-2 text-xs font-semibold text-ink-2">
         <Icon className="size-4 shrink-0" aria-hidden />
         <span className="min-w-0 truncate">{label}</span>
         {/* tabular numerals: the counts sit in a column down the page and would
-            otherwise jitter between 1 and 8. */}
-        <span className="shrink-0 rounded-full bg-card-2 px-1.5 text-[10px] tabular-nums">{recipes.length}</span>
+            otherwise jitter between 1 and 8. `text-ink` rather than inheriting the
+            heading's `ink-2`: on the `card-2` pill that pair measures 4.25:1 in the
+            light theme, under the 4.5 small text has to clear. */}
+        <span className="shrink-0 rounded-full bg-card-2 px-1.5 text-[10px] text-ink tabular-nums">{recipes.length}</span>
       </h3>
       <Cards recipes={recipes} onPick={onPick} />
     </section>
   );
 }
 
-/** Two columns where the middle column can afford them. Below ~1000px of window
- *  the board is under 300px wide (80px rail + 360px queue + padding), where two
- *  columns would leave a title per line. */
+/** Two columns where the middle column can afford them. The board is the window
+ *  minus the 88px rail, the 360px queue and 32px of padding — 280px at the 760px
+ *  minimum, where two columns would leave a word per line, and ~520px at 1000px,
+ *  where each of the two has room for a title. */
 function Cards({ recipes, onPick }: { recipes: Recipe[]; onPick: (r: Recipe) => void }) {
   return (
     <div className="grid grid-cols-1 gap-2 min-[1000px]:grid-cols-2">

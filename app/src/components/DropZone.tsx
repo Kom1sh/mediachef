@@ -50,7 +50,11 @@ export function DropZone({ onFiles, compact = false }: {
       // which would leave the jump instant instead of absent. The colour change
       // carries the same information without moving anything.
       className={`flex w-full shrink-0 items-center justify-center rounded-2xl border-2 border-dashed text-center transition ${
-        compact ? "h-24 gap-3 px-4" : "flex-col gap-2 px-6 py-10"
+        // `min-h`, not `h`: the strip is 96px tall on purpose, but the Russian
+        // invitation wraps to two lines at the 760px minimum window and a fixed
+        // height would crop the second one instead of growing for it. The padding
+        // only ever shows once it does grow.
+        compact ? "min-h-24 gap-3 px-4 py-3" : "flex-col gap-2 px-6 py-10"
       } ${
         hover
           ? "border-basil bg-card-2 motion-safe:scale-[1.01]"
@@ -62,9 +66,9 @@ export function DropZone({ onFiles, compact = false }: {
           one line rather than a second layout to keep in step. */}
       <span className="min-w-0">
         {/* Wraps rather than truncates: at the 760px minimum window the board is
-            288px wide, and the Russian invitation is long enough that an ellipsis
+            280px wide, and the Russian invitation is long enough that an ellipsis
             would eat the "or click" half of it — the half a user who cannot drag
-            needs to read. Two lines still clear the 96px strip. */}
+            needs to read. Two lines still fit the 96px strip; a third grows it. */}
         <span className="block text-sm font-medium">{t("dropHint")}</span>
         {/* Dropped in the strip: 96px does not hold two lines beside a 28px pot,
             and the format list is onboarding — it has already been read by the
