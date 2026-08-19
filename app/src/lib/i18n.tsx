@@ -57,7 +57,6 @@ const EN = {
   clearNamed: "Clear {name}",
   unitMB: "MB",
   unitGB: "GB",
-  unitSeconds: "s",
   // The badge on a probed file. "any" is the catalog's wildcard and never the
   // answer to "what is this file", but the map is exhaustive by type.
   mt_video: "video",
@@ -183,7 +182,6 @@ const RU: Record<TKey, string> = {
   clearNamed: "Убрать {name}",
   unitMB: "МБ",
   unitGB: "ГБ",
-  unitSeconds: "с",
   mt_video: "видео",
   mt_audio: "аудио",
   mt_image: "изображение",

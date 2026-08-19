@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { BrainCircuit, CircleAlert } from "lucide-react";
+import { size } from "../lib/format";
 import { loc, useLocale, useT } from "../lib/i18n";
 import { cancelModelDownload, deleteModel, downloadModel, getModels, onModelProgress } from "../lib/ipc";
 import type { ModelView } from "../lib/types";
-
-// Units as words, not as literals: "GB" is "ГБ" in Russian.
-const size = (b: number, gb: string, mb: string) =>
-  (b / 1e9 >= 1 ? `${(b / 1e9).toFixed(1)} ${gb}` : `${Math.round(b / 1e6)} ${mb}`);
 
 export function ModelsPanel() {
   const t = useT();
@@ -105,7 +102,11 @@ export function ModelsPanel() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-ink">{m.id}</span>
-                    <span className="shrink-0 rounded-full bg-card-2 px-2 py-0.5 text-xs text-ink-2 tabular-nums">
+                    {/* `text-ink` on the `card-2` pill for the same reason as the
+                        file card's chips and the queue's lane badge: `ink-2` there
+                        measures 4.25:1 in the light theme, under the small-text
+                        floor of 4.5. */}
+                    <span className="shrink-0 rounded-full bg-card-2 px-2 py-0.5 text-xs text-ink tabular-nums">
                       {size(m.approx_bytes, t("unitGB"), t("unitMB"))}
                     </span>
                   </div>

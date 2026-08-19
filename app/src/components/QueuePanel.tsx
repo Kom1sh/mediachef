@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { ChefHat, CircleAlert, Copy, FolderOpen } from "lucide-react";
+import { duration } from "../lib/format";
 import { KIND_ICON, KIND_LABEL, STATUS_ICON, STATUS_TINT } from "../lib/icons";
 import { loc, useLocale, useT, type TKey } from "../lib/i18n";
 import { cancelJob, listJobs, onJobUpdate, revealFile } from "../lib/ipc";
@@ -38,11 +39,6 @@ const isNoSpeech = (j: JobView) =>
 /** Waiting or working — the two states a card can still leave on its own, and what
  *  the header counter counts. */
 const isActive = (j: JobView) => j.status === "queued" || j.status === "running";
-
-const mmss = (s: number) => {
-  const t = Math.max(0, Math.round(s));
-  return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
-};
 
 export function QueuePanel({
   recipes,
@@ -119,7 +115,10 @@ export function QueuePanel({
     const t0 = startedAt.current[j.id];
     if (t0 === undefined || j.percent < 3) return "—";
     const elapsed = (Date.now() - t0) / 1000;
-    return t("etaLeft", { time: mmss((elapsed * (100 - j.percent)) / Math.max(j.percent, 1)) });
+    // `duration` from lib/format, shared with the file card's length chip: a clock
+    // is spelled one way in this app, and a two-hour transcription needs the hours
+    // field that a local `mm:ss` did not have.
+    return t("etaLeft", { time: duration((elapsed * (100 - j.percent)) / Math.max(j.percent, 1)) });
   };
 
   // Reveal and copy-log are the two things here that can fail, and they fail the

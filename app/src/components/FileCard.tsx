@@ -1,16 +1,13 @@
 import { CircleAlert } from "lucide-react";
+import { duration, size } from "../lib/format";
 import { MEDIA_ICON } from "../lib/icons";
 import { useT, type TKey } from "../lib/i18n";
 import type { MediaType, ProbeInfo } from "../lib/types";
 
-// The unit arrives as a word rather than being spelled here: "MB" is "МБ" in
-// Russian, and a file card that says one and means the other is the kind of
-// detail a bilingual UI is judged by.
-const fmtSize = (b: number | null, mb: string) => (b == null ? "" : `${(b / 1024 / 1024).toFixed(1)} ${mb}`);
-const fmtDur = (s: number | null, sec: string) => (s == null ? "" : `${Math.round(s)} ${sec}`);
-
-/** The badge under the name. Exhaustive by type, so a media type added to the
- *  catalog cannot reach the card without a word for it. */
+/** The accessible name of the media tile's glyph — the type word is not written
+ *  out beside the icon that means it, so this is where a screen reader gets it.
+ *  Exhaustive by type, so a media type added to the catalog cannot reach the card
+ *  without a word for it. */
 const MEDIA_KEY: Record<MediaType, TKey> = {
   video: "mt_video", audio: "mt_audio", image: "mt_image", subtitle: "mt_subtitle", any: "mt_any",
 };
@@ -34,9 +31,17 @@ export function FileCard({ path, info, probeError, active, onSelect, onClear }: 
   // and no size), and three empty pills would be worse than none.
   const chips = info
     ? [
-        { k: "duration", text: fmtDur(info.duration_s, t("unitSeconds")) },
-        { k: "size", text: fmtSize(info.size_bytes, t("unitMB")) },
-        { k: "summary", text: info.summary },
+        // A clock rather than a second count («1:30:00», not «5400 с») and
+        // gigabytes rather than four thousand megabytes: `lib/format` is the one
+        // place in the app either is spelled, shared with the queue's ETA and the
+        // model list's sizes.
+        { k: "duration", text: info.duration_s == null ? "" : duration(info.duration_s), title: "" },
+        { k: "size", text: info.size_bytes == null ? "" : size(info.size_bytes, t("unitGB"), t("unitMB")), title: "" },
+        // The codec line is the one chip that can outgrow the row it sits in
+        // (`truncate` below), so it carries the whole summary as a tooltip. The
+        // other two are short by construction — a tooltip repeating them would be
+        // noise.
+        { k: "summary", text: info.summary, title: info.summary },
       ].filter(c => c.text !== "")
     : [];
   return (
@@ -60,8 +65,13 @@ export function FileCard({ path, info, probeError, active, onSelect, onClear }: 
           <button type="button" onClick={onSelect} className="block w-full truncate text-left font-medium">{name}</button>
           {chips.length > 0 && (
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {/* `text-ink`, not `ink-2`: on the `card-2` pill that pair measures
+                  4.25:1 in the light theme, under the 4.5 floor small text has to
+                  clear — the same reason the queue's lane badge is drawn in `ink`.
+                  The pill's own wash is what makes these read as secondary. */}
               {chips.map(c => (
-                <span key={c.k} className="max-w-full truncate rounded-full bg-card-2 px-2 py-0.5 text-xs text-ink-2">{c.text}</span>
+                <span key={c.k} title={c.title || undefined}
+                  className="max-w-full truncate rounded-full bg-card-2 px-2 py-0.5 text-xs text-ink">{c.text}</span>
               ))}
             </div>
           )}
