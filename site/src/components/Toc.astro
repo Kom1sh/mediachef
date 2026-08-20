@@ -1,0 +1,15 @@
+---
+// Содержание страницы. Стоит сразу под H1 и ведёт по якорям её же разделов —
+// в отличие от меню в шапке, которое уводит на другие страницы.
+interface Props { label: string; items: readonly { label: string; href: string }[] }
+const { label, items } = Astro.props;
+---
+
+<nav class="toc" aria-label={label}>
+  <p class="eyebrow toc-label">{label}</p>
+  <ol class="toc-list">
+    {items.map((i) => (
+      <li><a href={i.href}>{i.label}</a></li>
+    ))}
+  </ol>
+</nav>

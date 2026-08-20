@@ -1,0 +1,54 @@
+---
+// Подвал: колонка бренда плюс четыре колонки ссылок из footerFor().
+// В колонке «Скачать» — прямые ссылки на файлы релиза с их весом.
+import { footerFor, UI } from "../nav";
+import { T, FACTS, type Locale, type PageId } from "../content";
+
+interface Props { locale: Locale; page: PageId; switchPath: string }
+const { locale, page, switchPath } = Astro.props;
+const t = T[locale];
+const u = UI(locale);
+const cols = footerFor(locale, page);
+const other: Locale = locale === "en" ? "ru" : "en";
+---
+
+<footer>
+  <div class="wrap foot-grid">
+    <div class="foot-brand">
+      <div class="foot-mark">
+        <svg width="34" height="34" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="100" y="100" width="824" height="824" rx="185" fill="var(--card-2)"/><g><rect x="357" y="304" width="46" height="112" rx="23" fill="var(--basil)"/><rect x="432" y="252" width="46" height="164" rx="23" fill="var(--basil)"/><rect x="507" y="204" width="46" height="212" rx="23" fill="var(--basil)"/><rect x="582" y="252" width="46" height="164" rx="23" fill="var(--basil)"/><rect x="657" y="304" width="46" height="112" rx="23" fill="var(--basil)"/></g><circle cx="530" cy="452" r="30" fill="var(--amber)"/><rect x="266" y="482" width="528" height="34" rx="17" fill="var(--ink)"/><path d="M 296 542 L 764 542 L 764 700 Q 764 786 678 786 L 382 786 Q 296 786 296 700 Z" fill="var(--ink)"/><rect x="216" y="556" width="64" height="36" rx="18" fill="var(--ink)"/><rect x="780" y="556" width="64" height="36" rx="18" fill="var(--ink)"/></svg>
+        <strong>MediaChef</strong>
+      </div>
+      <p class="foot-blurb">{u.footBlurb}</p>
+      <ul class="foot-chips">
+        <li class="chip">{`${FACTS.version}`}</li>
+        <li class="chip">{FACTS.license}</li>
+        <li class="chip">macOS · Windows · Linux</li>
+      </ul>
+    </div>
+
+    {cols.map((c) => (
+      <nav class="foot-col" aria-label={c.label}>
+        <p class="foot-col-h">{c.label}</p>
+        <ul>
+          {c.items.map((i) => (
+            <li>
+              <a href={i.href} rel={i.ext ? "noopener" : undefined}>
+                {i.label}
+                {i.note && <span class="foot-note">{i.note}</span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    ))}
+  </div>
+
+  <div class="wrap foot-bottom">
+    <p class="foot-rights">
+      <span>{t.footRights}</span>
+      <span class="foot-tag">{t.footTagline}</span>
+    </p>
+    <a class="foot-lang" href={switchPath} hreflang={other} lang={other}>{t.switchLabel}</a>
+  </div>
+</footer>

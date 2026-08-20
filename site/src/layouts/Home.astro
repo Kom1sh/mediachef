@@ -1,7 +1,10 @@
 ---
 // Главная страница локали: /en/ и /ru/.
 import Base from "./Base.astro";
+import Toc from "../components/Toc.astro";
+import Ctas from "../components/Ctas.astro";
 import { T, LINKS, MODELS, SHOT, SITE, pathFor, type Locale } from "../content";
+import { homeToc } from "../nav";
 import { organizationLd, softwareApplicationLd, faqLd } from "../seo";
 
 interface Props { locale: Locale }
@@ -19,16 +22,13 @@ const jsonLd = [
 
 <Base locale={locale} page="home" title={t.title} description={t.description} jsonLd={jsonLd}>
   <main id="main">
+   <div class="band band-hero">
     <div class="wrap hero">
       <div>
         <h1>{t.heroTitle1}<br />{t.heroTitle2}<span class="accent">{t.heroAccent}</span></h1>
         <p class="sub">{t.heroSub}</p>
-        <div class="ctas" id="download">
-          <a class="btn btn-primary" href={LINKS.releases}>{t.ctaMac}</a>
-          <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaWin}</a>
-          <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaLinux}</a>
-        </div>
-        <p class="ctas-note">{t.ctaNote} <a href={LINKS.github}>{t.ctaNoteLink}</a></p>
+        <Toc label={t.tocLabel} items={homeToc(locale)} />
+        <Ctas locale={locale} anchor />
         <ul class="trust">
           {t.trust.map((c) => <li class="chip">{c}</li>)}
         </ul>
@@ -92,8 +92,9 @@ const jsonLd = [
         </g>
       </svg>
     </div>
+   </div>
 
-    <section id="how">
+    <section id="how" class="band">
       <div class="wrap">
         <h2>{t.howTitle}</h2>
         <ol class="steps">
@@ -120,7 +121,7 @@ const jsonLd = [
       </div>
     </section>
 
-    <section id="recipes">
+    <section id="recipes" class="band band-tint">
       <div class="wrap">
         <h2>{t.recipesTitle}</h2>
         <p class="lead">{t.recipesLead}</p>
@@ -158,7 +159,7 @@ const jsonLd = [
       </div>
     </section>
 
-    <section id="transcribe">
+    <section id="transcribe" class="band">
       <div class="wrap">
         <div class="split">
           <div>
@@ -220,21 +221,17 @@ const jsonLd = [
       </div>
     </section>
 
-    <section id="privacy">
+    <section id="privacy" class="band band-tint">
       <div class="wrap">
-        <div class="privacy">
-          <div class="wrap">
-            <h2>{t.privTitle}</h2>
-            <p class="lead">{t.privLead}</p>
-            <ul class="trust chips-lg">
-              {t.privChips.map((c) => <li class="chip">{c}</li>)}
-            </ul>
-          </div>
-        </div>
+        <h2>{t.privTitle}</h2>
+        <p class="lead">{t.privLead}</p>
+        <ul class="trust chips-lg">
+          {t.privChips.map((c) => <li class="chip">{c}</li>)}
+        </ul>
       </div>
     </section>
 
-    <section id="oss">
+    <section id="oss" class="band">
       <div class="wrap split">
         <div>
           <h2>{t.ossTitle}</h2>
@@ -257,7 +254,7 @@ const jsonLd = [
       </div>
     </section>
 
-    <section id="faq">
+    <section id="faq" class="band band-tint">
       <div class="wrap">
         <h2>{t.faqTitle}</h2>
         <div class="faq">
@@ -271,16 +268,12 @@ const jsonLd = [
       </div>
     </section>
 
-    <section>
+    <section class="band band-close">
       <div class="wrap">
         <div class="cta-final">
           <h2>{t.finalTitle}</h2>
           <p class="lead">{t.finalSub}</p>
-          <div class="ctas">
-            <a class="btn btn-primary" href={LINKS.releases}>{t.ctaMac}</a>
-            <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaWin}</a>
-            <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaLinux}</a>
-          </div>
+          <Ctas locale={locale} />
           <p class="ctas-note note-wide">{t.betaNote}</p>
         </div>
       </div>

@@ -6,6 +6,8 @@ import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/700.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "../styles/global.css";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
 import { T, SITE, pathFor, type Locale, type PageId } from "../content";
 
 interface Props {
@@ -28,8 +30,6 @@ const xDefault = page === "home" ? `${SITE}/` : enUrl;
 
 const homePath = pathFor("home", locale);
 const switchPath = pathFor(page, other);
-// На главной якоря локальные, на посадочных — ведут в разделы главной.
-const anchor = (id: string) => (page === "home" ? `#${id}` : `${homePath}#${id}`);
 ---
 
 <!doctype html>
@@ -64,35 +64,10 @@ const anchor = (id: string) => (page === "home" ? `#${id}` : `${homePath}#${id}`
   <body>
     <a class="skip" href="#main">{t.skipToContent}</a>
 
-    <header class="top">
-      <div class="wrap top-in">
-        <a class="brand" href={homePath}>
-          <svg width="30" height="30" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="100" y="100" width="824" height="824" rx="185" fill="var(--card-2)"/><g><rect x="357" y="304" width="46" height="112" rx="23" fill="var(--basil)"/><rect x="432" y="252" width="46" height="164" rx="23" fill="var(--basil)"/><rect x="507" y="204" width="46" height="212" rx="23" fill="var(--basil)"/><rect x="582" y="252" width="46" height="164" rx="23" fill="var(--basil)"/><rect x="657" y="304" width="46" height="112" rx="23" fill="var(--basil)"/></g><circle cx="530" cy="452" r="30" fill="var(--amber)"/><rect x="266" y="482" width="528" height="34" rx="17" fill="var(--ink)"/><path d="M 296 542 L 764 542 L 764 700 Q 764 786 678 786 L 382 786 Q 296 786 296 700 Z" fill="var(--ink)"/><rect x="216" y="556" width="64" height="36" rx="18" fill="var(--ink)"/><rect x="780" y="556" width="64" height="36" rx="18" fill="var(--ink)"/></svg>
-          <strong>MediaChef</strong>
-        </a>
-        <nav class="top-nav" aria-label="MediaChef">
-          <a href={anchor("recipes")}>{t.nav.recipes}</a>
-          <a href={anchor("transcribe")}>{t.nav.transcribe}</a>
-          <a href={anchor("privacy")}>{t.nav.privacy}</a>
-          <a href={anchor("faq")}>{t.nav.faq}</a>
-          <a class="lang" href={switchPath} hreflang={other} lang={other}>{other.toUpperCase()}</a>
-        </nav>
-      </div>
-    </header>
+    <Nav locale={locale} page={page} homePath={homePath} switchPath={switchPath} />
 
     <slot />
 
-    <footer>
-      <div class="wrap foot-in">
-        <p class="foot-rights">
-          <span>{t.footRights}</span>
-          <span class="foot-tag">{t.footTagline}</span>
-        </p>
-        <nav class="links" aria-label={t.footNavLabel}>
-          {t.footLinks.map((l) => <a href={l.href}>{l.label}</a>)}
-          <a href={switchPath} hreflang={other} lang={other}>{t.switchLabel}</a>
-        </nav>
-      </div>
-    </footer>
+    <Footer locale={locale} page={page} switchPath={switchPath} />
   </body>
 </html>

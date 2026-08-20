@@ -1,6 +1,8 @@
 ---
 // Посадочная под один поисковый интент: /en/<slug>/ и /ru/<slug>/.
 import Base from "./Base.astro";
+import Toc from "../components/Toc.astro";
+import Ctas from "../components/Ctas.astro";
 import { T, LINKS, LANDINGS, SHOT, SITE, pathFor, type Locale, type PageId } from "../content";
 import { organizationLd, softwareApplicationLd, faqLd, breadcrumbLd, howToLd } from "../seo";
 
@@ -13,6 +15,7 @@ const check = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" strok
 const pageUrl = SITE + pathFor(page, locale);
 const homePath = pathFor("home", locale);
 const anchors = [l.sections.how, l.sections.table, l.sections.why, l.sections.faq];
+const tocItems = l.toc.map((label, i) => ({ label, href: `#${anchors[i]}` }));
 
 const jsonLd = [
   organizationLd(),
@@ -34,43 +37,32 @@ const stamped = l.command.split("\n").map((line) => {
 
 <Base locale={locale} page={page} title={l.title} description={l.description} jsonLd={jsonLd}>
   <main id="main">
-    <div class="wrap hero hero-intent">
-      <div>
-        <p class="crumbs"><a href={homePath}>MediaChef</a> <span aria-hidden="true">/</span> {l.crumb}</p>
-        <h1>{l.h1}</h1>
-        <p class="sub">{l.lead}</p>
-        <div class="ctas" id="download">
-          <a class="btn btn-primary" href={LINKS.releases}>{t.ctaMac}</a>
-          <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaWin}</a>
-          <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaLinux}</a>
+    <div class="band band-hero">
+      <div class="wrap hero hero-intent">
+        <div>
+          <p class="crumbs"><a href={homePath}>MediaChef</a> <span aria-hidden="true">/</span> {l.crumb}</p>
+          <h1>{l.h1}</h1>
+          <p class="sub">{l.lead}</p>
+          <Toc label={t.tocLabel} items={tocItems} />
+          <Ctas locale={locale} anchor />
         </div>
-        <p class="ctas-note">{t.ctaNote} <a href={LINKS.github}>{t.ctaNoteLink}</a></p>
-      </div>
 
-      <div class="window cmd-card">
-        <p class="eyebrow">{l.commandLabel}</p>
-        <div class="mono cmd">
-          {stamped.map((s) => (
-            <span class="cmd-line">
-              {s.time && <span class="stamp">{s.time}</span>}
-              {s.text}
-            </span>
-          ))}
+        <div class="window cmd-card">
+          <p class="eyebrow">{l.commandLabel}</p>
+          <div class="mono cmd">
+            {stamped.map((s) => (
+              <span class="cmd-line">
+                {s.time && <span class="stamp">{s.time}</span>}
+                {s.text}
+              </span>
+            ))}
+          </div>
+          <p class="engine-note">{l.commandNote}</p>
         </div>
-        <p class="engine-note">{l.commandNote}</p>
       </div>
     </div>
 
-    <nav class="toc" aria-label={t.tocLabel}>
-      <div class="wrap toc-in">
-        <p class="eyebrow">{t.tocLabel}</p>
-        <ul>
-          {l.toc.map((label, i) => <li><a href={`#${anchors[i]}`}>{label}</a></li>)}
-        </ul>
-      </div>
-    </nav>
-
-    <section id={l.sections.how}>
+    <section id={l.sections.how} class="band">
       <div class="wrap">
         <h2>{l.stepsTitle}</h2>
         <ol class="steps steps-flow">
@@ -97,7 +89,7 @@ const stamped = l.command.split("\n").map((line) => {
       </div>
     </section>
 
-    <section id={l.sections.table}>
+    <section id={l.sections.table} class="band band-tint">
       <div class="wrap">
         <h2 id={`${l.sections.table}-h`}>{l.tableTitle}</h2>
         <p class="lead">{l.tableLead}</p>
@@ -121,7 +113,7 @@ const stamped = l.command.split("\n").map((line) => {
       </div>
     </section>
 
-    <section id={l.sections.why}>
+    <section id={l.sections.why} class="band">
       <div class="wrap">
         <h2>{l.whyTitle}</h2>
         <div class="bullets bullets-two">
@@ -135,7 +127,7 @@ const stamped = l.command.split("\n").map((line) => {
       </div>
     </section>
 
-    <section id={l.sections.faq}>
+    <section id={l.sections.faq} class="band band-tint">
       <div class="wrap">
         <h2>{l.faqTitle}</h2>
         <div class="faq">
@@ -149,16 +141,12 @@ const stamped = l.command.split("\n").map((line) => {
       </div>
     </section>
 
-    <section>
+    <section class="band band-close">
       <div class="wrap">
         <div class="cta-final">
           <h2>{l.ctaTitle}</h2>
           <p class="lead">{l.ctaSub}</p>
-          <div class="ctas">
-            <a class="btn btn-primary" href={LINKS.releases}>{t.ctaMac}</a>
-            <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaWin}</a>
-            <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaLinux}</a>
-          </div>
+          <Ctas locale={locale} />
           <p class="ctas-note note-wide">{t.betaNote}</p>
         </div>
 

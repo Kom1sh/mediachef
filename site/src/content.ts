@@ -14,6 +14,10 @@ export const LINKS = { releases: RELEASES, github: GITHUB, notice: NOTICE };
 /** Проверяемые факты о продукте — единственный источник для текста и разметки. */
 export const FACTS = {
   version: "0.4.0",
+  // Дата последней правки текстов — уезжает в <lastmod> sitemap.xml.
+  // Меняется вручную вместе с содержимым, а не при каждой пересборке:
+  // «сегодня» в lastmod у неизменившейся страницы Google просто перестаёт верить.
+  updated: "2026-08-20",
   recipeCount: 17,
   modelCount: 4,
   platformCount: 3,
