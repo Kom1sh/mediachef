@@ -314,9 +314,12 @@ export interface LandingCopy {
   lead: string;
   sections: { how: string; table: string; why: string; faq: string };
   toc: readonly string[];
-  commandLabel: string;
-  command: string;
-  commandNote: string;
+  // Образец результата в hero — только там, где это РЕЗУЛЬТАТ работы программы
+  // (готовый текст расшифровки). Строку запускаемой команды в hero не показываем:
+  // страница продаёт приложение, а не то, что под ним лежит.
+  outLabel?: string;
+  outSample?: string;
+  outNote?: string;
   stepsTitle: string;
   steps: readonly { h: string; p: string }[];
   shotAlt: string;
@@ -349,9 +352,6 @@ export const LANDINGS: Record<Exclude<PageId, "home">, Record<Locale, LandingCop
         "MediaChef ships a recipe called “Extract audio to MP3”. Drop a video on the board, pick a bitrate, press start: the soundtrack is written next to the original as an MP3. The file never leaves your machine, there is no size limit, and the whole thing works with the network off.",
       sections: { how: "how", table: "bitrate", why: "offline", faq: "faq" },
       toc: ["How to convert MP4 to MP3", "Which bitrate to pick", "Why convert on your computer", "FAQ"],
-      commandLabel: "What actually runs",
-      command: "ffmpeg -i input.mp4 -vn -b:a 192k output.mp3",
-      commandNote: "MediaChef writes this line for you and shows it before the job starts.",
       stepsTitle: "How to convert MP4 to MP3",
       steps: [
         { h: "Download MediaChef", p: "One file for macOS, Windows or Linux. FFmpeg is already inside — nothing to install separately, nothing to add to PATH." },
@@ -407,9 +407,6 @@ export const LANDINGS: Record<Exclude<PageId, "home">, Record<Locale, LandingCop
         "В MediaChef есть рецепт «Извлечь аудио в MP3». Положите видео на доску, выберите битрейт, нажмите старт — звуковая дорожка ляжет рядом с исходником в виде MP3. Файл не уезжает с вашего компьютера, лимита размера нет, и всё это работает с выключенной сетью.",
       sections: { how: "how", table: "bitrate", why: "offline", faq: "faq" },
       toc: ["Как перевести MP4 в MP3", "Какой битрейт выбрать", "Почему офлайн лучше", "Вопросы и ответы"],
-      commandLabel: "Что выполняется на самом деле",
-      command: "ffmpeg -i input.mp4 -vn -b:a 192k output.mp3",
-      commandNote: "MediaChef набирает эту строку за вас и показывает её до запуска задачи.",
       stepsTitle: "Как перевести MP4 в MP3",
       steps: [
         { h: "Скачайте MediaChef", p: "Один файл для macOS, Windows или Linux. FFmpeg уже внутри — ставить отдельно и прописывать в PATH ничего не нужно." },
@@ -469,9 +466,9 @@ export const LANDINGS: Record<Exclude<PageId, "home">, Record<Locale, LandingCop
         "MediaChef runs OpenAI's Whisper locally through whisper.cpp. Download a model once, then drop a recording or a video on the board and pick what you need out: plain text, SRT or VTT subtitles with timings, or JSON with the time of every segment. The audio is never uploaded, and there is no per-minute price.",
       sections: { how: "how", table: "models", why: "offline", faq: "faq" },
       toc: ["How to transcribe a recording", "Which Whisper model to pick", "Why transcribe on your computer", "FAQ"],
-      commandLabel: "What you get out",
-      command: "00:00:04  Hi everyone, let's get started…\n00:00:11  First topic — plans for the quarter.\n00:00:19  There are three scenarios, sharing now.",
-      commandNote: "TXT without timings, SRT and VTT with them, JSON with the start and end of every segment.",
+      outLabel: "What you get out",
+      outSample: "00:00:04  Hi everyone, let's get started…\n00:00:11  First topic — plans for the quarter.\n00:00:19  There are three scenarios, sharing now.",
+      outNote: "TXT without timings, SRT and VTT with them, JSON with the start and end of every segment.",
       stepsTitle: "How to transcribe a recording",
       steps: [
         { h: "Download MediaChef", p: "One file for macOS, Windows or Linux. whisper.cpp v1.7.6 is already inside the download; only the model is fetched separately." },
@@ -529,9 +526,9 @@ export const LANDINGS: Record<Exclude<PageId, "home">, Record<Locale, LandingCop
         "MediaChef запускает Whisper от OpenAI локально, через whisper.cpp. Скачайте модель один раз, положите запись или видео на доску и выберите, что получить на выходе: обычный текст, субтитры SRT и VTT с таймингами или JSON со временем каждого отрезка. Звук никуда не загружается, платы за минуты нет.",
       sections: { how: "how", table: "models", why: "offline", faq: "faq" },
       toc: ["Как расшифровать запись", "Какую модель Whisper выбрать", "Почему офлайн лучше", "Вопросы и ответы"],
-      commandLabel: "Что получится на выходе",
-      command: "00:00:04  Всем привет, начинаем встречу…\n00:00:11  Первый вопрос — планы на квартал.\n00:00:19  Есть три сценария, покажу таблицу.",
-      commandNote: "TXT — без таймингов, SRT и VTT — с ними, JSON — со временем начала и конца каждого отрезка.",
+      outLabel: "Что получится на выходе",
+      outSample: "00:00:04  Всем привет, начинаем встречу…\n00:00:11  Первый вопрос — планы на квартал.\n00:00:19  Есть три сценария, покажу таблицу.",
+      outNote: "TXT — без таймингов, SRT и VTT — с ними, JSON — со временем начала и конца каждого отрезка.",
       stepsTitle: "Как расшифровать запись",
       steps: [
         { h: "Скачайте MediaChef", p: "Один файл для macOS, Windows или Linux. whisper.cpp v1.7.6 уже внутри поставки — отдельно качается только модель." },

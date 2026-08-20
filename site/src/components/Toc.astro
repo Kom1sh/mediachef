@@ -1,15 +1,19 @@
 ---
-// Содержание страницы. Стоит сразу под H1 и ведёт по якорям её же разделов —
-// в отличие от меню в шапке, которое уводит на другие страницы.
+// Содержание страницы: тонкая строка сразу под H1, не блок. Ведёт по якорям
+// разделов этой же страницы — в отличие от меню в шапке, которое уводит
+// на другие страницы.
 interface Props { label: string; items: readonly { label: string; href: string }[] }
 const { label, items } = Astro.props;
 ---
 
 <nav class="toc" aria-label={label}>
-  <p class="eyebrow toc-label">{label}</p>
-  <ol class="toc-list">
+  <svg class="toc-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+    <path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>
+  </svg>
+  <span class="toc-label">{label}</span>
+  <ul class="toc-list">
     {items.map((i) => (
       <li><a href={i.href}>{i.label}</a></li>
     ))}
-  </ol>
+  </ul>
 </nav>

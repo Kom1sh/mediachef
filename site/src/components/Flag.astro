@@ -1,0 +1,27 @@
+---
+// Флажок для переключателя языка. Рисуем SVG, а не эмодзи: флаговые эмодзи
+// Windows не показывает вообще — вместо флага были бы две буквы.
+// Внешний svg сам обрезает всё, что вылезло за viewBox, поэтому диагонали
+// британского флага рисуются штрихами без clipPath (и без коллизий id).
+import type { Locale } from "../content";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+---
+
+{locale === "ru" ? (
+  <svg class="flag" viewBox="0 0 60 40" width="20" height="14" aria-hidden="true">
+    <rect width="60" height="40" fill="#fff"/>
+    <rect y="13.33" width="60" height="13.34" fill="#0039A6"/>
+    <rect y="26.67" width="60" height="13.33" fill="#D52B1E"/>
+    <rect width="60" height="40" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="2"/>
+  </svg>
+) : (
+  <svg class="flag" viewBox="0 0 60 40" width="20" height="14" aria-hidden="true">
+    <rect width="60" height="40" fill="#012169"/>
+    <path d="M0 0 60 40M60 0 0 40" stroke="#fff" stroke-width="8"/>
+    <path d="M0 0 60 40M60 0 0 40" stroke="#C8102E" stroke-width="4"/>
+    <path d="M30 0V40M0 20H60" stroke="#fff" stroke-width="13"/>
+    <path d="M30 0V40M0 20H60" stroke="#C8102E" stroke-width="8"/>
+  </svg>
+)}

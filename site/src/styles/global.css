@@ -1,20 +1,40 @@
-/* MediaChef site — те же токены «тёплой кухни», что в приложении. */
+/* MediaChef site — палитра «чистый лист»: холодные нейтрали, один насыщенный
+   акцент (базилик) и янтарь как второй голос для таймкодов и значений
+   по умолчанию. Прежняя бежевая гамма ушла: она гасила контраст и старила
+   страницу. Те же имена токенов используются в приложении (app/src/index.css). */
 :root {
-  --paper: #FAF7F1; --card: #FFFFFF; --card-2: #F3EEE5;
-  --ink: #2A231C; --ink-2: #6E6355; --line: #E8E0D2; --line-strong: #93826D;
-  --basil: #3D7A46; --basil-deep: #2F6238; --basil-ink: #FFFFFF;
-  --amber: #BD7614; --amber-soft: #F3E4CB;
-  --tomato: #BC4B37;
+  --paper: #F7F8FA; --card: #FFFFFF; --card-2: #EDF0F4;
+  --ink: #0F1319; --ink-2: #5A6473; --line: #E2E6EC; --line-strong: #79838F;
+  --basil: #0EA05C; --basil-deep: #0B8A4E; --basil-ink: #FFFFFF;
+  --amber: #C97609;
+  --tomato: #E23D3D;
+  /* Подсветка hero. Отдельный токен, а не «мягкий янтарь»: на холодной
+     подложке тёплое пятно читалось как пятно, а не как свет. */
+  --glow: #E7F3EC;
+  /* Цвета плиток-категорий: пара «подложка / знак» на каждую.
+     Вынесены в токены, чтобы палитра менялась в одном месте — и в CSS,
+     и в SVG окна приложения. */
+  --t-green-bg: #E3F5EC;  --t-green: #0B7A46;
+  --t-ochre-bg: #FBEEDA;  --t-ochre: #A66A0B;
+  --t-blue-bg:  #E6ECFB;  --t-blue:  #2C4FB0;
+  --t-red-bg:   #FBE7E7;  --t-red:   #C0332F;
+  --t-purple-bg:#F0E9FB;  --t-purple:#6D45B8;
   --header-h: 62px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #211B15; --card: #2B241D; --card-2: #352D24;
-    --ink: #F2EBE1; --ink-2: #B3A695; --line: #3E352A; --line-strong: #8A7C69;
-    --basil: #5FA96B; --basil-deep: #4C8E58; --basil-ink: #1C2B1F;
-    --amber: #E8A13D; --amber-soft: #3B2F1D;
-    --tomato: #D97862;
+    --paper: #0E1116; --card: #161B22; --card-2: #1D242D;
+    --ink: #E9EEF4; --ink-2: #97A3B2; --line: #262E38; --line-strong: #6E7A88;
+    --basil: #2FBF74; --basil-deep: #26A463; --basil-ink: #062015;
+    --amber: #F5A524;
+    --tomato: #F2555A;
+    --glow: #163024;
+    --t-green-bg: #10291E;  --t-green: #4FD08C;
+    --t-ochre-bg: #2C2415;  --t-ochre: #F0AE4E;
+    --t-blue-bg:  #1A2138;  --t-blue:  #94A9F0;
+    --t-red-bg:   #2D1A1C;  --t-red:   #F08585;
+    --t-purple-bg:#241C3A;  --t-purple:#B49AF5;
     color-scheme: dark;
   }
 }
@@ -84,9 +104,12 @@ h3 { font-size: 1.05rem; font-weight: 700; }
 .lang {
   font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.8rem; font-weight: 600;
   border: 1px solid var(--line-strong); border-radius: 9px; text-decoration: none;
-  display: inline-flex; align-items: center; min-height: 34px; padding: 0 10px; color: var(--ink);
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 34px; padding: 0 9px; color: var(--ink);
 }
 .lang:hover { border-color: var(--basil); }
+.flag { flex: none; border-radius: 2px; }
+.acc-link .flag, .foot-lang .flag { margin-right: 10px; }
 
 /* ── меню: категории с выпадающими списками ─────────────
    Раскрытие без единой строки JS: на десктопе — :hover/:focus-within,
@@ -108,7 +131,7 @@ h3 { font-size: 1.05rem; font-weight: 700; }
   position: absolute; top: 100%; left: 0; z-index: 60;
   min-width: 292px; margin-top: 10px; padding: 14px;
   background: var(--card); border: 1px solid var(--line); border-radius: 18px;
-  box-shadow: 0 26px 60px -28px rgba(42, 35, 28, .5);
+  box-shadow: 0 26px 60px -28px rgba(15, 19, 25, .5);
   display: grid; gap: 12px;
   /* Скрыт через visibility, а не display: так ссылки внутри выпадают из
      Tab-порядка, пока панель закрыта, и возвращаются, когда открыта. */
@@ -153,7 +176,7 @@ h3 { font-size: 1.05rem; font-weight: 700; }
 .burger-panel {
   position: absolute; left: 0; right: 0; top: 100%; z-index: 55;
   background: var(--paper); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
-  box-shadow: 0 30px 60px -30px rgba(42, 35, 28, .5);
+  box-shadow: 0 30px 60px -30px rgba(15, 19, 25, .5);
   max-height: calc(100dvh - var(--header-h)); overflow-y: auto;
 }
 .burger-in { padding-top: 6px; padding-bottom: 22px; }
@@ -224,10 +247,10 @@ h3 { font-size: 1.05rem; font-weight: 700; }
 
 /* ── иллюстрация-окно ─────────────────────────────────── */
 .window { background: var(--card); border: 1px solid var(--line); border-radius: 20px;
-  box-shadow: 0 24px 60px -30px rgba(42,35,28,.35); overflow: hidden; }
+  box-shadow: 0 24px 60px -30px rgba(15,19,25,.28); overflow: hidden; }
 
-/* Карточка «что выполняется»: настоящая команда или настоящий вывод. */
-.cmd-card { padding: 22px; }
+/* Карточка результата: то, что человек получит на выходе. */
+.out-card { padding: 22px; }
 .cmd {
   margin-top: 12px; font-size: 0.84rem; line-height: 1.9; color: var(--ink);
   overflow-wrap: break-word;
@@ -246,7 +269,7 @@ section.band { padding: 76px 0; }
 /* Тёплое пятно в правом верхнем углу — единственная «подсветка» на сайте.
    Тот же янтарь, что метит таймкоды и значение по умолчанию в таблицах. */
 .band-hero {
-  background: radial-gradient(900px 340px at 78% -12%, var(--amber-soft), transparent 68%), var(--card-2);
+  background: radial-gradient(900px 340px at 78% -12%, var(--glow), transparent 68%), var(--card-2);
   border-bottom: 1px solid var(--line);
 }
 .band-close { padding-bottom: 88px; }
@@ -264,15 +287,20 @@ p.lead { margin-top: 14px; color: var(--ink-2); max-width: 44em; font-size: 1.05
    Стоит прямо под H1: меню в шапке уводит на другие страницы, а это —
    карта самой страницы, и она нужна раньше, чем кнопки. */
 .toc {
-  margin-top: 24px; max-width: 34em;
-  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-  padding: 12px 16px 13px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px;
+  margin-top: 18px; padding: 11px 0;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
 }
-.toc-label { margin-bottom: 6px; }
-.toc-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 0 22px; }
+.toc-icon { color: var(--ink-2); flex: none; }
+.toc-icon + .toc-label { margin-left: -12px; }
+.toc-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--ink-2); white-space: nowrap;
+}
+.toc-list { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 18px; }
 .toc-list a {
-  display: block; padding: 4px 0; text-decoration: none;
-  color: var(--ink); font-weight: 600; font-size: 0.9rem;
+  text-decoration: none; color: var(--ink); font-weight: 600; font-size: 0.9rem;
 }
 .toc-list a:hover { color: var(--basil); }
 
@@ -289,7 +317,7 @@ p.lead { margin-top: 14px; color: var(--ink-2); max-width: 44em; font-size: 1.05
 .shot { margin-top: 40px; }
 .shot img {
   width: 100%; border-radius: 18px; border: 1px solid var(--line);
-  background: var(--card-2); box-shadow: 0 30px 70px -36px rgba(42,35,28,.45);
+  background: var(--card-2); box-shadow: 0 30px 70px -36px rgba(15,19,25,.4);
 }
 .shot figcaption { margin-top: 12px; font-size: 0.85rem; color: var(--ink-2); max-width: 46em; }
 
@@ -300,18 +328,11 @@ p.lead { margin-top: 14px; color: var(--ink-2); max-width: 44em; font-size: 1.05
 .recipe .tile { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 12px; }
 .recipe h3 { font-size: 0.95rem; }
 .recipe p { margin-top: 4px; font-size: 0.82rem; color: var(--ink-2); }
-.tile-green { background: #E7EFE8; color: #3D7A46; }
-.tile-ochre { background: #F2E9DB; color: #9A6B22; }
-.tile-blue  { background: #E9EBF2; color: #4C5B8F; }
-.tile-red   { background: #F5E8E4; color: #BC4B37; }
-.tile-purple{ background: #F1E7F0; color: #8F4C82; }
-@media (prefers-color-scheme: dark) {
-  .tile-green { background: #2E3A30; color: #7DC489; }
-  .tile-ochre { background: #3B331F; color: #E8A13D; }
-  .tile-blue  { background: #2C3140; color: #A2ADE4; }
-  .tile-red   { background: #3D2B26; color: #E08D79; }
-  .tile-purple{ background: #392C37; color: #D79AC9; }
-}
+.tile-green { background: var(--t-green-bg); color: var(--t-green); }
+.tile-ochre { background: var(--t-ochre-bg); color: var(--t-ochre); }
+.tile-blue  { background: var(--t-blue-bg);  color: var(--t-blue); }
+.tile-red   { background: var(--t-red-bg);   color: var(--t-red); }
+.tile-purple{ background: var(--t-purple-bg);color: var(--t-purple); }
 
 /* ── таблицы-справки ──────────────────────────────────── */
 .table-wrap {
@@ -406,7 +427,7 @@ footer { background: var(--card-2); border-top: 1px solid var(--line); color: va
 }
 .foot-rights { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .foot-tag { opacity: .75; }
-.foot-lang { color: var(--ink-2); text-decoration: none; font-weight: 600; }
+.foot-lang { display: inline-flex; align-items: center; color: var(--ink-2); text-decoration: none; font-weight: 600; }
 .foot-lang:hover { color: var(--basil); }
 
 /* ── адаптив ──────────────────────────────────────────── */
@@ -435,6 +456,5 @@ footer { background: var(--card-2); border-top: 1px solid var(--line); color: va
   .recipes { grid-template-columns: 1fr; }
   .wrap { padding: 0 18px; }
   .shot img { border-radius: 14px; }
-  .toc-list { grid-template-columns: 1fr; }
   .foot-grid { grid-template-columns: 1fr; }
 }

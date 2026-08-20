@@ -3,6 +3,7 @@
 import Base from "./Base.astro";
 import Toc from "../components/Toc.astro";
 import Ctas from "../components/Ctas.astro";
+import AppWindow from "../components/AppWindow.astro";
 import { T, LINKS, LANDINGS, SHOT, SITE, pathFor, type Locale, type PageId } from "../content";
 import { organizationLd, softwareApplicationLd, faqLd, breadcrumbLd, howToLd } from "../seo";
 
@@ -29,10 +30,14 @@ const jsonLd = [
 ];
 
 // Строка вида «00:00:04␠␠текст» рисуется таймкодом + репликой; всё остальное — как есть.
-const stamped = l.command.split("\n").map((line) => {
-  const m = line.match(/^(\d\d:\d\d:\d\d) {2}(.*)$/);
-  return m ? { time: m[1], text: m[2] } : { time: null, text: line };
-});
+// Образец результата есть не у всякой посадочной: где его нет, в hero стоит окно
+// приложения. Строку запускаемой команды в hero не показываем принципиально.
+const stamped = l.outSample
+  ? l.outSample.split("\n").map((line) => {
+      const m = line.match(/^(\d\d:\d\d:\d\d) {2}(.*)$/);
+      return m ? { time: m[1], text: m[2] } : { time: null, text: line };
+    })
+  : null;
 ---
 
 <Base locale={locale} page={page} title={l.title} description={l.description} jsonLd={jsonLd}>
@@ -42,23 +47,27 @@ const stamped = l.command.split("\n").map((line) => {
         <div>
           <p class="crumbs"><a href={homePath}>MediaChef</a> <span aria-hidden="true">/</span> {l.crumb}</p>
           <h1>{l.h1}</h1>
-          <p class="sub">{l.lead}</p>
           <Toc label={t.tocLabel} items={tocItems} />
+          <p class="sub">{l.lead}</p>
           <Ctas locale={locale} anchor />
         </div>
 
-        <div class="window cmd-card">
-          <p class="eyebrow">{l.commandLabel}</p>
-          <div class="mono cmd">
-            {stamped.map((s) => (
-              <span class="cmd-line">
-                {s.time && <span class="stamp">{s.time}</span>}
-                {s.text}
-              </span>
-            ))}
+        {stamped ? (
+          <div class="window out-card">
+            <p class="eyebrow">{l.outLabel}</p>
+            <div class="mono cmd">
+              {stamped.map((s) => (
+                <span class="cmd-line">
+                  {s.time && <span class="stamp">{s.time}</span>}
+                  {s.text}
+                </span>
+              ))}
+            </div>
+            <p class="engine-note">{l.outNote}</p>
           </div>
-          <p class="engine-note">{l.commandNote}</p>
-        </div>
+        ) : (
+          <AppWindow locale={locale} />
+        )}
       </div>
     </div>
 

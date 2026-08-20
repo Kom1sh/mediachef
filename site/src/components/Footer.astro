@@ -1,6 +1,7 @@
 ---
 // Подвал: колонка бренда плюс четыре колонки ссылок из footerFor().
 // В колонке «Скачать» — прямые ссылки на файлы релиза с их весом.
+import Flag from "./Flag.astro";
 import { footerFor, UI } from "../nav";
 import { T, FACTS, type Locale, type PageId } from "../content";
 
@@ -49,6 +50,9 @@ const other: Locale = locale === "en" ? "ru" : "en";
       <span>{t.footRights}</span>
       <span class="foot-tag">{t.footTagline}</span>
     </p>
-    <a class="foot-lang" href={switchPath} hreflang={other} lang={other}>{t.switchLabel}</a>
+    <a class="foot-lang" href={switchPath} hreflang={other} lang={other}>
+      <Flag locale={other} />
+      {t.switchLabel}
+    </a>
   </div>
 </footer>

@@ -3,6 +3,7 @@
 import Base from "./Base.astro";
 import Toc from "../components/Toc.astro";
 import Ctas from "../components/Ctas.astro";
+import AppWindow from "../components/AppWindow.astro";
 import { T, LINKS, MODELS, SHOT, SITE, pathFor, type Locale } from "../content";
 import { homeToc } from "../nav";
 import { organizationLd, softwareApplicationLd, faqLd } from "../seo";
@@ -26,71 +27,15 @@ const jsonLd = [
     <div class="wrap hero">
       <div>
         <h1>{t.heroTitle1}<br />{t.heroTitle2}<span class="accent">{t.heroAccent}</span></h1>
-        <p class="sub">{t.heroSub}</p>
         <Toc label={t.tocLabel} items={homeToc(locale)} />
+        <p class="sub">{t.heroSub}</p>
         <Ctas locale={locale} anchor />
         <ul class="trust">
           {t.trust.map((c) => <li class="chip">{c}</li>)}
         </ul>
       </div>
 
-      <!-- Стилизованное окно приложения: сайдбар, доска, карточки-рецепты, очередь. -->
-      <svg class="window" viewBox="0 0 560 400" role="img" aria-label={locale === "ru" ? "Схема окна MediaChef: доска для файлов, карточки рецептов и очередь задач" : "Diagram of the MediaChef window: drop board, recipe cards and the task queue"}>
-        <rect width="560" height="400" fill="var(--card)"/>
-        <circle cx="22" cy="20" r="5" fill="var(--tomato)" opacity=".8"/>
-        <circle cx="40" cy="20" r="5" fill="var(--amber)" opacity=".8"/>
-        <circle cx="58" cy="20" r="5" fill="var(--basil)" opacity=".8"/>
-        <rect x="0" y="38" width="64" height="362" fill="var(--card-2)"/>
-        <rect x="16" y="58" width="32" height="32" rx="9" fill="var(--basil)" opacity=".92"/>
-        <rect x="16" y="104" width="32" height="32" rx="9" fill="var(--line)"/>
-        <rect x="16" y="150" width="32" height="32" rx="9" fill="var(--line)"/>
-        <g>
-          <rect x="84" y="58" width="284" height="64" rx="14" fill="var(--paper)" stroke="var(--basil)" stroke-width="2" stroke-dasharray="7 6"/>
-          <text x="226" y="95" text-anchor="middle" font-family="Manrope, sans-serif" font-size="13" font-weight="600" fill="var(--ink-2)">{locale === "ru" ? "Перетащите файлы сюда" : "Drop files here"}</text>
-        </g>
-        <rect x="84" y="138" width="284" height="30" rx="9" fill="var(--paper)" stroke="var(--line)"/>
-        <g>
-          <rect x="84" y="184" width="136" height="88" rx="12" fill="var(--paper)" stroke="var(--line)"/>
-          <rect x="96" y="196" width="28" height="28" rx="8" fill="#F2E9DB"/>
-          <rect x="102" y="203" width="4" height="14" rx="2" fill="#9A6B22"/><rect x="109" y="199" width="4" height="18" rx="2" fill="#9A6B22"/><rect x="116" y="205" width="4" height="12" rx="2" fill="#9A6B22"/>
-          <rect x="96" y="234" width="96" height="8" rx="4" fill="var(--ink)" opacity=".75"/>
-          <rect x="96" y="250" width="112" height="6" rx="3" fill="var(--line-strong)" opacity=".5"/>
-        </g>
-        <g>
-          <rect x="232" y="184" width="136" height="88" rx="12" fill="var(--paper)" stroke="var(--line)"/>
-          <rect x="244" y="196" width="28" height="28" rx="8" fill="#E7EFE8"/>
-          <path d="M251 210 h14 M251 205 h14 M251 215 h9" stroke="#3D7A46" stroke-width="3" stroke-linecap="round"/>
-          <rect x="244" y="234" width="88" height="8" rx="4" fill="var(--ink)" opacity=".75"/>
-          <rect x="244" y="250" width="104" height="6" rx="3" fill="var(--line-strong)" opacity=".5"/>
-        </g>
-        <g>
-          <rect x="84" y="288" width="136" height="88" rx="12" fill="var(--paper)" stroke="var(--line)"/>
-          <rect x="96" y="300" width="28" height="28" rx="8" fill="#F1E7F0"/>
-          <rect x="102" y="307" width="16" height="13" rx="3" fill="none" stroke="#8F4C82" stroke-width="2.6"/>
-          <rect x="96" y="338" width="76" height="8" rx="4" fill="var(--ink)" opacity=".75"/>
-          <rect x="96" y="354" width="100" height="6" rx="3" fill="var(--line-strong)" opacity=".5"/>
-        </g>
-        <g>
-          <rect x="232" y="288" width="136" height="88" rx="12" fill="var(--paper)" stroke="var(--line)"/>
-          <rect x="244" y="300" width="28" height="28" rx="8" fill="#E7EFE8"/>
-          <rect x="250" y="306" width="16" height="16" rx="4" fill="none" stroke="#3D7A46" stroke-width="2.6"/>
-          <rect x="244" y="338" width="92" height="8" rx="4" fill="var(--ink)" opacity=".75"/>
-          <rect x="244" y="354" width="84" height="6" rx="3" fill="var(--line-strong)" opacity=".5"/>
-        </g>
-        <g>
-          <rect x="384" y="58" width="160" height="318" rx="14" fill="var(--paper)" stroke="var(--line)"/>
-          <rect x="398" y="74" width="70" height="9" rx="4" fill="var(--ink)" opacity=".7"/>
-          <rect x="398" y="96" width="132" height="52" rx="10" fill="var(--card)" stroke="var(--line)"/>
-          <rect x="406" y="106" width="80" height="7" rx="3" fill="var(--ink)" opacity=".7"/>
-          <rect x="406" y="126" width="116" height="8" rx="4" fill="var(--card-2)"/>
-          <rect x="406" y="126" width="76" height="8" rx="4" fill="var(--amber)"/>
-          <rect x="398" y="160" width="132" height="52" rx="10" fill="var(--card)" stroke="var(--line)"/>
-          <rect x="406" y="170" width="64" height="7" rx="3" fill="var(--ink)" opacity=".7"/>
-          <rect x="406" y="190" width="116" height="8" rx="4" fill="var(--card-2)"/>
-          <rect x="406" y="190" width="116" height="8" rx="4" fill="var(--basil)"/>
-          <circle cx="514" cy="173" r="7" fill="var(--basil)"/>
-        </g>
-      </svg>
+      <AppWindow locale={locale} />
     </div>
    </div>
 
