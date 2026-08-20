@@ -5,7 +5,9 @@
 :root {
   --paper: #F7F8FA; --card: #FFFFFF; --card-2: #EDF0F4;
   --ink: #0F1319; --ink-2: #5A6473; --line: #E2E6EC; --line-strong: #79838F;
-  --basil: #0EA05C; --basil-deep: #0B8A4E; --basil-ink: #FFFFFF;
+  /* Зелёный держит белый текст кнопки на 4.86:1 — светлее нельзя: на #0EA05C
+     подпись «Скачать» давала 3.39 и не проходила AA. */
+  --basil: #0A8250; --basil-deep: #076A41; --basil-ink: #FFFFFF;
   --amber: #C97609;
   --tomato: #E23D3D;
   /* Подсветка hero. Отдельный токен, а не «мягкий янтарь»: на холодной

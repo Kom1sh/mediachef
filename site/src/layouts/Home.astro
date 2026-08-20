@@ -4,7 +4,8 @@ import Base from "./Base.astro";
 import Toc from "../components/Toc.astro";
 import Ctas from "../components/Ctas.astro";
 import AppWindow from "../components/AppWindow.astro";
-import { T, LINKS, MODELS, SHOT, SITE, pathFor, type Locale } from "../content";
+import Shot from "../components/Shot.astro";
+import { T, LINKS, MODELS, SITE, pathFor, type Locale } from "../content";
 import { homeToc } from "../nav";
 import { organizationLd, softwareApplicationLd, faqLd } from "../seo";
 
@@ -52,17 +53,7 @@ const jsonLd = [
           ))}
         </ol>
 
-        <figure class="shot">
-          <img
-            src={SHOT.src}
-            width={SHOT.w}
-            height={SHOT.h}
-            alt={t.shotAlt}
-            loading="lazy"
-            decoding="async"
-          />
-          <figcaption>{t.shotCaption}</figcaption>
-        </figure>
+        <Shot alt={t.shotAlt} caption={t.shotCaption} />
       </div>
     </section>
 

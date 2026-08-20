@@ -4,7 +4,8 @@ import Base from "./Base.astro";
 import Toc from "../components/Toc.astro";
 import Ctas from "../components/Ctas.astro";
 import AppWindow from "../components/AppWindow.astro";
-import { T, LINKS, LANDINGS, SHOT, SITE, pathFor, type Locale, type PageId } from "../content";
+import Shot from "../components/Shot.astro";
+import { T, LINKS, LANDINGS, SITE, pathFor, type Locale, type PageId } from "../content";
 import { organizationLd, softwareApplicationLd, faqLd, breadcrumbLd, howToLd } from "../seo";
 
 interface Props { locale: Locale; page: Exclude<PageId, "home"> }
@@ -84,17 +85,7 @@ const stamped = l.outSample
           ))}
         </ol>
 
-        <figure class="shot">
-          <img
-            src={SHOT.src}
-            width={SHOT.w}
-            height={SHOT.h}
-            alt={l.shotAlt}
-            loading="lazy"
-            decoding="async"
-          />
-          <figcaption>{l.shotCaption}</figcaption>
-        </figure>
+        <Shot alt={l.shotAlt} caption={l.shotCaption} />
       </div>
     </section>
 

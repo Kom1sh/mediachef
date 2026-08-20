@@ -1,7 +1,11 @@
 @import "tailwindcss";
 
-/* «Тёплая кухня»: light — warm paper, dark — warm espresso, never #000.
+/* «Чистый лист»: light — cool near-white, dark — graphite, never #000. One
+   saturated accent (basil) carries every primary action; amber is the second
+   voice and marks running work and defaults. Replaced the warm beige palette in
+   2026-08: it sat at low chroma throughout, which cost contrast and read dated.
    Every colour in the app derives from these tokens; no raw hex in components.
+   The same values drive the site — site/src/styles/global.css.
 
    Shape of this file: the light palette is declared straight onto the tokens,
    the dark palette is declared once as `--dark-*` and then *mapped* onto the
@@ -16,8 +20,8 @@
      light dress on the espresso theme. */
   color-scheme: light;
 
-  --paper: #FAF7F1; --card: #FFFFFF; --card-2: #F3EEE5;
-  --ink: #2A231C; --ink-2: #7A6F61; --line: #E8E0D2;
+  --paper: #F7F8FA; --card: #FFFFFF; --card-2: #EDF0F4;
+  --ink: #0F1319; --ink-2: #5A6473; --line: #E2E6EC;
   /* The border of a control you are meant to *type in or open*, and the only
      reason it is a second line token: `--line` is a hairline that separates
      surfaces (1.31:1 on `card`, 1.13 on `card-2`), which is right for a card edge
@@ -27,57 +31,57 @@
      question this answers.
 
      Measured against both surfaces a control can sit on, plus the page: light
-     #93826D is 3.71 on `card`, 3.21 on `card-2`, 3.47 on `paper`; dark #8A7C69 is
-     3.76 / 3.33 / 4.19. Held down deliberately from `--ink-2` (4.91 / 4.25), which
+     #79838F is 3.85 on `card`, 3.37 on `card-2`, 3.62 on `paper`; dark #6E7A88 is
+     3.96 / 3.58 / 4.32. Held down deliberately from `--ink-2` (5.99 / 5.24), which
      clears the floor but reads as a heavy hand-drawn box around every field.
 
      Cards, dividers and the rail keep `--line`: they are edges between surfaces,
      not controls, and 1.4.11 does not ask them for anything. */
-  --line-strong: #93826D;
-  --basil: #3D7A46; --basil-ink: #FFFFFF;
+  --line-strong: #79838F;
+  /* The green is as bright as it can get while `--basil-ink` stays legible on
+     it: white on #0A8250 is 4.86:1, and one step brighter (#0EA05C) drops the
+     button label to 3.39 and fails AA. */
+  --basil: #0A8250; --basil-ink: #FFFFFF;
   /* Light `--amber` is darker than a designer's amber would be, and the reason is
      that it is never decoration: it draws the running-status ring and the progress
      fill, which are non-text graphics and owe 3:1 against whatever they sit on
-     (WCAG 1.4.11). At the design table's #D98E2B those measured 2.67 on `card` and
-     2.31 on `card-2` — a bar you could lose against its own card. #BD7614 is the
-     same hue carried down to 3.64 / 3.15 (3.41 on `paper`). The queue counter chip
-     is unaffected: its wash is amber/15 and its numeral is `ink`, still 13.05 /
-     11.50. Dark keeps `--dark-amber`, which was never short (6.18–7.79). */
-  --amber: #BD7614; --tomato: #BC4B37; --focus: #3D7A46;
+     (WCAG 1.4.11). A designer's amber (#E8A13D) measures 1.94 on `card` here — a
+     bar you could lose against its own card. #C97609 is the same hue carried down
+     to 3.45 / 3.02 (3.25 on `paper`). The queue counter chip is unaffected: its
+     wash is amber/15 and its numeral is `ink`. Dark keeps `--dark-amber`, which
+     was never short (7.66–9.27). */
+  --amber: #C97609; --tomato: #E23D3D; --focus: #0A8250;
 
   /* Category tints: tile background + glyph, one pair per hue family. Recipe
      categories map onto these in `lib/icons.ts`, so a component only ever knows
      its category — never which hue it drew.
 
-     Light values are the design table verbatim (glyph-on-tile 3.88–5.51:1). The
-     dark pairs are derived: the tile keeps its hue and drops to the ~#332C24
-     depth band, and the glyph is lifted until every pair clears 5:1 — a floor
-     the palette's own dark accents miss on these tiles (basil #5FA96B on the
-     green tile is 4.21, tomato #D97862 on the red tile 4.27). So `ochre` and
-     `neutral` do land exactly on `--dark-amber` / `--dark-ink-2` (5.83 / 5.03),
-     while green, tomato, blue and purple are lifts above the palette:
-     5.78 / 5.18 / 5.87 / 5.96. */
-  --tint-green-bg: #E7EFE8; --tint-green-fg: #3D7A46;
-  --tint-ochre-bg: #F2E9DB; --tint-ochre-fg: #9A6B22;
-  --tint-tomato-bg: #F5E8E4; --tint-tomato-fg: #BC4B37;
-  --tint-blue-bg: #E9EBF2; --tint-blue-fg: #4C5B8F;
-  --tint-purple-bg: #F1E7F0; --tint-purple-fg: #8F4C82;
-  --tint-neutral-bg: #F3EEE5; --tint-neutral-fg: #7A6F61;
+     Light pairs measure 3.91–6.22:1 glyph-on-tile; the dark ones keep the hue,
+     drop the tile into the ~#20262F depth band and lift the glyph until every
+     pair clears 5:1 — a floor the palette's own dark accents miss on these
+     tiles. Measured dark: green 7.90, ochre 7.93, tomato 6.58, blue 6.97,
+     purple 6.82, neutral 6.11. */
+  --tint-green-bg: #E3F5EC; --tint-green-fg: #0B7A46;
+  --tint-ochre-bg: #FBEEDA; --tint-ochre-fg: #A66A0B;
+  --tint-tomato-bg: #FBE7E7; --tint-tomato-fg: #C0332F;
+  --tint-blue-bg: #E6ECFB; --tint-blue-fg: #2C4FB0;
+  --tint-purple-bg: #F0E9FB; --tint-purple-fg: #6D45B8;
+  --tint-neutral-bg: #EDF0F4; --tint-neutral-fg: #5A6473;
 
   /* The dark palette, defined once. Nothing reads these directly — the two dark
      scopes below map them onto the tokens above. */
-  --dark-paper: #211B15; --dark-card: #2B241D; --dark-card-2: #352D24;
-  --dark-ink: #F2EBE1; --dark-ink-2: #A99C8B; --dark-line: #3E352A;
-  --dark-line-strong: #8A7C69;
-  --dark-basil: #5FA96B; --dark-basil-ink: #1C2B1F;
-  --dark-amber: #E8A13D; --dark-tomato: #D97862; --dark-focus: #5FA96B;
+  --dark-paper: #0E1116; --dark-card: #161B22; --dark-card-2: #1D242D;
+  --dark-ink: #E9EEF4; --dark-ink-2: #97A3B2; --dark-line: #262E38;
+  --dark-line-strong: #6E7A88;
+  --dark-basil: #2FBF74; --dark-basil-ink: #062015;
+  --dark-amber: #F5A524; --dark-tomato: #F2555A; --dark-focus: #2FBF74;
 
-  --dark-tint-green-bg: #2C3A2F; --dark-tint-green-fg: #7DC489;
-  --dark-tint-ochre-bg: #3A3125; --dark-tint-ochre-fg: #E8A13D;
-  --dark-tint-tomato-bg: #3B2D2A; --dark-tint-tomato-fg: #E08D79;
-  --dark-tint-blue-bg: #2C3242; --dark-tint-blue-fg: #A2ADE4;
-  --dark-tint-purple-bg: #382B37; --dark-tint-purple-fg: #D79AC9;
-  --dark-tint-neutral-bg: #352D24; --dark-tint-neutral-fg: #A99C8B;
+  --dark-tint-green-bg: #10291E; --dark-tint-green-fg: #4FD08C;
+  --dark-tint-ochre-bg: #2C2415; --dark-tint-ochre-fg: #F0AE4E;
+  --dark-tint-tomato-bg: #2D1A1C; --dark-tint-tomato-fg: #F08585;
+  --dark-tint-blue-bg: #1A2138; --dark-tint-blue-fg: #94A9F0;
+  --dark-tint-purple-bg: #241C3A; --dark-tint-purple-fg: #B49AF5;
+  --dark-tint-neutral-bg: #1D242D; --dark-tint-neutral-fg: #97A3B2;
 }
 [data-theme="dark"] {
   color-scheme: dark;

@@ -50,7 +50,18 @@ export const MODELS = [
 export type ModelId = (typeof MODELS)[number]["id"];
 
 /** Скриншот приложения. Размеры — атрибуты img, чтобы не было сдвига вёрстки. */
-export const SHOT = { src: "/screenshots/app-main-dark.png", w: 2360, h: 1520 };
+/**
+ * Настоящее окно приложения, снятое с работающей сборки (2360×1520 = 1180×760 @2x).
+ * Две темы: страница показывает ту, в которой сидит посетитель. В schema.org
+ * уходит светлая — там нужен один адрес.
+ */
+export const SHOT = {
+  light: "/screenshots/app-main-light.png",
+  dark: "/screenshots/app-main-dark.png",
+  src: "/screenshots/app-main-light.png",
+  w: 2360,
+  h: 1520,
+};
 
 export const T = {
   en: {
@@ -85,9 +96,9 @@ export const T = {
       { n: "3", h: "Take the result", p: "The file lands next to the original — or in a folder you choose. The queue shows progress, time left and where the output went." },
     ],
     shotAlt:
-      "MediaChef main screen in dark theme: sidebar with Convert, Models and Settings, a drop board for files, and the task queue on the right.",
+      "MediaChef main screen: sidebar with Convert, Models and Settings, a drop board for files, and the task queue on the right.",
     shotCaption:
-      "The real window, dark theme. Drop board in the middle, queue on the right, engines already inside. Interface language follows your system — English and Russian.",
+      "The real window, shown in the theme you are reading in. Drop board in the middle, queue on the right, engines already inside.",
     outTitle: "What it does out of the box",
     outLead: `Seventeen recipes ship with the app. Each one is a real FFmpeg or Whisper job with the parameters already filled in, and each one writes its result next to your file as {name}.{what}.{ext}.`,
     outHead: ["Direction", "Recipe in the app", "What you get"],
@@ -206,9 +217,9 @@ export const T = {
       { n: "3", h: "Заберите результат", p: "Файл появится рядом с исходником — или в вашей папке. Очередь показывает прогресс, оставшееся время и путь к результату." },
     ],
     shotAlt:
-      "Главный экран MediaChef в тёмной теме: боковое меню «Конвертация», «Модели», «Настройки», доска для файлов и очередь задач справа.",
+      "Главный экран MediaChef: боковое меню «Конвертация», «Модели», «Настройки», доска для файлов и очередь задач справа.",
     shotCaption:
-      "Настоящее окно, тёмная тема. Доска для файлов посередине, очередь справа, движки уже внутри. Язык интерфейса берётся из системы — русский и английский.",
+      "Настоящее окно — в той теме, в которой вы сейчас читаете. Доска для файлов посередине, очередь справа, движки уже внутри.",
     outTitle: "Что умеет из коробки",
     outLead:
       "В приложении семнадцать рецептов. Каждый — реальная задача FFmpeg или Whisper с уже настроенными параметрами, и каждый кладёт результат рядом с вашим файлом по схеме {имя}.{что}.{расширение}.",

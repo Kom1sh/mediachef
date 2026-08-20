@@ -1,0 +1,23 @@
+---
+// Скриншот приложения. Тем две, и показываем ту, в которой сидит посетитель:
+// светлый снимок в тёмной теме бьёт по глазам и наоборот.
+import { SHOT } from "../content";
+
+interface Props { alt: string; caption: string }
+const { alt, caption } = Astro.props;
+---
+
+<figure class="shot">
+  <picture>
+    <source srcset={SHOT.dark} media="(prefers-color-scheme: dark)" />
+    <img
+      src={SHOT.light}
+      width={SHOT.w}
+      height={SHOT.h}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+    />
+  </picture>
+  <figcaption>{caption}</figcaption>
+</figure>
