@@ -54,13 +54,20 @@ export type ModelId = (typeof MODELS)[number]["id"];
  * Настоящее окно приложения, снятое с работающей сборки (2360×1520 = 1180×760 @2x).
  * Две темы: страница показывает ту, в которой сидит посетитель. В schema.org
  * уходит светлая — там нужен один адрес.
+ *
+ * Файлы лежат в src/assets, а не в public/: тогда в имя попадает хеш содержимого.
+ * Из public/ они раздавались с max-age=86400 под неизменным именем, и после
+ * пересъёмки Cloudflare сутки отдавал старую картинку.
  */
+import shotLight from "./assets/app-main-light.png";
+import shotDark from "./assets/app-main-dark.png";
+
 export const SHOT = {
-  light: "/screenshots/app-main-light.png",
-  dark: "/screenshots/app-main-dark.png",
-  src: "/screenshots/app-main-light.png",
-  w: 2360,
-  h: 1520,
+  light: shotLight.src,
+  dark: shotDark.src,
+  src: shotLight.src,
+  w: shotLight.width,
+  h: shotLight.height,
 };
 
 export const T = {
