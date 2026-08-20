@@ -1,0 +1,174 @@
+---
+// Посадочная под один поисковый интент: /en/<slug>/ и /ru/<slug>/.
+import Base from "./Base.astro";
+import { T, LINKS, LANDINGS, SHOT, SITE, pathFor, type Locale, type PageId } from "../content";
+import { organizationLd, softwareApplicationLd, faqLd, breadcrumbLd, howToLd } from "../seo";
+
+interface Props { locale: Locale; page: Exclude<PageId, "home"> }
+const { locale, page } = Astro.props;
+const t = T[locale];
+const l = LANDINGS[page][locale];
+const check = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
+
+const pageUrl = SITE + pathFor(page, locale);
+const homePath = pathFor("home", locale);
+const anchors = [l.sections.how, l.sections.table, l.sections.why, l.sections.faq];
+
+const jsonLd = [
+  organizationLd(),
+  softwareApplicationLd(locale, pageUrl),
+  breadcrumbLd(
+    { name: t.breadcrumbHome, url: SITE + homePath },
+    { name: l.crumb, url: pageUrl },
+  ),
+  howToLd({ name: l.stepsTitle, description: l.description, url: pageUrl, steps: l.steps }),
+  faqLd(l.faq),
+];
+
+// Строка вида «00:00:04␠␠текст» рисуется таймкодом + репликой; всё остальное — как есть.
+const stamped = l.command.split("\n").map((line) => {
+  const m = line.match(/^(\d\d:\d\d:\d\d) {2}(.*)$/);
+  return m ? { time: m[1], text: m[2] } : { time: null, text: line };
+});
+---
+
+<Base locale={locale} page={page} title={l.title} description={l.description} jsonLd={jsonLd}>
+  <main id="main">
+    <div class="wrap hero hero-intent">
+      <div>
+        <p class="crumbs"><a href={homePath}>MediaChef</a> <span aria-hidden="true">/</span> {l.crumb}</p>
+        <h1>{l.h1}</h1>
+        <p class="sub">{l.lead}</p>
+        <div class="ctas" id="download">
+          <a class="btn btn-primary" href={LINKS.releases}>{t.ctaMac}</a>
+          <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaWin}</a>
+          <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaLinux}</a>
+        </div>
+        <p class="ctas-note">{t.ctaNote} <a href={LINKS.github}>{t.ctaNoteLink}</a></p>
+      </div>
+
+      <div class="window cmd-card">
+        <p class="eyebrow">{l.commandLabel}</p>
+        <div class="mono cmd">
+          {stamped.map((s) => (
+            <span class="cmd-line">
+              {s.time && <span class="stamp">{s.time}</span>}
+              {s.text}
+            </span>
+          ))}
+        </div>
+        <p class="engine-note">{l.commandNote}</p>
+      </div>
+    </div>
+
+    <nav class="toc" aria-label={t.tocLabel}>
+      <div class="wrap toc-in">
+        <p class="eyebrow">{t.tocLabel}</p>
+        <ul>
+          {l.toc.map((label, i) => <li><a href={`#${anchors[i]}`}>{label}</a></li>)}
+        </ul>
+      </div>
+    </nav>
+
+    <section id={l.sections.how}>
+      <div class="wrap">
+        <h2>{l.stepsTitle}</h2>
+        <ol class="steps steps-flow">
+          {l.steps.map((s, i) => (
+            <li class="step">
+              <div class="n" aria-hidden="true">{i + 1}</div>
+              <h3>{s.h}</h3>
+              <p>{s.p}</p>
+            </li>
+          ))}
+        </ol>
+
+        <figure class="shot">
+          <img
+            src={SHOT.src}
+            width={SHOT.w}
+            height={SHOT.h}
+            alt={l.shotAlt}
+            loading="lazy"
+            decoding="async"
+          />
+          <figcaption>{l.shotCaption}</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id={l.sections.table}>
+      <div class="wrap">
+        <h2 id={`${l.sections.table}-h`}>{l.tableTitle}</h2>
+        <p class="lead">{l.tableLead}</p>
+        <div class="table-wrap">
+          <table class="ref" aria-labelledby={`${l.sections.table}-h`}>
+            <thead>
+              <tr>{l.tableHead.map((h) => <th scope="col">{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {l.tableRows.map((r) => (
+                <tr>
+                  <th scope="row"><code>{r[0]}</code></th>
+                  <td class="num">{r[1]}</td>
+                  <td>{r[2]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">{l.tableNote}</p>
+      </div>
+    </section>
+
+    <section id={l.sections.why}>
+      <div class="wrap">
+        <h2>{l.whyTitle}</h2>
+        <div class="bullets bullets-two">
+          {l.whyBullets.map((b) => (
+            <div class="bullet">
+              <Fragment set:html={check} />
+              <p><strong>{b.h}</strong> {b.p}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id={l.sections.faq}>
+      <div class="wrap">
+        <h2>{l.faqTitle}</h2>
+        <div class="faq">
+          {l.faq.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="cta-final">
+          <h2>{l.ctaTitle}</h2>
+          <p class="lead">{l.ctaSub}</p>
+          <div class="ctas">
+            <a class="btn btn-primary" href={LINKS.releases}>{t.ctaMac}</a>
+            <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaWin}</a>
+            <a class="btn btn-ghost" href={LINKS.releases}>{t.ctaLinux}</a>
+          </div>
+          <p class="ctas-note note-wide">{t.betaNote}</p>
+        </div>
+
+        <nav class="also" aria-label={t.alsoLabel}>
+          <p class="eyebrow">{t.alsoLabel}</p>
+          <ul>
+            {l.also.map((a) => <li><a href={pathFor(a.page, locale)}>{a.label}</a></li>)}
+          </ul>
+        </nav>
+      </div>
+    </section>
+  </main>
+</Base>

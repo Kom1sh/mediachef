@@ -6,34 +6,30 @@ import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/700.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "../styles/global.css";
-import { T, LINKS, type Locale } from "../content";
+import { T, SITE, pathFor, type Locale, type PageId } from "../content";
 
-interface Props { locale: Locale }
-const { locale } = Astro.props;
+interface Props {
+  locale: Locale;
+  page: PageId;
+  title: string;
+  description: string;
+  jsonLd: unknown[];
+}
+const { locale, page, title, description, jsonLd } = Astro.props;
 const t = T[locale];
-const canonical = locale === "en" ? "https://mediachef.app/" : "https://mediachef.app/ru";
+const other: Locale = locale === "en" ? "ru" : "en";
 
-const appLd = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "MediaChef",
-  operatingSystem: "macOS, Windows, Linux",
-  applicationCategory: "MultimediaApplication",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-  license: "https://www.gnu.org/licenses/gpl-3.0.html",
-  url: "https://mediachef.app/",
-  downloadUrl: LINKS.releases,
-  description: t.description,
-};
-const faqLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: t.faq.map((f) => ({
-    "@type": "Question",
-    name: f.q,
-    acceptedAnswer: { "@type": "Answer", text: f.a },
-  })),
-};
+const enUrl = SITE + pathFor(page, "en");
+const ruUrl = SITE + pathFor(page, "ru");
+const canonical = locale === "en" ? enUrl : ruUrl;
+// Корень редиректит только главную, поэтому x-default для главной — сам корень,
+// а для посадочных — их англоязычная версия.
+const xDefault = page === "home" ? `${SITE}/` : enUrl;
+
+const homePath = pathFor("home", locale);
+const switchPath = pathFor(page, other);
+// На главной якоря локальные, на посадочных — ведут в разделы главной.
+const anchor = (id: string) => (page === "home" ? `#${id}` : `${homePath}#${id}`);
 ---
 
 <!doctype html>
@@ -41,52 +37,61 @@ const faqLd = {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{t.title}</title>
-    <meta name="description" content={t.description} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang="en" href="https://mediachef.app/" />
-    <link rel="alternate" hreflang="ru" href="https://mediachef.app/ru" />
-    <link rel="alternate" hreflang="x-default" href="https://mediachef.app/" />
+    <link rel="alternate" hreflang="en" href={enUrl} />
+    <link rel="alternate" hreflang="ru" href={ruUrl} />
+    <link rel="alternate" hreflang="x-default" href={xDefault} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MediaChef" />
-    <meta property="og:title" content={t.title} />
-    <meta property="og:description" content={t.description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content="https://mediachef.app/og.png" />
+    <meta property="og:locale" content={t.ogLocale} />
+    <meta property="og:locale:alternate" content={T[other].ogLocale} />
+    <meta property="og:image" content={`${SITE}/og.png`} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="MediaChef" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#FAF7F1" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#211B15" media="(prefers-color-scheme: dark)" />
-    <script type="application/ld+json" set:html={JSON.stringify(appLd)} />
-    <script type="application/ld+json" set:html={JSON.stringify(faqLd)} />
+    {jsonLd.map((ld) => <script type="application/ld+json" set:html={JSON.stringify(ld)} />)}
   </head>
   <body>
-    <header class="wrap top">
-      <a class="brand" href={locale === "en" ? "/" : "/ru"}>
-        <svg width="34" height="34" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="100" y="100" width="824" height="824" rx="185" fill="var(--card-2)"/><g><rect x="357" y="304" width="46" height="112" rx="23" fill="var(--basil)"/><rect x="432" y="252" width="46" height="164" rx="23" fill="var(--basil)"/><rect x="507" y="204" width="46" height="212" rx="23" fill="var(--basil)"/><rect x="582" y="252" width="46" height="164" rx="23" fill="var(--basil)"/><rect x="657" y="304" width="46" height="112" rx="23" fill="var(--basil)"/></g><circle cx="530" cy="452" r="30" fill="var(--amber)"/><rect x="266" y="482" width="528" height="34" rx="17" fill="var(--ink)"/><path d="M 296 542 L 764 542 L 764 700 Q 764 786 678 786 L 382 786 Q 296 786 296 700 Z" fill="var(--ink)"/><rect x="216" y="556" width="64" height="36" rx="18" fill="var(--ink)"/><rect x="780" y="556" width="64" height="36" rx="18" fill="var(--ink)"/></svg>
-        <strong>MediaChef</strong>
-      </a>
-      <nav>
-        <a href="#recipes">{t.nav.recipes}</a>
-        <a href="#transcribe">{t.nav.transcribe}</a>
-        <a href="#privacy">{t.nav.privacy}</a>
-        <a href="#faq">{t.nav.faq}</a>
-        <a href={t.switchHref} rel="alternate" hreflang={locale === "en" ? "ru" : "en"}>{locale === "en" ? "RU" : "EN"}</a>
-      </nav>
+    <a class="skip" href="#main">{t.skipToContent}</a>
+
+    <header class="top">
+      <div class="wrap top-in">
+        <a class="brand" href={homePath}>
+          <svg width="30" height="30" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="100" y="100" width="824" height="824" rx="185" fill="var(--card-2)"/><g><rect x="357" y="304" width="46" height="112" rx="23" fill="var(--basil)"/><rect x="432" y="252" width="46" height="164" rx="23" fill="var(--basil)"/><rect x="507" y="204" width="46" height="212" rx="23" fill="var(--basil)"/><rect x="582" y="252" width="46" height="164" rx="23" fill="var(--basil)"/><rect x="657" y="304" width="46" height="112" rx="23" fill="var(--basil)"/></g><circle cx="530" cy="452" r="30" fill="var(--amber)"/><rect x="266" y="482" width="528" height="34" rx="17" fill="var(--ink)"/><path d="M 296 542 L 764 542 L 764 700 Q 764 786 678 786 L 382 786 Q 296 786 296 700 Z" fill="var(--ink)"/><rect x="216" y="556" width="64" height="36" rx="18" fill="var(--ink)"/><rect x="780" y="556" width="64" height="36" rx="18" fill="var(--ink)"/></svg>
+          <strong>MediaChef</strong>
+        </a>
+        <nav class="top-nav" aria-label="MediaChef">
+          <a href={anchor("recipes")}>{t.nav.recipes}</a>
+          <a href={anchor("transcribe")}>{t.nav.transcribe}</a>
+          <a href={anchor("privacy")}>{t.nav.privacy}</a>
+          <a href={anchor("faq")}>{t.nav.faq}</a>
+          <a class="lang" href={switchPath} hreflang={other} lang={other}>{other.toUpperCase()}</a>
+        </nav>
+      </div>
     </header>
 
     <slot />
 
     <footer>
-      <div class="wrap">
-        <span>{t.footRights}</span>
-        <div class="links">
+      <div class="wrap foot-in">
+        <p class="foot-rights">
+          <span>{t.footRights}</span>
+          <span class="foot-tag">{t.footTagline}</span>
+        </p>
+        <nav class="links" aria-label={t.footNavLabel}>
           {t.footLinks.map((l) => <a href={l.href}>{l.label}</a>)}
-          <a href={t.switchHref}>{t.switchLabel}</a>
-        </div>
+          <a href={switchPath} hreflang={other} lang={other}>{t.switchLabel}</a>
+        </nav>
       </div>
     </footer>
   </body>

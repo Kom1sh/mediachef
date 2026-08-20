@@ -5,6 +5,7 @@
   --basil: #3D7A46; --basil-deep: #2F6238; --basil-ink: #FFFFFF;
   --amber: #BD7614; --amber-soft: #F3E4CB;
   --tomato: #BC4B37;
+  --header-h: 62px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -19,7 +20,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body {
   background: var(--paper);
   color: var(--ink);
@@ -27,40 +28,90 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
+/* Страховка от горизонтальной прокрутки. Стоит на main, а не на body: overflow
+   на предке липкой шапки превратил бы body в скролл-контейнер и убил sticky. */
+main { overflow-x: hidden; }
 img, svg { display: block; max-width: 100%; }
+img { height: auto; }
 a { color: inherit; }
 :focus-visible { outline: 2px solid var(--basil); outline-offset: 3px; border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Якоря не должны уезжать под липкую шапку. */
+main[id], section[id], div[id], h2[id], h3[id] { scroll-margin-top: calc(var(--header-h) + 16px); }
 
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
 h1, h2 { font-family: "Unbounded", "Manrope", sans-serif; line-height: 1.15; letter-spacing: -0.01em; }
-h1 { font-size: clamp(2rem, 5.4vw, 3.4rem); font-weight: 700; }
-h2 { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 600; }
+h1 { font-size: clamp(1.9rem, 5vw, 3.4rem); font-weight: 700; overflow-wrap: break-word; }
+h2 { font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 600; }
 h3 { font-size: 1.05rem; font-weight: 700; }
 
-.mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+.mono, code { font-family: "JetBrains Mono", ui-monospace, monospace; }
+.eyebrow {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--ink-2);
+}
 
-/* ── шапка ─────────────────────────────────────────────── */
-.top { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
-.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-.brand strong { font-family: "Unbounded", sans-serif; font-weight: 600; font-size: 1.05rem; }
-.top nav { display: flex; gap: 20px; align-items: center; font-size: 0.92rem; font-weight: 600; }
-.top nav a { text-decoration: none; color: var(--ink-2); }
-.top nav a:hover { color: var(--ink); }
+.skip {
+  position: absolute; left: -9999px; top: 0; z-index: 100;
+  background: var(--basil); color: var(--basil-ink);
+  padding: 12px 18px; border-radius: 0 0 12px 0; font-weight: 700; text-decoration: none;
+}
+.skip:focus { left: 0; }
+
+/* ── шапка: липкая, полупрозрачная ─────────────────────── */
+.top {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+@supports (backdrop-filter: blur(8px)) {
+  .top {
+    background: color-mix(in srgb, var(--paper) 80%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+  }
+}
+.top-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: var(--header-h); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; flex: none; }
+.brand strong { font-family: "Unbounded", sans-serif; font-weight: 600; font-size: 1rem; }
+.top-nav { display: flex; gap: 18px; align-items: center; font-size: 0.92rem; font-weight: 600; }
+.top-nav a {
+  text-decoration: none; color: var(--ink-2);
+  display: inline-flex; align-items: center; min-height: 44px; white-space: nowrap;
+}
+.top-nav a:hover { color: var(--ink); }
+.top-nav .lang {
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.8rem;
+  border: 1px solid var(--line-strong); border-radius: 9px;
+  min-height: 34px; padding: 0 10px; color: var(--ink);
+}
+.top-nav .lang:hover { border-color: var(--basil); }
 
 /* ── hero ─────────────────────────────────────────────── */
-.hero { padding: 56px 0 40px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; }
+.hero { padding: 52px 0 40px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; }
 .hero .accent { color: var(--basil); display: block; }
 .hero p.sub { margin-top: 20px; font-size: 1.12rem; color: var(--ink-2); max-width: 34em; }
-.trust { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+.hero-intent { align-items: start; padding-top: 44px; }
+.hero-intent h1 { font-size: clamp(1.75rem, 4vw, 2.7rem); }
+.crumbs { font-size: 0.85rem; color: var(--ink-2); margin-bottom: 14px; }
+.crumbs a { color: var(--ink-2); text-decoration: none; }
+.crumbs a:hover { color: var(--ink); }
+.crumbs span { padding: 0 6px; opacity: .6; }
+
+.trust { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; list-style: none; }
 .chip { background: var(--card-2); border: 1px solid var(--line); color: var(--ink); border-radius: 999px; padding: 4px 12px; font-size: 0.82rem; font-weight: 600; }
+.chips-lg { margin-top: 22px; }
 
 .ctas { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 12px; }
-.btn { display: inline-flex; align-items: center; gap: 10px; border-radius: 14px; padding: 13px 22px;
-  font-weight: 700; font-size: 0.98rem; text-decoration: none; border: 2px solid transparent; transition: transform .12s ease, opacity .12s ease; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 14px; padding: 13px 22px;
+  min-height: 48px; font-weight: 700; font-size: 0.98rem; text-decoration: none; border: 2px solid transparent;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease; }
 .btn:hover { transform: translateY(-1px); }
 .btn-primary { background: var(--basil); color: var(--basil-ink); }
 .btn-primary:hover { background: var(--basil-deep); }
@@ -68,22 +119,58 @@ h3 { font-size: 1.05rem; font-weight: 700; }
 .btn-ghost:hover { border-color: var(--basil); }
 .ctas-note { margin-top: 12px; font-size: 0.85rem; color: var(--ink-2); }
 .ctas-note a { color: var(--basil); font-weight: 600; }
+.note-wide { max-width: 46em; margin: 18px auto 0; }
 
 /* ── иллюстрация-окно ─────────────────────────────────── */
 .window { background: var(--card); border: 1px solid var(--line); border-radius: 20px;
   box-shadow: 0 24px 60px -30px rgba(42,35,28,.35); overflow: hidden; }
 
-/* ── секции ───────────────────────────────────────────── */
-section { padding: 64px 0; }
-section > .wrap > p.lead { margin-top: 14px; color: var(--ink-2); max-width: 44em; font-size: 1.05rem; }
+/* Карточка «что выполняется»: настоящая команда или настоящий вывод. */
+.cmd-card { padding: 22px; }
+.cmd {
+  margin-top: 12px; font-size: 0.84rem; line-height: 1.9; color: var(--ink);
+  overflow-wrap: break-word;
+}
+.cmd-line { display: block; }
+.cmd .stamp { color: var(--amber); margin-right: 14px; }
+.engine-note { margin-top: 14px; font-size: 0.82rem; color: var(--ink-2); }
+.engine-note a { color: var(--basil); font-weight: 600; }
 
-.steps { margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+/* ── секции ───────────────────────────────────────────── */
+section { padding: 60px 0; }
+p.lead { margin-top: 14px; color: var(--ink-2); max-width: 44em; font-size: 1.05rem; }
+.lead-tight { margin-top: 10px; }
+.sub-h { margin-top: 52px; font-size: 1.2rem; font-family: "Unbounded", "Manrope", sans-serif; font-weight: 600; }
+.onward { margin-top: 20px; font-weight: 700; font-size: 0.95rem; }
+.onward a { color: var(--basil); text-decoration: none; }
+.onward a:hover { text-decoration: underline; }
+
+/* ── содержание посадочной ────────────────────────────── */
+.toc { padding: 4px 0 8px; }
+.toc-in { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding-top: 18px; padding-bottom: 18px; }
+.toc ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 26px; margin-top: 10px; }
+.toc a { color: var(--ink); text-decoration: none; font-weight: 600; font-size: 0.95rem;
+  border-bottom: 1px solid var(--line-strong); padding-bottom: 2px; }
+.toc a:hover { color: var(--basil); border-color: var(--basil); }
+
+/* ── шаги ─────────────────────────────────────────────── */
+.steps { margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; list-style: none; }
+.steps-flow { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
 .step { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
 .step .n { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
   background: var(--card-2); color: var(--basil); font-family: "Unbounded", sans-serif; font-weight: 700; }
 .step h3 { margin: 14px 0 6px; }
 .step p { color: var(--ink-2); font-size: 0.95rem; }
 
+/* ── настоящий скриншот ───────────────────────────────── */
+.shot { margin-top: 40px; }
+.shot img {
+  width: 100%; border-radius: 18px; border: 1px solid var(--line);
+  background: var(--card-2); box-shadow: 0 30px 70px -36px rgba(42,35,28,.45);
+}
+.shot figcaption { margin-top: 12px; font-size: 0.85rem; color: var(--ink-2); max-width: 46em; }
+
+/* ── карточки рецептов ────────────────────────────────── */
 .recipes { margin-top: 36px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .recipe { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; transition: border-color .12s; }
 .recipe:hover { border-color: var(--basil); }
@@ -103,39 +190,113 @@ section > .wrap > p.lead { margin-top: 14px; color: var(--ink-2); max-width: 44e
   .tile-purple{ background: #392C37; color: #D79AC9; }
 }
 
+/* ── таблицы-справки ──────────────────────────────────── */
+.table-wrap {
+  margin-top: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--line); border-radius: 18px; background: var(--card);
+}
+table.ref { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 0.93rem; }
+table.ref th, table.ref td { text-align: left; padding: 13px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.ref thead th {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+  font-weight: 400; color: var(--ink-2); background: var(--card-2); white-space: nowrap;
+}
+table.ref tbody th { font-weight: 700; color: var(--ink); white-space: nowrap; }
+table.ref tbody tr:last-child th, table.ref tbody tr:last-child td { border-bottom: 0; }
+table.ref td { color: var(--ink-2); }
+table.ref td.num { font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--ink); white-space: nowrap; }
+table.ref .recipe-name { color: var(--ink); }
+table.ref code { font-size: 0.86em; background: var(--card-2); border-radius: 6px; padding: 1px 6px; color: var(--ink); }
+table.ref tbody th code { background: none; padding: 0; font-size: 0.95em; }
+/* Строка со значением по умолчанию — единственная янтарная метка в таблице. */
+table.ref tr.is-default th { box-shadow: inset 3px 0 0 var(--amber); }
+.tag {
+  display: inline-block; margin-left: 8px; vertical-align: 2px;
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.62rem;
+  text-transform: uppercase; letter-spacing: 0.08em; font-weight: 400;
+  color: var(--amber); border: 1px solid var(--amber); border-radius: 999px; padding: 1px 7px;
+}
+.table-note { margin-top: 14px; font-size: 0.88rem; color: var(--ink-2); max-width: 46em; }
+
+/* ── двухколоночные блоки ─────────────────────────────── */
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
 .bullets { margin-top: 22px; display: grid; gap: 14px; }
+.bullets-two { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px 40px; }
 .bullet { display: flex; gap: 12px; align-items: flex-start; }
 .bullet svg { flex: none; margin-top: 3px; color: var(--basil); }
 .bullet p { color: var(--ink-2); font-size: 0.97rem; }
 .bullet p strong { color: var(--ink); }
 
-.privacy { background: var(--card-2); border-radius: 28px; }
-.privacy .wrap { padding-top: 56px; padding-bottom: 56px; }
+.engines { padding: 24px; }
+.engine-row { display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--line); }
+.engine-row:first-child { padding-top: 0; }
+.engine-row dt { font-size: 0.9rem; color: var(--ink); }
+.engine-row dd { font-size: 0.86rem; color: var(--ink-2); }
 
-.faq { max-width: 760px; }
+.privacy { background: var(--card-2); border-radius: 28px; }
+.privacy .wrap { padding-top: 52px; padding-bottom: 52px; }
+
+.faq { max-width: 760px; margin-top: 24px; }
 .faq details { border-bottom: 1px solid var(--line); padding: 18px 0; }
 .faq summary { cursor: pointer; font-weight: 700; font-size: 1.02rem; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
 .faq summary::-webkit-details-marker { display: none; }
-.faq summary::after { content: "+"; color: var(--basil); font-family: "Unbounded"; }
+.faq summary::after { content: "+"; color: var(--basil); font-family: "Unbounded", sans-serif; flex: none; }
 .faq details[open] summary::after { content: "–"; }
 .faq details p { margin-top: 10px; color: var(--ink-2); }
 
-.cta-final { text-align: center; background: var(--card); border: 1px solid var(--line); border-radius: 28px; padding: 56px 24px; }
+.cta-final { text-align: center; background: var(--card); border: 1px solid var(--line); border-radius: 28px; padding: 52px 24px; }
 .cta-final .ctas { justify-content: center; }
+.cta-final p.lead { margin: 10px auto 0; max-width: 34em; }
 
-footer { padding: 40px 0 56px; color: var(--ink-2); font-size: 0.9rem; }
-footer .wrap { display: flex; flex-wrap: wrap; gap: 18px; justify-content: space-between; align-items: center; }
+.also { margin-top: 44px; }
+.also ul { list-style: none; margin-top: 12px; display: grid; gap: 10px; }
+.also a { color: var(--basil); font-weight: 700; text-decoration: none; font-size: 0.98rem; }
+.also a:hover { text-decoration: underline; }
+
+footer { padding: 40px 0 56px; color: var(--ink-2); font-size: 0.9rem; border-top: 1px solid var(--line); }
+.foot-in { display: flex; flex-wrap: wrap; gap: 18px 32px; justify-content: space-between; align-items: center; }
+.foot-rights { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.foot-tag { opacity: .75; }
 footer a { color: var(--ink-2); }
 footer a:hover { color: var(--ink); }
-footer .links { display: flex; gap: 18px; }
+footer .links { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+footer .links a { display: inline-flex; align-items: center; min-height: 32px; }
 
-@media (max-width: 900px) {
+/* ── адаптив ──────────────────────────────────────────── */
+@media (max-width: 980px) {
   .hero, .split { grid-template-columns: 1fr; gap: 32px; }
+  .hero { padding-top: 40px; }
   .steps { grid-template-columns: 1fr; }
   .recipes { grid-template-columns: repeat(2, 1fr); }
+  section { padding: 48px 0; }
+}
+@media (max-width: 720px) {
+  :root { --header-h: 110px; }
+  .top-in { flex-wrap: wrap; gap: 0; padding-top: 6px; }
+  .brand { min-height: 46px; }
+  /* Ссылки уезжают в прокручиваемую строку — гамбургер не нужен. */
+  .top-nav {
+    order: 3; width: 100%; gap: 20px;
+    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    border-top: 1px solid var(--line);
+  }
+  .top-nav::-webkit-scrollbar { display: none; }
+  .top-nav .lang { margin-left: auto; }
+  h1 { letter-spacing: 0; }
+  .hero p.sub { font-size: 1.04rem; }
+  .toc ul { display: grid; gap: 10px; }
+  .btn { flex: 1 1 auto; }
+  .cta-final { padding: 40px 18px; border-radius: 22px; }
+  .privacy { border-radius: 22px; }
+  .privacy .wrap { padding-left: 20px; padding-right: 20px; }
+  table.ref { min-width: 480px; font-size: 0.88rem; }
+  table.ref th, table.ref td { padding: 11px 14px; }
+  .sub-h { margin-top: 40px; }
 }
 @media (max-width: 520px) {
   .recipes { grid-template-columns: 1fr; }
-  .top nav { gap: 12px; }
+  .wrap { padding: 0 18px; }
+  .shot img { border-radius: 14px; }
 }

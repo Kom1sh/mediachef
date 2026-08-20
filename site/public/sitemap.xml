@@ -1,13 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Корень «/» здесь не указан намеренно: он отдаёт 302 по Accept-Language. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://mediachef.app/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://mediachef.app/"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://mediachef.app/ru"/>
+    <loc>https://mediachef.app/en/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mediachef.app/en/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://mediachef.app/ru/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mediachef.app/"/>
   </url>
   <url>
-    <loc>https://mediachef.app/ru</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://mediachef.app/"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://mediachef.app/ru"/>
+    <loc>https://mediachef.app/ru/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mediachef.app/en/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://mediachef.app/ru/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mediachef.app/"/>
+  </url>
+  <url>
+    <loc>https://mediachef.app/en/convert-mp4-to-mp3/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mediachef.app/en/convert-mp4-to-mp3/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://mediachef.app/ru/mp4-v-mp3/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mediachef.app/en/convert-mp4-to-mp3/"/>
+  </url>
+  <url>
+    <loc>https://mediachef.app/ru/mp4-v-mp3/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mediachef.app/en/convert-mp4-to-mp3/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://mediachef.app/ru/mp4-v-mp3/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mediachef.app/en/convert-mp4-to-mp3/"/>
+  </url>
+  <url>
+    <loc>https://mediachef.app/en/transcribe-audio-to-text/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mediachef.app/en/transcribe-audio-to-text/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://mediachef.app/ru/transkribaciya-audio-v-tekst/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mediachef.app/en/transcribe-audio-to-text/"/>
+  </url>
+  <url>
+    <loc>https://mediachef.app/ru/transkribaciya-audio-v-tekst/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mediachef.app/en/transcribe-audio-to-text/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://mediachef.app/ru/transkribaciya-audio-v-tekst/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mediachef.app/en/transcribe-audio-to-text/"/>
   </url>
 </urlset>
