@@ -1,7 +1,7 @@
 // Навигация и футер: один источник для шапки, бургера и подвала. Добавили
 // посадочную — дописали строку сюда, и она появилась во всех трёх местах.
 // Сам список страниц для sitemap.xml берётся из ROUTES в content.ts.
-import { FACTS, LINKS, pathFor, type Locale, type PageId } from "./content";
+import { FACTS, LINKS, T, pathFor, type Locale, type PageId } from "./content";
 
 /** Прямая ссылка на файл релиза: качается сразу, без похода на страницу GitHub. */
 const REL = `https://github.com/Kom1sh/mediachef/releases/download/v${FACTS.version}`;
@@ -9,133 +9,63 @@ const REL = `https://github.com/Kom1sh/mediachef/releases/download/v${FACTS.vers
 export interface DownloadFile {
   os: "mac" | "win" | "linux";
   href: string;
-  label: Record<Locale, string>;
   size: string;
-  /** Развёрнутая подпись — для списков в меню и подвале. */
-  note: Record<Locale, string>;
+  /** Подпись файла. Названия платформ и форматов не переводятся, поэтому
+   *  из текстов языка приходит только то, что действительно меняется. */
+  label: (u: Menu) => string;
+  /** Развёрнутая подпись для списков в меню и подвале. */
+  note: (u: Menu) => string;
   /** Короткая подпись для кнопки: там помещается только платформа. */
-  sub?: Record<Locale, string>;
+  sub?: (u: Menu) => string;
 }
+
+type Menu = ReturnType<typeof UI>;
 
 /** Имена файлов — ровно те, что публикует .github/workflows/release.yml. */
 export const DOWNLOADS: readonly DownloadFile[] = [
   {
     os: "mac",
     href: `${REL}/MediaChef_${FACTS.version}_aarch64.dmg`,
-    label: { en: "macOS · DMG", ru: "macOS · DMG" },
     size: "66 MB",
-    note: { en: "Apple Silicon", ru: "Apple Silicon" },
+    label: () => "macOS · DMG",
+    note: (u) => u.nApple,
   },
   {
     os: "mac",
     href: `${REL}/MediaChef-${FACTS.version}-macos-arm64.zip`,
-    label: { en: "macOS · ZIP", ru: "macOS · ZIP" },
     size: "60 MB",
-    note: { en: "Apple Silicon, no installer", ru: "Apple Silicon, без установщика" },
+    label: () => "macOS · ZIP",
+    note: (u) => u.nZip,
   },
   {
     os: "win",
     href: `${REL}/MediaChef_${FACTS.version}_x64-setup.exe`,
-    label: { en: "Windows · installer", ru: "Windows · установщик" },
     size: "82 MB",
-    note: { en: "64-bit", ru: "64-разрядная" },
+    label: (u) => u.dlWin,
+    note: (u) => u.nWin,
   },
   {
     os: "linux",
     href: `${REL}/MediaChef_${FACTS.version}_amd64.AppImage`,
-    label: { en: "Linux · AppImage", ru: "Linux · AppImage" },
     size: "181 MB",
-    note: { en: "x86_64, runs as is", ru: "x86_64, запускается как есть" },
-    sub: { en: "x86_64", ru: "x86_64" },
+    label: () => "Linux · AppImage",
+    note: (u) => u.nAppimage,
+    sub: () => "x86_64",
   },
   {
     os: "linux",
     href: `${REL}/MediaChef_${FACTS.version}_amd64.deb`,
-    label: { en: "Linux · DEB", ru: "Linux · DEB" },
     size: "118 MB",
-    note: { en: "x86_64, Debian and Ubuntu", ru: "x86_64, Debian и Ubuntu" },
+    label: () => "Linux · DEB",
+    note: (u) => u.nDeb,
   },
 ];
 
 export const byOs = (os: DownloadFile["os"]) => DOWNLOADS.filter((d) => d.os === os);
 
-/** Подписи навигации. Тексты страниц живут в content.ts, обвязка — здесь. */
-const M = {
-  en: {
-    navLabel: "Site",
-    menu: "Menu",
-    features: "Features",
-    guides: "Guides",
-    download: "Download",
-    faq: "FAQ",
-    gConvert: "Converting",
-    gTranscribe: "Transcription",
-    gTrust: "Privacy and code",
-    gMac: "macOS",
-    gWin: "Windows",
-    gLinux: "Linux",
-    allFiles: "All files and release notes",
-    onThisPage: "On this page",
-    footProduct: "Product",
-    footGuides: "Guides",
-    footDownload: "Download",
-    footProject: "Project",
-    footBlurb: `A free media kitchen for macOS, Windows and Linux. FFmpeg ${FACTS.ffmpeg} and whisper.cpp ${FACTS.whisper} ship inside the download — nothing to install separately.`,
-    license: "License GPL-3.0",
-    notice: "What is bundled — NOTICE.md",
-    sourceCode: "Source code on GitHub",
-    releases: "All releases",
-    // Разделы главной — короткие подписи для меню, содержания и футера.
-    sHow: "How it works",
-    sRecipes: "Recipes",
-    sOut: "What it does out of the box",
-    sTranscribe: "Transcription",
-    sModels: "Whisper models",
-    sPrivacy: "Offline and private",
-    sOss: "Open source",
-    sFaq: "FAQ",
-    // Названия посадочных в меню — короче, чем их H1.
-    pMp3: "MP4 to MP3",
-    pTranscribe: "Audio to text",
-  },
-  ru: {
-    navLabel: "Сайт",
-    menu: "Меню",
-    features: "Возможности",
-    guides: "Гайды",
-    download: "Скачать",
-    faq: "Вопросы",
-    gConvert: "Конвертация",
-    gTranscribe: "Транскрибация",
-    gTrust: "Приватность и код",
-    gMac: "macOS",
-    gWin: "Windows",
-    gLinux: "Linux",
-    allFiles: "Все файлы и заметки о релизе",
-    onThisPage: "На этой странице",
-    footProduct: "Продукт",
-    footGuides: "Гайды",
-    footDownload: "Скачать",
-    footProject: "Проект",
-    footBlurb: `Свободная медиа-кухня для macOS, Windows и Linux. FFmpeg ${FACTS.ffmpeg} и whisper.cpp ${FACTS.whisper} едут внутри загрузки — ставить отдельно нечего.`,
-    license: "Лицензия GPL-3.0",
-    notice: "Что внутри — NOTICE.md",
-    sourceCode: "Исходный код на GitHub",
-    releases: "Все релизы",
-    sHow: "Как это устроено",
-    sRecipes: "Рецепты",
-    sOut: "Что умеет из коробки",
-    sTranscribe: "Транскрибация",
-    sModels: "Модели Whisper",
-    sPrivacy: "Офлайн и приватность",
-    sOss: "Открытый код",
-    sFaq: "Вопросы",
-    pMp3: "MP4 в MP3",
-    pTranscribe: "Аудио в текст",
-  },
-} as const;
+/** Подписи навигации живут в текстах языка — copy/<locale>.ts, поле `menu`. */
+export const UI = (locale: Locale) => T[locale].menu;
 
-export const UI = (locale: Locale) => M[locale];
 
 export interface NavItem { label: string; href: string; note?: string; ext?: boolean }
 export interface NavGroup { label: string; items: readonly NavItem[] }
@@ -155,9 +85,9 @@ export function navFor(locale: Locale, page: PageId): readonly NavEntry[] {
   const u = UI(locale);
   const a = anchorFor(locale, page);
   const dl = (d: DownloadFile): NavItem => ({
-    label: d.label[locale],
+    label: d.label(u),
     href: d.href,
-    note: `${d.size} · ${d.note[locale]}`,
+    note: `${d.size} · ${d.note(u)}`,
     ext: true,
   });
 
@@ -222,7 +152,7 @@ export function footerFor(locale: Locale, page: PageId): readonly NavGroup[] {
       { label: u.pTranscribe, href: pathFor("transcribe", locale) },
     ] },
     { label: u.footDownload, items: [
-      ...DOWNLOADS.map((d) => ({ label: d.label[locale], href: d.href, note: d.size, ext: true })),
+      ...DOWNLOADS.map((d) => ({ label: d.label(u), href: d.href, note: d.size, ext: true })),
       { label: u.releases, href: LINKS.releases, ext: true },
     ] },
     { label: u.footProject, items: [

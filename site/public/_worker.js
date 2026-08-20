@@ -18,14 +18,22 @@ const SECURITY = {
 // Статусы, у которых тела быть не может: такой ответ переупаковывать нельзя.
 const NULL_BODY = new Set([101, 204, 205, 304]);
 
+// Языки сайта. Список продублирован здесь намеренно: _worker.js едет в dist
+// как есть и ничего не импортирует. Добавили локаль в content.ts — допишите
+// сюда, иначе корень будет отправлять её носителей на английский.
+// Порядок = приоритет при равном качестве совпадения.
+const SUPPORTED = ["en", "ru"];
+const DEFAULT_LOCALE = "en";
+
 /**
- * Русский ли язык у посетителя. Смотрим не «есть ли ru где-нибудь в строке», а
- * самый предпочитаемый тег: у `en-GB,ru;q=0.7` человек всё-таки просит
- * английский. Пустой или битый заголовок (боты) — не русский, значит /en/.
+ * Какой язык просит браузер. Смотрим не «есть ли ru где-нибудь в строке», а
+ * весь список по убыванию q: у `en-GB,ru;q=0.7` человек всё-таки просит
+ * английский. Совпадение по основному субтегу, поэтому pt-BR уходит на pt,
+ * а zh-Hans — на zh. Пустой или битый заголовок (боты) — язык по умолчанию.
  */
-function prefersRussian(header) {
-  if (!header) return false;
-  const best = header
+function pickLocale(header) {
+  if (!header) return DEFAULT_LOCALE;
+  const wanted = header
     .split(",")
     .map((part, index) => {
       const [tag, ...params] = part.trim().split(";");
@@ -34,8 +42,15 @@ function prefersRussian(header) {
       return { tag: tag.trim().toLowerCase(), q: Number.isFinite(weight) ? weight : 0, index };
     })
     .filter((lang) => lang.tag && lang.q > 0)
-    .sort((a, b) => b.q - a.q || a.index - b.index)[0];
-  return !!best && /^ru\b/.test(best.tag);
+    .sort((a, b) => b.q - a.q || a.index - b.index);
+
+  for (const lang of wanted) {
+    if (lang.tag === "*") return DEFAULT_LOCALE;
+    const primary = lang.tag.split("-")[0];
+    const hit = SUPPORTED.find((l) => l === primary);
+    if (hit) return hit;
+  }
+  return DEFAULT_LOCALE;
 }
 
 function cacheControlFor(pathname) {
@@ -50,8 +65,8 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/") {
-      const wantsRu = prefersRussian(request.headers.get("accept-language"));
-      const target = new URL((wantsRu ? "/ru/" : "/en/") + url.search, url);
+      const locale = pickLocale(request.headers.get("accept-language"));
+      const target = new URL(`/${locale}/` + url.search, url);
       return new Response(null, {
         status: 302,
         headers: {

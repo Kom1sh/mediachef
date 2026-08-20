@@ -5,14 +5,14 @@
 // (мобильный бургер) и на :hover/:focus-within (десктопные выпадашки).
 import Flag from "./Flag.astro";
 import { navFor, UI } from "../nav";
-import { pathFor, type Locale, type PageId } from "../content";
+import { LOCALES, LOCALE_META, pathFor, type Locale, type PageId } from "../content";
 
-interface Props { locale: Locale; page: PageId; homePath: string; switchPath: string }
-const { locale, page, homePath, switchPath } = Astro.props;
+interface Props { locale: Locale; page: PageId; homePath: string }
+const { locale, page, homePath } = Astro.props;
 const u = UI(locale);
 const entries = navFor(locale, page);
-const other: Locale = locale === "en" ? "ru" : "en";
 const caret = `<svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
+const others = LOCALES.filter((l) => l !== locale);
 ---
 
 <header class="top">
@@ -63,10 +63,37 @@ const caret = `<svg class="caret" width="12" height="12" viewBox="0 0 24 24" fil
     </nav>
 
     <div class="top-right">
-      <a class="lang" href={switchPath} hreflang={other} lang={other}>
-        <Flag locale={other} />
-        {other.toUpperCase()}
-      </a>
+      {/* Переключатель языка. Каждый пункт ведёт в ту же страницу на другом
+          языке, а не на чужую главную, — слаги берутся из ROUTES. */}
+      <div class="nav-item lang-item">
+        <button class="lang" type="button" aria-label={u.langLabel}>
+          <Flag code={LOCALE_META[locale].flag} />
+          <span>{locale.toUpperCase()}</span>
+          <Fragment set:html={caret} />
+        </button>
+        <div class="dd-panel lang-panel">
+          <div class="dd-col">
+            <p class="dd-group">{u.langLabel}</p>
+            <ul>
+              {LOCALES.map((l) => (
+                <li>
+                  <a
+                    href={pathFor(page, l)}
+                    hreflang={l}
+                    lang={l}
+                    aria-current={l === locale ? "true" : undefined}
+                  >
+                    <span class="lang-row">
+                      <Flag code={LOCALE_META[l].flag} />
+                      <span class="dd-label">{LOCALE_META[l].name}</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
 
       <details class="burger">
         <summary class="burger-btn" aria-label={u.menu}>
@@ -103,10 +130,29 @@ const caret = `<svg class="caret" width="12" height="12" viewBox="0 0 24 24" fil
                 <a class="acc-link" href={e.href}>{e.label}</a>
               )
             ))}
-            <a class="acc-link" href={pathFor(page, other)} hreflang={other} lang={other}>
-              <Flag locale={other} />
-              {other === "ru" ? "Русская версия" : "English version"}
-            </a>
+
+            <details class="acc">
+              <summary class="acc-top">
+                {u.langLabel}
+                <Fragment set:html={caret} />
+              </summary>
+              <div class="acc-body">
+                <div class="acc-group">
+                  <ul>
+                    {others.map((l) => (
+                      <li>
+                        <a href={pathFor(page, l)} hreflang={l} lang={l}>
+                          <span class="lang-row">
+                            <Flag code={LOCALE_META[l].flag} />
+                            <span class="dd-label">{LOCALE_META[l].name}</span>
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
       </details>

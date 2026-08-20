@@ -80,11 +80,11 @@ h3 { font-size: 1.05rem; font-weight: 700; }
 }
 
 .skip {
-  position: absolute; left: -9999px; top: 0; z-index: 100;
+  position: absolute; inset-inline-start: -9999px; top: 0; z-index: 100;
   background: var(--basil); color: var(--basil-ink);
-  padding: 12px 18px; border-radius: 0 0 12px 0; font-weight: 700; text-decoration: none;
+  padding: 12px 18px; border-start-start-radius: 0; border-end-end-radius: 12px; font-weight: 700; text-decoration: none;
 }
-.skip:focus { left: 0; }
+.skip:focus { inset-inline-start: 0; }
 
 /* ── шапка: липкая, полупрозрачная ─────────────────────── */
 .top {
@@ -108,10 +108,30 @@ h3 { font-size: 1.05rem; font-weight: 700; }
   border: 1px solid var(--line-strong); border-radius: 9px; text-decoration: none;
   display: inline-flex; align-items: center; gap: 7px;
   min-height: 34px; padding: 0 9px; color: var(--ink);
+  background: none; cursor: pointer;
 }
 .lang:hover { border-color: var(--basil); }
 .flag { flex: none; border-radius: 2px; }
-.acc-link .flag, .foot-lang .flag { margin-right: 10px; }
+
+/* Переключатель языка: та же выпадашка, что у категорий, но прижата к правому
+   краю — иначе на десяти языках панель уезжает за экран. */
+.lang-item { position: relative; }
+.lang-item .dd-panel { inset-inline-start: auto; inset-inline-end: 0; min-width: 210px; }
+.lang-row { display: flex; align-items: center; gap: 10px; }
+.lang-item .dd-col a[aria-current] { background: var(--card-2); color: var(--basil); }
+.lang-item .caret { margin-left: 2px; }
+
+.foot-langs { padding-bottom: 30px; }
+.foot-langs ul {
+  list-style: none; margin-top: 10px;
+  display: flex; flex-wrap: wrap; gap: 8px 22px;
+}
+.foot-langs a {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--ink-2); text-decoration: none; font-size: 0.9rem;
+}
+.foot-langs a:hover { color: var(--basil); }
+.foot-langs a[aria-current] { color: var(--ink); font-weight: 700; }
 
 /* ── меню: категории с выпадающими списками ─────────────
    Раскрытие без единой строки JS: на десктопе — :hover/:focus-within,
@@ -130,7 +150,7 @@ h3 { font-size: 1.05rem; font-weight: 700; }
 .caret { opacity: .55; transition: transform .14s ease; }
 
 .dd-panel {
-  position: absolute; top: 100%; left: 0; z-index: 60;
+  position: absolute; top: 100%; inset-inline-start: 0; z-index: 60;
   min-width: 292px; margin-top: 10px; padding: 14px;
   background: var(--card); border: 1px solid var(--line); border-radius: 18px;
   box-shadow: 0 26px 60px -28px rgba(15, 19, 25, .5);
@@ -142,7 +162,7 @@ h3 { font-size: 1.05rem; font-weight: 700; }
 }
 /* Мостик под курсор: без него зазор между кнопкой и панелью гасит :hover. */
 .dd-panel::before { content: ""; position: absolute; left: 0; right: 0; top: -12px; height: 12px; }
-.nav-item.is-cta .dd-panel { left: auto; right: 0; }
+.nav-item.is-cta .dd-panel { inset-inline-start: auto; inset-inline-end: 0; }
 .dd-group {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em;
@@ -342,7 +362,7 @@ p.lead { margin-top: 14px; color: var(--ink-2); max-width: 44em; font-size: 1.05
   border: 1px solid var(--line); border-radius: 18px; background: var(--card);
 }
 table.ref { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 0.93rem; }
-table.ref th, table.ref td { text-align: left; padding: 13px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.ref th, table.ref td { text-align: start; padding: 13px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.ref thead th {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
@@ -460,3 +480,11 @@ footer { background: var(--card-2); border-top: 1px solid var(--line); color: va
   .shot img { border-radius: 14px; }
   .foot-grid { grid-template-columns: 1fr; }
 }
+
+/* ── письмо справа налево ────────────────────────────────
+   Направленных правил в файле почти не осталось — остальное считают
+   логические свойства. Здесь только то, чего в логическом виде нет. */
+[dir="rtl"] table.ref tr.is-default th { box-shadow: inset -3px 0 0 var(--amber); }
+[dir="rtl"] .caret { transform: none; }
+[dir="rtl"] .crumbs span { transform: scaleX(-1); display: inline-block; }
+[dir="rtl"] .onward a::after, [dir="rtl"] .also a { unicode-bidi: plaintext; }

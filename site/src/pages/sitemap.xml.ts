@@ -2,9 +2,8 @@
 // страницы. Раньше файл лежал руками в public/ и его нужно было помнить: новая
 // посадочная появлялась на сайте, но не в карте. Теперь забыть нечего.
 import type { APIRoute } from "astro";
-import { SITE, ROUTES, FACTS, pathFor, type Locale, type PageId } from "../content";
+import { SITE, ROUTES, FACTS, LOCALES, pathFor, type Locale, type PageId } from "../content";
 
-const LOCALES = ["en", "ru"] as const satisfies readonly Locale[];
 const PAGES = Object.keys(ROUTES) as PageId[];
 
 /**

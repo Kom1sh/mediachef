@@ -8,7 +8,7 @@ import "@fontsource/jetbrains-mono/400.css";
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
-import { T, SITE, pathFor, type Locale, type PageId } from "../content";
+import { T, SITE, LOCALES, LOCALE_META, pathFor, type Locale, type PageId } from "../content";
 
 interface Props {
   locale: Locale;
@@ -19,29 +19,28 @@ interface Props {
 }
 const { locale, page, title, description, jsonLd } = Astro.props;
 const t = T[locale];
-const other: Locale = locale === "en" ? "ru" : "en";
+const meta = LOCALE_META[locale];
 
-const enUrl = SITE + pathFor(page, "en");
-const ruUrl = SITE + pathFor(page, "ru");
-const canonical = locale === "en" ? enUrl : ruUrl;
+const canonical = SITE + pathFor(page, locale);
+// Взаимные hreflang по всем локалям: страница знает про все свои переводы,
+// иначе Google не сшивает их в одну группу.
+const alternates = LOCALES.map((l) => ({ l, href: SITE + pathFor(page, l) }));
 // Корень редиректит только главную, поэтому x-default для главной — сам корень,
 // а для посадочных — их англоязычная версия.
-const xDefault = page === "home" ? `${SITE}/` : enUrl;
+const xDefault = page === "home" ? `${SITE}/` : SITE + pathFor(page, "en");
 
 const homePath = pathFor("home", locale);
-const switchPath = pathFor(page, other);
 ---
 
 <!doctype html>
-<html lang={t.lang}>
+<html lang={meta.lang} dir={meta.dir}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang="en" href={enUrl} />
-    <link rel="alternate" hreflang="ru" href={ruUrl} />
+    {alternates.map((a) => <link rel="alternate" hreflang={a.l} href={a.href} />)}
     <link rel="alternate" hreflang="x-default" href={xDefault} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -50,8 +49,10 @@ const switchPath = pathFor(page, other);
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:locale" content={t.ogLocale} />
-    <meta property="og:locale:alternate" content={T[other].ogLocale} />
+    <meta property="og:locale" content={meta.ogLocale} />
+    {LOCALES.filter((l) => l !== locale).map((l) => (
+      <meta property="og:locale:alternate" content={LOCALE_META[l].ogLocale} />
+    ))}
     <meta property="og:image" content={`${SITE}/og.png`} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -64,10 +65,10 @@ const switchPath = pathFor(page, other);
   <body>
     <a class="skip" href="#main">{t.skipToContent}</a>
 
-    <Nav locale={locale} page={page} homePath={homePath} switchPath={switchPath} />
+    <Nav locale={locale} page={page} homePath={homePath} />
 
     <slot />
 
-    <Footer locale={locale} page={page} switchPath={switchPath} />
+    <Footer locale={locale} page={page} />
   </body>
 </html>

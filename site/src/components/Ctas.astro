@@ -14,7 +14,7 @@ const u = UI(locale);
 const mac = DOWNLOADS.find((d) => d.href.endsWith(".dmg"))!;
 const win = DOWNLOADS.find((d) => d.href.endsWith(".exe"))!;
 const linux = DOWNLOADS.find((d) => d.href.endsWith(".AppImage"))!;
-const sub = (d: typeof mac) => `${d.size} · ${(d.sub ?? d.note)[locale]}`;
+const sub = (d: typeof mac) => `${d.size} · ${(d.sub ?? d.note)(u)}`;
 ---
 
 <div class="ctas" id={anchor ? "download" : undefined}>

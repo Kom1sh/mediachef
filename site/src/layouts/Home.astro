@@ -146,7 +146,7 @@ const jsonLd = [
                     <code>{m.id}</code>
                     {m.isDefault && <span class="tag">{t.defaultTag}</span>}
                   </th>
-                  <td class="num">{m.size[locale]}</td>
+                  <td class="num">{t.modelSizes[m.id]}</td>
                   <td>{t.modelNotes[m.id]}</td>
                 </tr>
               ))}

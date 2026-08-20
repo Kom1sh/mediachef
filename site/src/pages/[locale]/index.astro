@@ -1,0 +1,13 @@
+---
+// Главная каждой локали: /en/, /ru/, … Список берётся из LOCALES, поэтому
+// новый язык появляется сам, без отдельного файла страницы.
+import Home from "../../layouts/Home.astro";
+import { LOCALES, type Locale } from "../../content";
+
+export function getStaticPaths() {
+  return LOCALES.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+---
+<Home locale={locale} />
