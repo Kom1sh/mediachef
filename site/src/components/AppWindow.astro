@@ -1,14 +1,14 @@
 ---
 // Стилизованное окно MediaChef: сайдбар, доска для файлов, карточки-рецептов
 // и очередь задач. Рисуется токенами темы, поэтому живёт и в светлой, и в тёмной.
-import type { Locale } from "../content";
+import { T, type Locale } from "../content";
 
 interface Props { locale: Locale }
 const { locale } = Astro.props;
-const ru = locale === "ru";
+const t = T[locale];
 ---
 
-<svg class="window" viewBox="0 0 560 400" role="img" aria-label={ru ? "Схема окна MediaChef: доска для файлов, карточки рецептов и очередь задач" : "Diagram of the MediaChef window: drop board, recipe cards and the task queue"}>
+<svg class="window" viewBox="0 0 560 400" role="img" aria-label={t.shotAlt}>
   <rect width="560" height="400" fill="var(--card)"/>
   <circle cx="22" cy="20" r="5" fill="var(--tomato)" opacity=".8"/>
   <circle cx="40" cy="20" r="5" fill="var(--amber)" opacity=".8"/>
@@ -19,7 +19,7 @@ const ru = locale === "ru";
   <rect x="16" y="150" width="32" height="32" rx="9" fill="var(--line)"/>
   <g>
     <rect x="84" y="58" width="284" height="64" rx="14" fill="var(--paper)" stroke="var(--basil)" stroke-width="2" stroke-dasharray="7 6"/>
-    <text x="226" y="95" text-anchor="middle" font-family="Manrope, sans-serif" font-size="13" font-weight="600" fill="var(--ink-2)">{ru ? "Перетащите файлы сюда" : "Drop files here"}</text>
+    <text x="226" y="95" text-anchor="middle" font-family="Manrope, sans-serif" font-size="13" font-weight="600" fill="var(--ink-2)">{t.menu.dropHere}</text>
   </g>
   <rect x="84" y="138" width="284" height="30" rx="9" fill="var(--paper)" stroke="var(--line)"/>
   <g>

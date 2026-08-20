@@ -6,6 +6,14 @@
 // в sitemap.xml и в роутах: всё считается из этой таблицы.
 import en from "./copy/en";
 import ru from "./copy/ru";
+import es from "./copy/es";
+import pt from "./copy/pt";
+import fr from "./copy/fr";
+import de from "./copy/de";
+import pl from "./copy/pl";
+import it from "./copy/it";
+import ar from "./copy/ar";
+import zh from "./copy/zh";
 import shotLight from "./assets/app-main-light.png";
 import shotDark from "./assets/app-main-dark.png";
 
@@ -22,6 +30,14 @@ export type PageId = "home" | "mp3" | "transcribe";
 const META = {
   en: { lang: "en", ogLocale: "en_US", name: "English", flag: "gb" },
   ru: { lang: "ru", ogLocale: "ru_RU", name: "Русский", flag: "ru" },
+  es: { lang: "es", ogLocale: "es_ES", name: "Español", flag: "es" },
+  pt: { lang: "pt", ogLocale: "pt_BR", name: "Português", flag: "pt" },
+  fr: { lang: "fr", ogLocale: "fr_FR", name: "Français", flag: "fr" },
+  de: { lang: "de", ogLocale: "de_DE", name: "Deutsch", flag: "de" },
+  pl: { lang: "pl", ogLocale: "pl_PL", name: "Polski", flag: "pl" },
+  it: { lang: "it", ogLocale: "it_IT", name: "Italiano", flag: "it" },
+  ar: { lang: "ar", ogLocale: "ar_SA", name: "العربية", flag: "sa", dir: "rtl" },
+  zh: { lang: "zh", ogLocale: "zh_CN", name: "中文", flag: "cn" },
 } as const;
 
 export type Locale = keyof typeof META;
@@ -32,9 +48,9 @@ export const LOCALES = Object.keys(META) as Locale[];
 
 /** Слаги по локалям: переключатель языка бьёт страницу в страницу, а не в главную. */
 export const ROUTES: Record<PageId, Record<Locale, string>> = {
-  home: { en: "", ru: "" },
-  mp3: { en: "convert-mp4-to-mp3", ru: "mp4-v-mp3" },
-  transcribe: { en: "transcribe-audio-to-text", ru: "transkribaciya-audio-v-tekst" },
+  home: { en: "", ru: "", zh: "", ar: "", it: "", pl: "", de: "", fr: "", pt: "", es: "" },
+  mp3: { en: "convert-mp4-to-mp3", zh: "mp4-zhuan-mp3", ar: "tahwil-mp4-ila-mp3", it: "convertire-mp4-in-mp3", pl: "konwersja-mp4-na-mp3", de: "mp4-in-mp3-umwandeln", fr: "convertir-mp4-en-mp3", pt: "converter-mp4-em-mp3", ru: "mp4-v-mp3", es: "convertir-mp4-a-mp3" },
+  transcribe: { en: "transcribe-audio-to-text", zh: "yinpin-zhuan-wenzi", ar: "tafrigh-sawti-ila-nass", it: "trascrivere-audio-in-testo", pl: "transkrypcja-audio-na-tekst", de: "audio-in-text-umwandeln", fr: "transcrire-audio-en-texte", pt: "transcrever-audio-para-texto", ru: "transkribaciya-audio-v-tekst", es: "transcribir-audio-a-texto" },
 };
 
 /** Путь страницы внутри локали, всегда со слешем на конце. */
@@ -114,16 +130,40 @@ export type UiCopy = typeof en.ui;
 
 export const T: Record<Locale, UiCopy> = {
   en: en.ui,
+  zh: zh.ui,
+  ar: ar.ui,
+  it: it.ui,
+  pl: pl.ui,
+  de: de.ui,
+  fr: fr.ui,
+  pt: pt.ui,
   ru: ru.ui,
+  es: es.ui,
 };
 
 export const LANDINGS: Record<Exclude<PageId, "home">, Record<Locale, LandingCopy>> = {
   mp3: {
     en: en.landings.mp3,
+    zh: zh.landings.mp3,
+    ar: ar.landings.mp3,
+    it: it.landings.mp3,
+    pl: pl.landings.mp3,
+    de: de.landings.mp3,
+    fr: fr.landings.mp3,
+    pt: pt.landings.mp3,
     ru: ru.landings.mp3,
+    es: es.landings.mp3,
   },
   transcribe: {
     en: en.landings.transcribe,
+    zh: zh.landings.transcribe,
+    ar: ar.landings.transcribe,
+    it: it.landings.transcribe,
+    pl: pl.landings.transcribe,
+    de: de.landings.transcribe,
+    fr: fr.landings.transcribe,
+    pt: pt.landings.transcribe,
     ru: ru.landings.transcribe,
+    es: es.landings.transcribe,
   },
 };

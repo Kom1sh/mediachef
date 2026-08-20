@@ -4,8 +4,6 @@ import { FACTS } from "../facts";
 
 
 export const ui = {
-  lang: "ru",
-  ogLocale: "ru_RU",
   title: "MediaChef — конвертер видео и аудио офлайн + транскрибация",
   description:
     "Бесплатное приложение с открытым кодом для macOS, Windows и Linux: конвертируйте видео и аудио на своём компьютере и переводите речь в текст через Whisper. Без загрузки в облако, без лимитов и подписок.",
@@ -120,7 +118,6 @@ export const ui = {
   // ── общая обвязка ──
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Медиакухня с открытым кодом.",
-  switchLabel: "English version",
   tocLabel: "Содержание",
   breadcrumbHome: "Главная",
   alsoLabel: "Читать дальше",
@@ -150,6 +147,8 @@ export const ui = {
     sourceCode: "Исходный код на GitHub",
     releases: "Все релизы",
     langLabel: "Язык",
+    // Подпись на схеме окна приложения в hero.
+    dropHere: "Перетащите файлы сюда",
     dlWin: "Windows · установщик",
     nApple: "Apple Silicon",
     nZip: "Apple Silicon, без установщика",

@@ -4,8 +4,6 @@ import { FACTS } from "../facts";
 
 
 export const ui = {
-  lang: "en",
-  ogLocale: "en_US",
   title: "MediaChef — free offline video converter with transcription",
   description:
     "Free open-source app for macOS, Windows and Linux: convert video and audio on your own computer and transcribe speech to text with Whisper. No uploads, no size limits, no subscription.",
@@ -121,7 +119,6 @@ export const ui = {
   // ── общая обвязка ──
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "An open-source media kitchen.",
-  switchLabel: "Русская версия",
   tocLabel: "On this page",
   breadcrumbHome: "Home",
   alsoLabel: "Read next",
@@ -153,6 +150,8 @@ export const ui = {
     sourceCode: "Source code on GitHub",
     releases: "All releases",
     langLabel: "Language",
+    // Подпись на схеме окна приложения в hero.
+    dropHere: "Drop files here",
     // Подписи файлов загрузки: переводится только то, что не является
     // названием платформы или формата.
     dlWin: "Windows · installer",

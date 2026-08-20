@@ -255,7 +255,13 @@ h3 { font-size: 1.05rem; font-weight: 700; }
   border-radius: 14px; padding: 10px 18px;
   min-height: 52px; font-weight: 700; font-size: 0.95rem; text-decoration: none; border: 2px solid transparent;
   transition: transform .12s ease, background .12s ease, border-color .12s ease; }
-/* Вес и платформа прямо на кнопке: человек знает, что получит, до клика. */
+/* Вес и платформа прямо на кнопке: человек знает, что получит, до клика.
+   direction здесь не косметика: «181 MB · x86_64» — техническая строка слева
+   направо, и в арабской вёрстке без изоляции она распадается на «MB · x86_64 181». */
+.btn-sub { direction: ltr; unicode-bidi: isolate; }
+/* В списках подпись может содержать и обычный текст языка, поэтому направление
+   здесь не навязываем — только изолируем, чтобы соседи не перетасовали её. */
+.dd-note, .foot-note { unicode-bidi: isolate; }
 .btn-sub { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.68rem; font-weight: 400; opacity: .85; }
 .btn:hover { transform: translateY(-1px); }
 .btn-primary { background: var(--basil); color: var(--basil-ink); }
