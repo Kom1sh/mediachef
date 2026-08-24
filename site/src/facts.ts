@@ -12,7 +12,7 @@ const NOTICE = "https://github.com/Kom1sh/mediachef/blob/main/NOTICE.md";
 export const LINKS = { releases: RELEASES, github: GITHUB, notice: NOTICE };
 
 export const FACTS = {
-  version: "0.6.0",
+  version: "0.6.1",
   // Дата последней правки текстов — уезжает в <lastmod> sitemap.xml.
   // Меняется вручную вместе с содержимым, а не при каждой пересборке:
   // «сегодня» в lastmod у неизменившейся страницы Google просто перестаёт верить.

@@ -1,15 +1,15 @@
-MediaChef 0.6.0 (Linux x86_64)
+MediaChef 0.6.1 (Linux x86_64)
 ==============================
 
 ВАРИАНТ 1 — AppImage (любой дистрибутив)
 ----------------------------------------
-    chmod +x MediaChef_0.6.0_amd64.AppImage
-    ./MediaChef_0.6.0_amd64.AppImage
+    chmod +x MediaChef_0.6.1_amd64.AppImage
+    ./MediaChef_0.6.1_amd64.AppImage
 (нужен libfuse2: sudo apt install libfuse2)
 
 ВАРИАНТ 2 — deb (Ubuntu/Debian)
 -------------------------------
-    sudo apt install ./MediaChef_0.6.0_amd64.deb
+    sudo apt install ./MediaChef_0.6.1_amd64.deb
 
 ЗАВИСИМОСТИ
 -----------

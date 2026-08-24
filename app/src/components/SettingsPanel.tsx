@@ -1,14 +1,23 @@
 import { useState } from "react";
-import { Bell, FolderOpen, Gauge, Languages, Palette } from "lucide-react";
-import { useT, LOCALES, LOCALE_NAMES } from "../lib/i18n";
+import { Bell, FolderOpen, Gauge, Languages, Monitor, Palette } from "lucide-react";
+import { useT, LOCALES, LOCALE_FLAGS, LOCALE_NAMES } from "../lib/i18n";
+import { Flag } from "./Flag";
 import { pickFolder } from "../lib/ipc";
 import type { AppSettings } from "../lib/types";
 import type { LucideIcon } from "lucide-react";
 
-/** One option of a segmented control: the stored value and the word for it. */
+/**
+ * One option of a segmented control: the stored value and the word for it.
+ *
+ * `flag` — код флажка (см. LOCALE_FLAGS), `icon` — значок lucide для варианта,
+ * у которого флага быть не может («как в системе»). Оба необязательны: у темы
+ * и у числа воркеров подписи говорят сами за себя.
+ */
 interface Choice<T extends string> {
   value: T;
   label: string;
+  flag?: string;
+  icon?: LucideIcon;
 }
 
 // The worker counts are numerals in both languages, so this one list can stay at
@@ -73,7 +82,13 @@ function Segmented<T extends string>({
               type="radio" name={name} value={c.value} checked={on} className="sr-only"
               onChange={() => onPick(c.value)}
             />
-            {c.label}
+            {/* Значок и подпись в одной строке: без inline-flex флажок съезжает
+                с базовой линии текста, потому что это отдельный блок svg. */}
+            <span className="inline-flex items-center gap-1.5">
+              {c.flag ? <Flag code={c.flag} /> : null}
+              {c.icon ? <c.icon size={13} className="shrink-0" aria-hidden /> : null}
+              {c.label}
+            </span>
           </label>
         );
       })}
@@ -161,8 +176,10 @@ export function SettingsPanel({
   // the switch is looking for "Русский", not for whatever the current UI calls it.
   // "System" is the exception — it is a word about the setting, not a language.
   const LANGUAGES: readonly Choice<AppSettings["language"]>[] = [
-    { value: "system", label: t("optSystem") },
-    ...LOCALES.map((l) => ({ value: l, label: LOCALE_NAMES[l] })),
+    // У «как в системе» флага нет и быть не может — это не язык, а правило.
+    // Монитор говорит то же самое без слов, и ряд не выглядит рваным.
+    { value: "system", label: t("optSystem"), icon: Monitor },
+    ...LOCALES.map((l) => ({ value: l, label: LOCALE_NAMES[l], flag: LOCALE_FLAGS[l] })),
   ];
   const THEMES: readonly Choice<AppSettings["theme"]>[] = [
     { value: "system", label: t("optSystem") },

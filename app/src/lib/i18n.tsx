@@ -57,6 +57,24 @@ export const LOCALE_NAMES: Record<Locale, string> = {
   zh: "中文",
 };
 
+/**
+ * Флажок языка. Совпадает с кодом языка везде, кроме трёх случаев, где у языка
+ * нет «своей» страны и берётся привычная: английский — Великобритания,
+ * арабский — Саудовская Аравия, китайский — КНР. Тот же список на сайте.
+ */
+export const LOCALE_FLAGS: Record<Locale, string> = {
+  en: "gb",
+  ru: "ru",
+  es: "es",
+  pt: "pt",
+  fr: "fr",
+  de: "de",
+  pl: "pl",
+  it: "it",
+  ar: "sa",
+  zh: "cn",
+};
+
 /** Языки с письмом справа налево. Атрибут dir проставляет App. */
 const RTL: ReadonlySet<string> = new Set(["ar"]);
 
