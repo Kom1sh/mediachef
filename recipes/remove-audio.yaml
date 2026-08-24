@@ -1,10 +1,38 @@
 id: remove-audio
 category: audio-in-video
-title: {en: "Remove audio from video", ru: "Убрать звук из видео"}
+title:
+  en: "Remove audio from video"
+  ru: "Убрать звук из видео"
+  es: "Quitar el audio de un vídeo"
+  pt: "Remover o áudio do vídeo"
+  fr: "Supprimer le son d'une vidéo"
+  de: "Ton aus Video entfernen"
+  pl: "Usuń dźwięk z wideo"
+  it: "Togli l'audio dal video"
+  ar: "إزالة الصوت من الفيديو"
+  zh: "去掉视频里的声音"
 aliases:
   en: [mute video, strip audio, no sound]
   ru: [видео без звука, удалить звук, заглушить видео]
-description: {en: "Copies the video stream, drops all audio.", ru: "Копирует видеопоток, удаляет все аудиодорожки."}
+  es: ["vídeo sin sonido", "quitar el audio", "silenciar vídeo", "eliminar sonido del vídeo"]
+  pt: ["vídeo sem som", "tirar o áudio", "silenciar vídeo", "remover som do vídeo"]
+  fr: ["vidéo sans son", "supprimer le son", "couper le son d'une vidéo"]
+  de: ["video ohne ton", "ton entfernen", "video stumm machen"]
+  pl: ["wideo bez dźwięku", "usunąć dźwięk", "wyciszyć wideo"]
+  it: ["video senza audio", "togliere l'audio", "silenziare un video"]
+  ar: ["فيديو بلا صوت", "إزالة الصوت", "كتم الفيديو"]
+  zh: ["视频去声音", "删除音轨", "静音视频", "去掉声音"]
+description:
+  en: "Copies the video stream, drops all audio."
+  ru: "Копирует видеопоток, удаляет все аудиодорожки."
+  es: "Copia el vídeo y elimina todo el audio."
+  pt: "Copia o vídeo e elimina todo o áudio."
+  fr: "Copie le flux vidéo et retire tout l'audio."
+  de: "Kopiert die Videospur und entfernt jeden Ton."
+  pl: "Kopiuje obraz i usuwa cały dźwięk."
+  it: "Copia il video ed elimina tutto l'audio."
+  ar: "ينسخ الفيديو ويحذف كل الصوت."
+  zh: "复制画面，删除全部音频。"
 input: {types: [video]}
 params: []
 engine: ffmpeg

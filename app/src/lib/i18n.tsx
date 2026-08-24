@@ -96,9 +96,14 @@ export function makeT(locale: Locale): TFn {
  * asks the browser and then falls back to English, so the UI can never end up
  * rendering keys.
  */
-export function resolveLocale(setting: string): Locale {
+export function resolveLocale(setting: string, osLocale = ""): Locale {
   if (setting in DICTS) return setting as Locale;
-  const lang = typeof navigator === "undefined" ? "" : navigator.language || "";
+  // Сначала то, что сказала операционная система, и только потом webview:
+  // на macOS WKWebView сообщает локаль приложения, а не системы, и у
+  // нелокализованной сборки это всегда «en-US» — «как в системе» тогда молча
+  // означало бы «английский» на любой машине.
+  const nav = typeof navigator === "undefined" ? "" : navigator.language || "";
+  const lang = osLocale || nav;
   // Совпадение по основному субтегу: pt-BR — это pt, zh-Hans — zh.
   const primary = lang.toLowerCase().split("-")[0];
   return (LOCALES.find((l) => l === primary) ?? "en") as Locale;

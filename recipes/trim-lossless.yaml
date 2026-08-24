@@ -1,14 +1,42 @@
 id: trim-lossless
 category: cut
-title: {en: "Trim video without re-encoding", ru: "Обрезать видео без перекодирования"}
+title:
+  en: "Trim video without re-encoding"
+  ru: "Обрезать видео без перекодирования"
+  es: "Recortar vídeo sin recodificar"
+  pt: "Cortar vídeo sem recodificar"
+  fr: "Découper la vidéo sans réencodage"
+  de: "Video ohne Neukodierung zuschneiden"
+  pl: "Przytnij wideo bez ponownego kodowania"
+  it: "Taglia il video senza ricodificare"
+  ar: "قص الفيديو بلا إعادة ترميز"
+  zh: "剪切视频而不重新编码"
 aliases:
   en: [cut video, trim clip, lossless cut]
   ru: [обрезать видео, вырезать кусок, обрезка без потерь]
-description: {en: "Keeps a fragment between two timestamps, stream copy.", ru: "Оставляет фрагмент между двумя метками, без перекодирования."}
+  es: ["cortar vídeo", "recortar un clip", "corte sin pérdida"]
+  pt: ["cortar vídeo", "recortar um clipe", "corte sem perdas"]
+  fr: ["couper une vidéo", "rogner un clip", "découpe sans perte"]
+  de: ["video schneiden", "clip kürzen", "verlustfrei schneiden"]
+  pl: ["przyciąć wideo", "wyciąć fragment", "cięcie bezstratne"]
+  it: ["tagliare video", "ritagliare un clip", "taglio senza perdita"]
+  ar: ["قص فيديو", "اقتطاع مقطع", "قص بلا فقدان"]
+  zh: ["剪切视频", "裁剪片段", "无损剪切"]
+description:
+  en: "Keeps a fragment between two timestamps, stream copy."
+  ru: "Оставляет фрагмент между двумя метками, без перекодирования."
+  es: "Conserva el fragmento entre dos marcas, copiando el flujo."
+  pt: "Mantém o trecho entre duas marcas, copiando o fluxo."
+  fr: "Conserve le fragment entre deux repères, en copie de flux."
+  de: "Behält den Abschnitt zwischen zwei Marken, ohne neu zu kodieren."
+  pl: "Zostawia fragment między dwoma znacznikami, bez ponownego kodowania."
+  it: "Tiene il frammento tra due marcatori, copiando il flusso."
+  ar: "يُبقي المقطع بين علامتين زمنيتين بنسخ المسار."
+  zh: "保留两个时间点之间的片段，直接复制流。"
 input: {types: [video]}
 params:
-  - {key: start, type: string, default: "00:00:00", label: {en: "Start (HH:MM:SS)", ru: "Начало (ЧЧ:ММ:СС)"}}
-  - {key: end, type: string, default: "", label: {en: "End (empty = till the end)", ru: "Конец (пусто = до конца)"}, advanced: true}
+  - {key: start, type: string, default: "00:00:00", label: {en: "Start (HH:MM:SS)", ru: "Начало (ЧЧ:ММ:СС)", es: "Inicio (HH:MM:SS)", pt: "Início (HH:MM:SS)", fr: "Début (HH:MM:SS)", de: "Start (HH:MM:SS)", pl: "Początek (GG:MM:SS)", it: "Inizio (HH:MM:SS)", ar: "البداية (HH:MM:SS)", zh: "开始（时:分:秒）"}}
+  - {key: end, type: string, default: "", label: {en: "End (empty = till the end)", ru: "Конец (пусто = до конца)", es: "Fin (vacío = hasta el final)", pt: "Fim (vazio = até o final)", fr: "Fin (vide = jusqu'au bout)", de: "Ende (leer = bis zum Schluss)", pl: "Koniec (puste = do końca)", it: "Fine (vuoto = fino alla fine)", ar: "النهاية (فارغ = حتى النهاية)", zh: "结束（留空 = 到末尾）"}, advanced: true}
 engine: ffmpeg
 args: ["-ss", "{start}", "-to", "{end}", "-i", "{input}", "-c", "copy", "{output}"]
 output: {ext: mp4, suffix: trim}

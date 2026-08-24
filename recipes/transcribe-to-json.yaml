@@ -1,14 +1,42 @@
 id: transcribe-to-json
 category: transcribe
-title: {en: "Transcribe audio to JSON with timings", ru: "Аудио в JSON с таймингами"}
+title:
+  en: "Transcribe audio to JSON with timings"
+  ru: "Аудио в JSON с таймингами"
+  es: "Transcribir audio a JSON con tiempos"
+  pt: "Transcrever áudio para JSON com tempos"
+  fr: "Transcrire l'audio en JSON avec minutages"
+  de: "Audio in JSON mit Zeitmarken transkribieren"
+  pl: "Przepisz audio na JSON z czasami"
+  it: "Trascrivi audio in JSON con i tempi"
+  ar: "تفريغ الصوت إلى JSON بتوقيتات"
+  zh: "把音频转成带时间的 JSON"
 aliases:
   en: [audio to json, json transcript, transcription with timestamps, transcript json, mp3 to json]
   ru: [аудио в json, расшифровка в json, транскрипт с таймкодами, json с таймингами, текст с временем]
-description: {en: "Machine-readable transcript: segments with start and end times (Whisper).", ru: "Расшифровка для машин: отрезки речи с временем начала и конца (Whisper)."}
+  es: ["audio a json", "transcripción en json", "transcripción con marcas de tiempo", "mp3 a json"]
+  pt: ["áudio para json", "transcrição em json", "transcrição com marcações de tempo", "mp3 para json"]
+  fr: ["audio en json", "transcription json", "transcription avec minutages", "mp3 en json"]
+  de: ["audio in json", "transkript als json", "transkription mit zeitmarken", "mp3 in json"]
+  pl: ["audio na json", "transkrypcja json", "transkrypcja z czasami", "mp3 na json"]
+  it: ["audio in json", "trascrizione json", "trascrizione con i tempi", "mp3 in json"]
+  ar: ["صوت إلى json", "تفريغ json", "تفريغ بتوقيتات", "mp3 إلى json"]
+  zh: ["音频转 json", "json 转写", "带时间的转写", "mp3 转 json"]
+description:
+  en: "Machine-readable transcript: segments with start and end times (Whisper)."
+  ru: "Расшифровка для машин: отрезки речи с временем начала и конца (Whisper)."
+  es: "Transcripción legible por máquinas: segmentos con tiempo de inicio y fin (Whisper)."
+  pt: "Transcrição legível por máquinas: segmentos com tempo de início e fim (Whisper)."
+  fr: "Transcription lisible par une machine : segments avec début et fin (Whisper)."
+  de: "Maschinenlesbare Transkription: Abschnitte mit Anfangs- und Endzeit (Whisper)."
+  pl: "Transkrypcja dla maszyn: fragmenty z czasem początku i końca (Whisper)."
+  it: "Trascrizione leggibile dalle macchine: segmenti con inizio e fine (Whisper)."
+  ar: "تفريغ يقرأه الحاسوب: مقاطع بزمن البداية والنهاية (Whisper)."
+  zh: "供程序读取的转写结果：带起止时间的分段（Whisper）。"
 input: {types: [audio, video]}
 params:
-  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
-  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель, es: "Modelo", pt: "Modelo", fr: "Modèle", de: "Modell", pl: "Model", it: "Modello", ar: "النموذج", zh: "模型"}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык, es: "Idioma", pt: "Idioma", fr: "Langue", de: "Sprache", pl: "Język", it: "Lingua", ar: "اللغة", zh: "语言"}}
 engine: whisper
 args: []
 output: {ext: json, suffix: transcript}

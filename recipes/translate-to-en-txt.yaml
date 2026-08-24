@@ -1,14 +1,42 @@
 id: translate-to-en-txt
 category: transcribe
-title: {en: "Translate speech to English text", ru: "Перевод речи в английский текст"}
+title:
+  en: "Translate speech to English text"
+  ru: "Перевод речи в английский текст"
+  es: "Traducir la voz a texto en inglés"
+  pt: "Traduzir a fala para texto em inglês"
+  fr: "Traduire la parole en texte anglais"
+  de: "Sprache in englischen Text übersetzen"
+  pl: "Przetłumacz mowę na tekst angielski"
+  it: "Traduci il parlato in testo inglese"
+  ar: "ترجمة الكلام إلى نص إنجليزي"
+  zh: "把语音翻译成英文文字"
 aliases:
   en: [translate audio to english, translate speech to english, audio translation to text, translate mp3 to english]
   ru: [перевести аудио на английский, перевод речи на английский, аудио на английский текст, перевод аудио на английский текст]
-description: {en: "Any language in, English text out — one pass, locally (Whisper).", ru: "На входе любой язык, на выходе английский текст — за один проход, локально (Whisper)."}
+  es: ["traducir audio al inglés", "traducir voz al inglés", "audio a texto en inglés"]
+  pt: ["traduzir áudio para inglês", "traduzir fala para inglês", "áudio para texto em inglês"]
+  fr: ["traduire un audio en anglais", "traduire la parole en anglais", "audio en texte anglais"]
+  de: ["audio ins englische übersetzen", "sprache ins englische übersetzen", "audio als englischer text"]
+  pl: ["przetłumaczyć audio na angielski", "przetłumaczyć mowę na angielski", "audio na tekst angielski"]
+  it: ["tradurre audio in inglese", "tradurre il parlato in inglese", "audio in testo inglese"]
+  ar: ["ترجمة الصوت إلى الإنجليزية", "ترجمة الكلام إلى الإنجليزية", "صوت إلى نص إنجليزي"]
+  zh: ["把音频翻译成英文", "把语音翻译成英文", "音频转英文文字"]
+description:
+  en: "Any language in, English text out — one pass, locally (Whisper)."
+  ru: "На входе любой язык, на выходе английский текст — за один проход, локально (Whisper)."
+  es: "Entra cualquier idioma, sale texto en inglés — una pasada, en local (Whisper)."
+  pt: "Entra qualquer idioma, sai texto em inglês — uma passagem, localmente (Whisper)."
+  fr: "N'importe quelle langue en entrée, du texte anglais en sortie — une passe, en local (Whisper)."
+  de: "Beliebige Sprache hinein, englischer Text heraus — ein Durchgang, lokal (Whisper)."
+  pl: "Na wejściu dowolny język, na wyjściu tekst angielski — jeden przebieg, lokalnie (Whisper)."
+  it: "Qualsiasi lingua in ingresso, testo inglese in uscita — un passaggio, in locale (Whisper)."
+  ar: "أي لغة تدخل، ويخرج نص إنجليزي — مرور واحد، محلياً (Whisper)."
+  zh: "输入任意语言，输出英文文字 — 一次完成，本地运行（Whisper）。"
 input: {types: [audio, video]}
 params:
-  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
-  - {key: language, type: language, default: "auto", label: {en: "Source language", ru: "Язык источника"}}
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель, es: "Modelo", pt: "Modelo", fr: "Modèle", de: "Modell", pl: "Model", it: "Modello", ar: "النموذج", zh: "模型"}}
+  - {key: language, type: language, default: "auto", label: {en: "Source language", ru: "Язык источника", es: "Idioma de origen", pt: "Idioma de origem", fr: "Langue source", de: "Ausgangssprache", pl: "Język źródłowy", it: "Lingua di partenza", ar: "لغة المصدر", zh: "源语言"}}
 engine: whisper
 args: []
 whisper: {translate: true}

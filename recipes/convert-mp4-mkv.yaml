@@ -1,10 +1,38 @@
 id: convert-mp4-mkv
 category: convert-video
-title: {en: "Convert MP4 to MKV", ru: "Конвертировать MP4 в MKV"}
+title:
+  en: "Convert MP4 to MKV"
+  ru: "Конвертировать MP4 в MKV"
+  es: "Convertir MP4 a MKV"
+  pt: "Converter MP4 em MKV"
+  fr: "Convertir MP4 en MKV"
+  de: "MP4 in MKV umwandeln"
+  pl: "Konwertuj MP4 na MKV"
+  it: "Converti MP4 in MKV"
+  ar: "تحويل MP4 إلى MKV"
+  zh: "把 MP4 转成 MKV"
 aliases:
   en: [mp4 to mkv, remux mp4]
   ru: [мп4 в мкв, mp4 в mkv без потерь]
-description: {en: "Repackages MP4 into MKV without re-encoding.", ru: "Перепаковывает MP4 в MKV без перекодирования."}
+  es: ["mp4 a mkv", "convertir mp4 a mkv", "remuxear mp4"]
+  pt: ["mp4 para mkv", "converter mp4 em mkv", "remux mp4"]
+  fr: ["mp4 en mkv", "convertir mp4 en mkv", "remux mp4"]
+  de: ["mp4 in mkv", "mp4 zu mkv", "mp4 remuxen"]
+  pl: ["mp4 na mkv", "konwersja mp4 mkv", "remux mp4"]
+  it: ["mp4 in mkv", "convertire mp4 in mkv", "remux mp4"]
+  ar: ["mp4 إلى mkv", "تحويل mp4 إلى mkv"]
+  zh: ["mp4 转 mkv", "mp4转mkv", "封装成 mkv"]
+description:
+  en: "Repackages MP4 into MKV without re-encoding."
+  ru: "Перепаковывает MP4 в MKV без перекодирования."
+  es: "Reempaqueta MP4 en MKV sin recodificar."
+  pt: "Reempacota MP4 em MKV sem recodificar."
+  fr: "Réempaquette le MP4 en MKV sans réencodage."
+  de: "Verpackt MP4 als MKV neu, ohne neu zu kodieren."
+  pl: "Przepakowuje MP4 do MKV bez ponownego kodowania."
+  it: "Reimpacchetta l'MP4 in MKV senza ricodificare."
+  ar: "يعيد تغليف MP4 إلى MKV بلا إعادة ترميز."
+  zh: "把 MP4 重新封装成 MKV，不重新编码。"
 input: {types: [video]}
 params: []
 engine: ffmpeg

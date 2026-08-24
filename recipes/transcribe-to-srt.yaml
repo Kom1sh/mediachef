@@ -1,14 +1,42 @@
 id: transcribe-to-srt
 category: transcribe
-title: {en: "Transcribe audio to SRT subtitles", ru: "Аудио в субтитры SRT"}
+title:
+  en: "Transcribe audio to SRT subtitles"
+  ru: "Аудио в субтитры SRT"
+  es: "Transcribir audio a subtítulos SRT"
+  pt: "Transcrever áudio para legendas SRT"
+  fr: "Transcrire l'audio en sous-titres SRT"
+  de: "Audio in SRT-Untertitel transkribieren"
+  pl: "Przepisz audio na napisy SRT"
+  it: "Trascrivi audio in sottotitoli SRT"
+  ar: "تفريغ الصوت إلى ترجمة SRT"
+  zh: "把音频转成 SRT 字幕"
 aliases:
   en: [mp3 to srt, audio to srt, subtitles from audio, transcribe to subtitles, srt from audio]
   ru: [аудио в srt, субтитры из аудио, расшифровка аудио в субтитры, сделать srt, мп3 в srt]
-description: {en: "Writes timed SRT subtitles from speech locally (Whisper).", ru: "Пишет субтитры SRT с таймингами по речи, локально (Whisper)."}
+  es: ["mp3 a srt", "audio a srt", "subtítulos desde audio", "hacer srt", "srt desde audio"]
+  pt: ["mp3 para srt", "áudio para srt", "legendas a partir do áudio", "fazer srt", "srt do áudio"]
+  fr: ["mp3 en srt", "audio en srt", "sous-titres à partir d'un audio", "faire un srt"]
+  de: ["mp3 in srt", "audio in srt", "untertitel aus audio", "srt erstellen"]
+  pl: ["mp3 na srt", "audio na srt", "napisy z audio", "zrobić srt"]
+  it: ["mp3 in srt", "audio in srt", "sottotitoli dall'audio", "creare srt"]
+  ar: ["mp3 إلى srt", "صوت إلى srt", "ترجمة من الصوت", "إنشاء srt"]
+  zh: ["mp3 转 srt", "音频转 srt", "从音频生成字幕", "做 srt 字幕"]
+description:
+  en: "Writes timed SRT subtitles from speech locally (Whisper)."
+  ru: "Пишет субтитры SRT с таймингами по речи, локально (Whisper)."
+  es: "Escribe subtítulos SRT con tiempos a partir de la voz, en local (Whisper)."
+  pt: "Escreve legendas SRT com tempos a partir da fala, localmente (Whisper)."
+  fr: "Écrit des sous-titres SRT minutés à partir de la parole, en local (Whisper)."
+  de: "Schreibt SRT-Untertitel mit Zeitmarken aus der Sprache, lokal (Whisper)."
+  pl: "Zapisuje napisy SRT z czasami na podstawie mowy, lokalnie (Whisper)."
+  it: "Scrive sottotitoli SRT con i tempi a partire dal parlato, in locale (Whisper)."
+  ar: "يكتب ترجمة SRT بتوقيتات من الكلام، محلياً (Whisper)."
+  zh: "在本地根据语音生成带时间轴的 SRT 字幕（Whisper）。"
 input: {types: [audio, video]}
 params:
-  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
-  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель, es: "Modelo", pt: "Modelo", fr: "Modèle", de: "Modell", pl: "Model", it: "Modello", ar: "النموذج", zh: "模型"}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык, es: "Idioma", pt: "Idioma", fr: "Langue", de: "Sprache", pl: "Język", it: "Lingua", ar: "اللغة", zh: "语言"}}
 engine: whisper
 args: []
 output: {ext: srt, suffix: subtitles}

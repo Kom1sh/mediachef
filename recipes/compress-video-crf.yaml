@@ -1,13 +1,41 @@
 id: compress-video-crf
 category: compress
-title: {en: "Compress video (quality preset)", ru: "Сжать видео (пресет качества)"}
+title:
+  en: "Compress video (quality preset)"
+  ru: "Сжать видео (пресет качества)"
+  es: "Comprimir vídeo (ajuste de calidad)"
+  pt: "Comprimir vídeo (predefinição de qualidade)"
+  fr: "Compresser la vidéo (préréglage de qualité)"
+  de: "Video komprimieren (Qualitätsvorgabe)"
+  pl: "Skompresuj wideo (ustawienie jakości)"
+  it: "Comprimi video (preset di qualità)"
+  ar: "ضغط الفيديو (إعداد جودة)"
+  zh: "压缩视频（质量预设）"
 aliases:
   en: [compress video, reduce video size, make video smaller]
   ru: [сжать видео, уменьшить размер видео, видео весит меньше]
-description: {en: "Re-encodes with H.264 at a chosen quality level.", ru: "Перекодирует в H.264 с выбранным уровнем качества."}
+  es: ["comprimir vídeo", "reducir tamaño de vídeo", "hacer el vídeo más pequeño", "bajar peso del vídeo"]
+  pt: ["comprimir vídeo", "reduzir tamanho do vídeo", "deixar o vídeo menor", "diminuir vídeo"]
+  fr: ["compresser une vidéo", "réduire la taille d'une vidéo", "alléger une vidéo"]
+  de: ["video komprimieren", "video verkleinern", "videogröße reduzieren"]
+  pl: ["skompresować wideo", "zmniejszyć rozmiar wideo", "zmniejszyć film"]
+  it: ["comprimere video", "ridurre le dimensioni del video", "alleggerire un video"]
+  ar: ["ضغط فيديو", "تصغير حجم الفيديو", "تقليل حجم الفيديو"]
+  zh: ["压缩视频", "视频压缩", "减小视频体积", "视频变小"]
+description:
+  en: "Re-encodes with H.264 at a chosen quality level."
+  ru: "Перекодирует в H.264 с выбранным уровнем качества."
+  es: "Recodifica en H.264 con el nivel de calidad elegido."
+  pt: "Recodifica em H.264 com o nível de qualidade escolhido."
+  fr: "Réencode en H.264 au niveau de qualité choisi."
+  de: "Kodiert mit H.264 in der gewählten Qualitätsstufe neu."
+  pl: "Koduje ponownie w H.264 z wybranym poziomem jakości."
+  it: "Ricodifica in H.264 al livello di qualità scelto."
+  ar: "يعيد الترميز بصيغة H.264 بمستوى الجودة المختار."
+  zh: "以选定的质量等级重新编码为 H.264。"
 input: {types: [video]}
 params:
-  - {key: crf, type: enum, values: ["23", "28", "33"], default: "28", label: {en: "Quality (lower = better)", ru: "Качество (меньше = лучше)"}}
+  - {key: crf, type: enum, values: ["23", "28", "33"], default: "28", label: {en: "Quality (lower = better)", ru: "Качество (меньше = лучше)", es: "Calidad (menos = mejor)", pt: "Qualidade (menor = melhor)", fr: "Qualité (plus bas = meilleur)", de: "Qualität (kleiner = besser)", pl: "Jakość (mniej = lepiej)", it: "Qualità (più basso = migliore)", ar: "الجودة (أقل = أفضل)", zh: "质量（数值越小越好）"}}
 engine: ffmpeg
 args: ["-i", "{input}", "-c:v", "libx264", "-crf", "{crf}", "-preset", "veryfast", "-c:a", "aac", "-b:a", "128k", "{output}"]
 output: {ext: mp4, suffix: compressed}

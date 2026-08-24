@@ -82,6 +82,20 @@ describe("resolveLocale", () => {
     vi.unstubAllGlobals();
   });
 
+  /* Локаль от ОС важнее того, что говорит webview: на macOS WKWebView сообщает
+     локаль приложения, а у нелокализованной сборки это всегда en-US. Если бы
+     решал webview, «как в системе» означало бы «английский» на любой машине. */
+  it("prefers the OS locale over the webview's", () => {
+    vi.stubGlobal("navigator", { language: "en-US" });
+    expect(resolveLocale("system", "es-ES")).toBe("es");
+    expect(resolveLocale("system", "pt-BR")).toBe("pt");
+    // ОС молчит — остаётся webview.
+    expect(resolveLocale("system", "")).toBe("en");
+    // Явный выбор в настройках сильнее и системы, и webview.
+    expect(resolveLocale("de", "es-ES")).toBe("de");
+    vi.unstubAllGlobals();
+  });
+
   // A hand-edited settings.json can hold anything; Rust sanitizes, but the UI must
   // not depend on that to avoid rendering a screen full of `undefined`.
   it("falls back to english for an unknown setting", () => {

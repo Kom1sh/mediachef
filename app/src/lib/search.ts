@@ -1,4 +1,5 @@
 import Fuse from "fuse.js";
+import { LOCALES } from "./i18n";
 import type { MediaType, Recipe } from "./types";
 
 const RU_FORMATS: Record<string, string> = {
@@ -21,12 +22,13 @@ export function buildIndex(recipes: Recipe[]): SearchIndex {
   const fuse = new Fuse(recipes, {
     threshold: 0.35,
     ignoreLocation: true,
-    keys: [
-      { name: "title.en", weight: 2, getFn: r => normalize(r.title.en) },
-      { name: "title.ru", weight: 2, getFn: r => normalize(r.title.ru) },
-      { name: "aliases.en", weight: 1, getFn: r => r.aliases.en.map(normalize) },
-      { name: "aliases.ru", weight: 1, getFn: r => r.aliases.ru.map(normalize) },
-    ],
+    // Индексируются ВСЕ языки сразу, а не только текущий: человек ищет то на
+    // своём языке, то английским названием формата, и переключать индекс вместе
+    // с интерфейсом значило бы прятать от него половину каталога.
+    keys: LOCALES.flatMap((l) => [
+      { name: `title.${l}`, weight: 2, getFn: (r: Recipe) => normalize(r.title[l] ?? "") },
+      { name: `aliases.${l}`, weight: 1, getFn: (r: Recipe) => (r.aliases[l] ?? []).map(normalize) },
+    ]),
   });
   return { fuse, all: recipes };
 }

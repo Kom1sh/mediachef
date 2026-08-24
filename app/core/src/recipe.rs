@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -16,18 +17,88 @@ pub enum RecipeError {
 // `deny_unknown_fields` everywhere is deliberate: a typo'd or hopeful key in a
 // recipe YAML (`out_ext`, `sufix`, …) must fail the load instead of being
 // silently ignored, which would leave a param that looks wired but does nothing.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct LocStr {
-    pub en: String,
-    pub ru: String,
+/// Языки каталога. Тот же список, что в `app/src/lib/i18n.tsx`: рецепт,
+/// подписанный на языке, которого приложение не знает, — это опечатка,
+/// а не задел на будущее, и падать он должен на загрузке.
+pub const LOCALES: &[&str] = &["en", "ru", "es", "pt", "fr", "de", "pl", "it", "ar", "zh"];
+
+/// Строка на нескольких языках.
+///
+/// Была структурой `{ en, ru }` с `deny_unknown_fields`; с десятью языками
+/// это превратилось бы в десять обязательных полей у каждой подписи. Карта
+/// гибче — язык можно добавить, не трогая остальные рецепты, — но проверку
+/// ключей, ради которой стоял `deny_unknown_fields`, карта не делает сама,
+/// поэтому она здесь явная: неизвестный код языка и отсутствующий `en`
+/// (общий запасной вариант) роняют разбор.
+#[derive(Debug, Clone, Serialize)]
+#[serde(transparent)]
+pub struct LocStr(pub BTreeMap<String, String>);
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(transparent)]
+pub struct LocList(pub BTreeMap<String, Vec<String>>);
+
+fn check_locale_keys<V>(map: &BTreeMap<String, V>) -> Result<(), String> {
+    if !map.contains_key("en") {
+        return Err("localised value has no `en` — it is the fallback for every other language".into());
+    }
+    for key in map.keys() {
+        if !LOCALES.contains(&key.as_str()) {
+            return Err(format!("unknown language `{key}` (known: {})", LOCALES.join(", ")));
+        }
+    }
+    Ok(())
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct LocList {
-    pub en: Vec<String>,
-    pub ru: Vec<String>,
+impl TryFrom<BTreeMap<String, String>> for LocStr {
+    type Error = String;
+    fn try_from(m: BTreeMap<String, String>) -> Result<Self, Self::Error> {
+        check_locale_keys(&m)?;
+        Ok(Self(m))
+    }
+}
+
+impl TryFrom<BTreeMap<String, Vec<String>>> for LocList {
+    type Error = String;
+    fn try_from(m: BTreeMap<String, Vec<String>>) -> Result<Self, Self::Error> {
+        check_locale_keys(&m)?;
+        Ok(Self(m))
+    }
+}
+
+// Разбор вручную, а не через `#[serde(try_from = ...)]`: так ошибка приходит
+// сообщением serde с местом в YAML, а не голым `TryFrom`.
+impl<'de> Deserialize<'de> for LocStr {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let m = BTreeMap::<String, String>::deserialize(d)?;
+        Self::try_from(m).map_err(serde::de::Error::custom)
+    }
+}
+
+impl<'de> Deserialize<'de> for LocList {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let m = BTreeMap::<String, Vec<String>>::deserialize(d)?;
+        Self::try_from(m).map_err(serde::de::Error::custom)
+    }
+}
+
+impl LocStr {
+    /// Сторона на нужном языке; пусто или нет такого языка — английская.
+    pub fn get(&self, locale: &str) -> &str {
+        match self.0.get(locale) {
+            Some(v) if !v.trim().is_empty() => v,
+            _ => self.0.get("en").map(String::as_str).unwrap_or(""),
+        }
+    }
+}
+
+impl LocList {
+    pub fn get(&self, locale: &str) -> &[String] {
+        match self.0.get(locale) {
+            Some(v) if !v.is_empty() => v,
+            _ => self.0.get("en").map(Vec::as_slice).unwrap_or(&[]),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -244,7 +315,7 @@ seo: {slug: video-to-mp3, priority: high}
     fn parses_sample() {
         let r = Recipe::from_yaml(SAMPLE).unwrap();
         assert_eq!(r.id, "extract-audio-mp3");
-        assert_eq!(r.title.ru, "Извлечь аудио в MP3");
+        assert_eq!(r.title.get("ru"), "Извлечь аудио в MP3");
         assert_eq!(r.input.types, vec![MediaType::Video]);
         assert_eq!(r.params[0].default_str(), "192k");
         assert!(matches!(r.engine, Engine::Ffmpeg));
@@ -301,23 +372,40 @@ seo: {slug: video-to-mp3, priority: high}
                 ),
             ),
             (
+                // Подпись — это карта языков, а не структура, поэтому
+                // `deny_unknown_fields` её больше не стережёт: неизвестный код
+                // языка ловит собственная проверка в `check_locale_keys`.
+                // `de` здесь уже не годится — это настоящий язык каталога.
                 "title",
                 SAMPLE.replace(
                     r#"ru: "Извлечь аудио в MP3"}"#,
-                    r#"ru: "Извлечь аудио в MP3", de: "x"}"#,
+                    r#"ru: "Извлечь аудио в MP3", xx: "x"}"#,
                 ),
             ),
         ] {
             let e = Recipe::from_yaml(&yaml)
                 .expect_err(&format!("unknown {what} field must be rejected"));
+            let msg = e.to_string();
             assert!(
-                e.to_string().contains("unknown field"),
+                msg.contains("unknown field") || msg.contains("unknown language"),
                 "unexpected {what} error: {e}"
             );
         }
         // Sanity: the untouched sample still parses, so the cases above fail for
         // the added key and not for a botched string replace.
         assert!(Recipe::from_yaml(SAMPLE).is_ok());
+    }
+
+    /// `en` — общий запасной вариант для всех языков: подпись без него оставила
+    /// бы пустое место везде, где перевода ещё нет.
+    #[test]
+    fn localised_value_without_english_is_rejected() {
+        let yaml = SAMPLE.replace(
+            r#"title: {en: "Extract audio to MP3", ru: "Извлечь аудио в MP3"}"#,
+            r#"title: {ru: "Извлечь аудио в MP3"}"#,
+        );
+        let e = Recipe::from_yaml(&yaml).expect_err("a title with no `en` must be rejected");
+        assert!(e.to_string().contains("no `en`"), "unexpected error: {e}");
     }
 
     // `whisper:` carries the engine knobs that are not command-line arguments —

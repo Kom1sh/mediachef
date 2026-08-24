@@ -1,14 +1,42 @@
 id: video-subtitles-srt
 category: transcribe
-title: {en: "Make SRT subtitles for a video", ru: "Субтитры к видео (SRT)"}
+title:
+  en: "Make SRT subtitles for a video"
+  ru: "Субтитры к видео (SRT)"
+  es: "Crear subtítulos SRT para un vídeo"
+  pt: "Criar legendas SRT para um vídeo"
+  fr: "Créer des sous-titres SRT pour une vidéo"
+  de: "SRT-Untertitel für ein Video erstellen"
+  pl: "Zrób napisy SRT do wideo"
+  it: "Crea sottotitoli SRT per un video"
+  ar: "إنشاء ترجمة SRT لفيديو"
+  zh: "为视频生成 SRT 字幕"
 aliases:
   en: [video to srt, subtitles for video, generate subtitles, srt from video, subtitle a video]
   ru: [субтитры к видео, видео в субтитры, сделать сабы, субтитры из видео, сгенерировать субтитры]
-description: {en: "Listens to the video's audio and writes an SRT next to it (Whisper).", ru: "Слушает звук видео и кладёт рядом файл SRT (Whisper)."}
+  es: ["vídeo a srt", "subtítulos para un vídeo", "generar subtítulos", "srt desde vídeo", "poner subtítulos"]
+  pt: ["vídeo para srt", "legendas para um vídeo", "gerar legendas", "srt do vídeo", "colocar legendas"]
+  fr: ["vidéo en srt", "sous-titres pour une vidéo", "générer des sous-titres", "srt depuis une vidéo"]
+  de: ["video in srt", "untertitel für ein video", "untertitel erzeugen", "srt aus video"]
+  pl: ["wideo na srt", "napisy do filmu", "wygenerować napisy", "srt z wideo"]
+  it: ["video in srt", "sottotitoli per un video", "generare sottotitoli", "srt da video"]
+  ar: ["فيديو إلى srt", "ترجمة لفيديو", "توليد ترجمة", "srt من فيديو"]
+  zh: ["视频转 srt", "给视频加字幕", "生成字幕", "视频字幕"]
+description:
+  en: "Listens to the video's audio and writes an SRT next to it (Whisper)."
+  ru: "Слушает звук видео и кладёт рядом файл SRT (Whisper)."
+  es: "Escucha el audio del vídeo y deja un SRT a su lado (Whisper)."
+  pt: "Escuta o áudio do vídeo e deixa um SRT ao lado (Whisper)."
+  fr: "Écoute le son de la vidéo et pose un SRT à côté (Whisper)."
+  de: "Hört den Ton des Videos ab und legt eine SRT daneben (Whisper)."
+  pl: "Słucha dźwięku wideo i kładzie obok plik SRT (Whisper)."
+  it: "Ascolta l'audio del video e mette un SRT accanto (Whisper)."
+  ar: "يستمع إلى صوت الفيديو ويضع ملف SRT بجواره (Whisper)."
+  zh: "听取视频里的声音，并在旁边生成一个 SRT（Whisper）。"
 input: {types: [video]}
 params:
-  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
-  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель, es: "Modelo", pt: "Modelo", fr: "Modèle", de: "Modell", pl: "Model", it: "Modello", ar: "النموذج", zh: "模型"}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык, es: "Idioma", pt: "Idioma", fr: "Langue", de: "Sprache", pl: "Język", it: "Lingua", ar: "اللغة", zh: "语言"}}
 engine: whisper
 args: []
 output: {ext: srt, suffix: subs}

@@ -1,14 +1,42 @@
 id: translate-to-en-srt
 category: transcribe
-title: {en: "Translate speech to English subtitles", ru: "Перевод речи в английские субтитры"}
+title:
+  en: "Translate speech to English subtitles"
+  ru: "Перевод речи в английские субтитры"
+  es: "Traducir la voz a subtítulos en inglés"
+  pt: "Traduzir a fala para legendas em inglês"
+  fr: "Traduire la parole en sous-titres anglais"
+  de: "Sprache in englische Untertitel übersetzen"
+  pl: "Przetłumacz mowę na angielskie napisy"
+  it: "Traduci il parlato in sottotitoli inglesi"
+  ar: "ترجمة الكلام إلى ترجمة إنجليزية"
+  zh: "把语音翻译成英文字幕"
 aliases:
   en: [translate subtitles to english, english subtitles from audio, translate to english srt, english srt from video]
   ru: [английские субтитры, перевести субтитры на английский, субтитры на английском, перевод видео в английские субтитры]
-description: {en: "Any language in, timed English SRT out — one pass, locally (Whisper).", ru: "На входе любой язык, на выходе английский SRT с таймингами — за один проход, локально (Whisper)."}
+  es: ["subtítulos en inglés", "traducir subtítulos al inglés", "srt en inglés desde vídeo"]
+  pt: ["legendas em inglês", "traduzir legendas para inglês", "srt em inglês do vídeo"]
+  fr: ["sous-titres en anglais", "traduire les sous-titres en anglais", "srt anglais depuis une vidéo"]
+  de: ["englische untertitel", "untertitel ins englische übersetzen", "englische srt aus video"]
+  pl: ["angielskie napisy", "przetłumaczyć napisy na angielski", "angielski srt z wideo"]
+  it: ["sottotitoli in inglese", "tradurre i sottotitoli in inglese", "srt inglese da video"]
+  ar: ["ترجمة إنجليزية", "ترجمة الترجمات إلى الإنجليزية", "srt إنجليزي من فيديو"]
+  zh: ["英文字幕", "把字幕翻译成英文", "视频生成英文 srt"]
+description:
+  en: "Any language in, timed English SRT out — one pass, locally (Whisper)."
+  ru: "На входе любой язык, на выходе английский SRT с таймингами — за один проход, локально (Whisper)."
+  es: "Entra cualquier idioma, sale un SRT en inglés con tiempos — una pasada, en local (Whisper)."
+  pt: "Entra qualquer idioma, sai um SRT em inglês com tempos — uma passagem, localmente (Whisper)."
+  fr: "N'importe quelle langue en entrée, un SRT anglais minuté en sortie — une passe, en local (Whisper)."
+  de: "Beliebige Sprache hinein, englische SRT mit Zeitmarken heraus — ein Durchgang, lokal (Whisper)."
+  pl: "Na wejściu dowolny język, na wyjściu angielski SRT z czasami — jeden przebieg, lokalnie (Whisper)."
+  it: "Qualsiasi lingua in ingresso, un SRT inglese con i tempi in uscita — un passaggio, in locale (Whisper)."
+  ar: "أي لغة تدخل، ويخرج ملف SRT إنجليزي بتوقيتات — مرور واحد، محلياً (Whisper)."
+  zh: "输入任意语言，输出带时间轴的英文 SRT — 一次完成，本地运行（Whisper）。"
 input: {types: [audio, video]}
 params:
-  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
-  - {key: language, type: language, default: "auto", label: {en: "Source language", ru: "Язык источника"}}
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель, es: "Modelo", pt: "Modelo", fr: "Modèle", de: "Modell", pl: "Model", it: "Modello", ar: "النموذج", zh: "模型"}}
+  - {key: language, type: language, default: "auto", label: {en: "Source language", ru: "Язык источника", es: "Idioma de origen", pt: "Idioma de origem", fr: "Langue source", de: "Ausgangssprache", pl: "Język źródłowy", it: "Lingua di partenza", ar: "لغة المصدر", zh: "源语言"}}
 engine: whisper
 args: []
 whisper: {translate: true}

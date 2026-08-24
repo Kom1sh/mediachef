@@ -78,12 +78,26 @@ mod tests {
                     r.id
                 );
             }
-            assert!(
-                !r.title.ru.is_empty() && !r.title.en.is_empty(),
-                "{} title",
-                r.id
-            );
-            assert!(!r.aliases.ru.is_empty(), "{} needs ru aliases", r.id);
+            // Каждый заявленный язык обязан иметь и название, и слова для поиска.
+            // Иначе испанец видит испанский интерфейс, английское название рецепта
+            // и не находит его своим запросом — то есть поиск для него не работает.
+            for lang in crate::recipe::LOCALES {
+                assert!(
+                    !r.title.get(lang).is_empty(),
+                    "{}: no title for `{lang}`",
+                    r.id
+                );
+                assert!(
+                    r.title.0.contains_key(*lang),
+                    "{}: title falls back to en for `{lang}`",
+                    r.id
+                );
+                assert!(
+                    !r.aliases.get(lang).is_empty() && r.aliases.0.contains_key(*lang),
+                    "{}: no `{lang}` aliases — search would miss it in that language",
+                    r.id
+                );
+            }
             // `whisper: {translate: true}` on an ffmpeg recipe reads as wired and
             // does nothing — the same class of bug `deny_unknown_fields` exists for.
             assert!(

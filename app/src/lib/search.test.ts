@@ -40,6 +40,18 @@ describe("search", () => {
     expect(search(index, "extrct audio").some(r => r.id === "extract-audio-mp3")).toBe(true);
   });
 
+  /* Каталог подписан на десяти языках, и индекс держит их все сразу. Это и есть
+     смысл перевода алиасов: испанец набирает своими словами и попадает в рецепт,
+     хотя интерфейс у него мог бы стоять любой. Индекс не переключается вместе
+     с языком интерфейса — иначе английское «make gif» перестало бы работать
+     у того же испанца. */
+  it("finds recipes by aliases in the other shipped languages", () => {
+    expect(search(index, "sacar el audio de un vídeo")[0].id).toBe("extract-audio-mp3");
+    expect(search(index, "vidéo en mp3")[0].id).toBe("extract-audio-mp3");
+    expect(search(index, "video komprimieren")[0].id).toBe("compress-video-crf");
+    expect(search(index, "视频转 gif")[0].id).toBe("video-to-gif");
+  });
+
   /* Russian says "перевод" for both *transcription* ("перевод аудио в текст" —
      write down what was said) and *translation* ("перевод на английский" — say it
      in another language), so the two recipe families compete for one word. An

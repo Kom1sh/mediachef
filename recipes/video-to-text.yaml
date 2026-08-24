@@ -1,14 +1,42 @@
 id: video-to-text
 category: transcribe
-title: {en: "Get text from a video", ru: "Видео в текст"}
+title:
+  en: "Get text from a video"
+  ru: "Видео в текст"
+  es: "Sacar el texto de un vídeo"
+  pt: "Tirar o texto de um vídeo"
+  fr: "Récupérer le texte d'une vidéo"
+  de: "Text aus einem Video holen"
+  pl: "Wyciągnij tekst z wideo"
+  it: "Ricava il testo da un video"
+  ar: "استخراج النص من فيديو"
+  zh: "从视频里取出文字"
 aliases:
   en: [video to text, text from video, transcribe video, get text from video, mp4 to text]
   ru: [видео в текст, текст из видео, расшифровка видео, транскрибация видео, мп4 в текст, перевод видео в текст]
-description: {en: "Writes down everything said in the video as plain text (Whisper).", ru: "Записывает всё сказанное в видео обычным текстом (Whisper)."}
+  es: ["vídeo a texto", "texto de un vídeo", "transcribir vídeo", "mp4 a texto"]
+  pt: ["vídeo para texto", "texto de um vídeo", "transcrever vídeo", "mp4 para texto"]
+  fr: ["vidéo en texte", "texte d'une vidéo", "transcrire une vidéo", "mp4 en texte"]
+  de: ["video in text", "text aus video", "video transkribieren", "mp4 in text"]
+  pl: ["wideo na tekst", "tekst z filmu", "transkrypcja wideo", "mp4 na tekst"]
+  it: ["video in testo", "testo da un video", "trascrivere un video", "mp4 in testo"]
+  ar: ["فيديو إلى نص", "نص من فيديو", "تفريغ فيديو", "mp4 إلى نص"]
+  zh: ["视频转文字", "从视频提取文字", "视频转写", "mp4 转文字"]
+description:
+  en: "Writes down everything said in the video as plain text (Whisper)."
+  ru: "Записывает всё сказанное в видео обычным текстом (Whisper)."
+  es: "Escribe todo lo que se dice en el vídeo como texto plano (Whisper)."
+  pt: "Escreve tudo o que é dito no vídeo como texto simples (Whisper)."
+  fr: "Écrit tout ce qui est dit dans la vidéo en texte brut (Whisper)."
+  de: "Schreibt alles, was im Video gesagt wird, als reinen Text (Whisper)."
+  pl: "Spisuje wszystko, co powiedziano w wideo, zwykłym tekstem (Whisper)."
+  it: "Scrive come testo semplice tutto ciò che viene detto nel video (Whisper)."
+  ar: "يكتب كل ما قيل في الفيديو نصاً عادياً (Whisper)."
+  zh: "把视频里说的话全部写成纯文本（Whisper）。"
 input: {types: [video]}
 params:
-  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
-  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель, es: "Modelo", pt: "Modelo", fr: "Modèle", de: "Modell", pl: "Model", it: "Modello", ar: "النموذج", zh: "模型"}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык, es: "Idioma", pt: "Idioma", fr: "Langue", de: "Sprache", pl: "Język", it: "Lingua", ar: "اللغة", zh: "语言"}}
 engine: whisper
 args: []
 output: {ext: txt, suffix: transcript}

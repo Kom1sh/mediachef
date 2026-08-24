@@ -1,10 +1,38 @@
 id: convert-mp3-wav
 category: convert-audio
-title: {en: "Convert MP3 to WAV", ru: "Конвертировать MP3 в WAV"}
+title:
+  en: "Convert MP3 to WAV"
+  ru: "Конвертировать MP3 в WAV"
+  es: "Convertir MP3 a WAV"
+  pt: "Converter MP3 em WAV"
+  fr: "Convertir MP3 en WAV"
+  de: "MP3 in WAV umwandeln"
+  pl: "Konwertuj MP3 na WAV"
+  it: "Converti MP3 in WAV"
+  ar: "تحويل MP3 إلى WAV"
+  zh: "把 MP3 转成 WAV"
 aliases:
   en: [mp3 to wav, audio to wav]
   ru: [мп3 в вав, mp3 в wav]
-description: {en: "Decodes MP3 into uncompressed WAV.", ru: "Разжимает MP3 в несжатый WAV."}
+  es: ["mp3 a wav", "audio a wav", "convertir mp3 a wav"]
+  pt: ["mp3 para wav", "áudio para wav", "converter mp3 em wav"]
+  fr: ["mp3 en wav", "audio en wav", "convertir mp3 en wav"]
+  de: ["mp3 in wav", "audio in wav", "mp3 zu wav"]
+  pl: ["mp3 na wav", "audio na wav", "konwersja mp3 wav"]
+  it: ["mp3 in wav", "audio in wav", "convertire mp3 in wav"]
+  ar: ["mp3 إلى wav", "صوت إلى wav", "تحويل mp3 إلى wav"]
+  zh: ["mp3 转 wav", "音频转 wav", "mp3转wav"]
+description:
+  en: "Decodes MP3 into uncompressed WAV."
+  ru: "Разжимает MP3 в несжатый WAV."
+  es: "Descomprime el MP3 en WAV sin comprimir."
+  pt: "Descomprime o MP3 em WAV sem compressão."
+  fr: "Décompresse le MP3 en WAV non compressé."
+  de: "Dekodiert MP3 in unkomprimiertes WAV."
+  pl: "Rozpakowuje MP3 do nieskompresowanego WAV."
+  it: "Decomprime l'MP3 in WAV non compresso."
+  ar: "يفكّ ضغط MP3 إلى WAV غير مضغوط."
+  zh: "把 MP3 解码成未压缩的 WAV。"
 input: {types: [audio]}
 params: []
 engine: ffmpeg

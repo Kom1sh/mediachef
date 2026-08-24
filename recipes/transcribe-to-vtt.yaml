@@ -1,14 +1,42 @@
 id: transcribe-to-vtt
 category: transcribe
-title: {en: "Transcribe audio to WebVTT", ru: "Аудио в субтитры WebVTT"}
+title:
+  en: "Transcribe audio to WebVTT"
+  ru: "Аудио в субтитры WebVTT"
+  es: "Transcribir audio a WebVTT"
+  pt: "Transcrever áudio para WebVTT"
+  fr: "Transcrire l'audio en WebVTT"
+  de: "Audio in WebVTT transkribieren"
+  pl: "Przepisz audio na WebVTT"
+  it: "Trascrivi audio in WebVTT"
+  ar: "تفريغ الصوت إلى WebVTT"
+  zh: "把音频转成 WebVTT"
 aliases:
   en: [audio to vtt, webvtt subtitles, vtt from audio, transcribe to vtt, mp3 to vtt]
   ru: [аудио в vtt, субтитры vtt, сделать vtt, вебвтт субтитры, субтитры для сайта]
-description: {en: "Writes WebVTT captions for web players from speech (Whisper).", ru: "Пишет субтитры WebVTT для веб-плееров по речи (Whisper)."}
+  es: ["audio a vtt", "subtítulos webvtt", "vtt desde audio", "subtítulos para la web"]
+  pt: ["áudio para vtt", "legendas webvtt", "vtt do áudio", "legendas para a web"]
+  fr: ["audio en vtt", "sous-titres webvtt", "vtt depuis un audio", "sous-titres pour le web"]
+  de: ["audio in vtt", "webvtt untertitel", "vtt aus audio", "untertitel fürs web"]
+  pl: ["audio na vtt", "napisy webvtt", "vtt z audio", "napisy na stronę"]
+  it: ["audio in vtt", "sottotitoli webvtt", "vtt dall'audio", "sottotitoli per il web"]
+  ar: ["صوت إلى vtt", "ترجمة webvtt", "vtt من الصوت", "ترجمة للويب"]
+  zh: ["音频转 vtt", "webvtt 字幕", "网页字幕", "从音频生成 vtt"]
+description:
+  en: "Writes WebVTT captions for web players from speech (Whisper)."
+  ru: "Пишет субтитры WebVTT для веб-плееров по речи (Whisper)."
+  es: "Escribe subtítulos WebVTT para reproductores web a partir de la voz (Whisper)."
+  pt: "Escreve legendas WebVTT para players web a partir da fala (Whisper)."
+  fr: "Écrit des sous-titres WebVTT pour les lecteurs web à partir de la parole (Whisper)."
+  de: "Schreibt WebVTT-Untertitel für Web-Player aus der Sprache (Whisper)."
+  pl: "Zapisuje napisy WebVTT dla odtwarzaczy internetowych na podstawie mowy (Whisper)."
+  it: "Scrive sottotitoli WebVTT per i player web a partire dal parlato (Whisper)."
+  ar: "يكتب ترجمة WebVTT لمشغّلات الويب من الكلام (Whisper)."
+  zh: "根据语音生成供网页播放器使用的 WebVTT 字幕（Whisper）。"
 input: {types: [audio, video]}
 params:
-  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
-  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель, es: "Modelo", pt: "Modelo", fr: "Modèle", de: "Modell", pl: "Model", it: "Modello", ar: "النموذج", zh: "模型"}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык, es: "Idioma", pt: "Idioma", fr: "Langue", de: "Sprache", pl: "Język", it: "Lingua", ar: "اللغة", zh: "语言"}}
 engine: whisper
 args: []
 output: {ext: vtt, suffix: captions}

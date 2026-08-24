@@ -1,14 +1,42 @@
 id: video-to-gif
 category: gif
-title: {en: "Video to GIF", ru: "Видео в GIF"}
+title:
+  en: "Video to GIF"
+  ru: "Видео в GIF"
+  es: "Vídeo a GIF"
+  pt: "Vídeo para GIF"
+  fr: "Vidéo en GIF"
+  de: "Video zu GIF"
+  pl: "Wideo na GIF"
+  it: "Video in GIF"
+  ar: "فيديو إلى GIF"
+  zh: "视频转 GIF"
 aliases:
   en: [make gif, convert to gif, gif from video]
   ru: [сделать гифку, видео в гиф, гифка из видео]
-description: {en: "Converts a clip into an animated GIF.", ru: "Превращает ролик в анимированный GIF."}
+  es: ["hacer un gif", "convertir a gif", "gif desde vídeo"]
+  pt: ["fazer um gif", "converter para gif", "gif a partir do vídeo"]
+  fr: ["faire un gif", "convertir en gif", "gif depuis une vidéo"]
+  de: ["gif erstellen", "in gif umwandeln", "gif aus video"]
+  pl: ["zrobić gifa", "wideo na gif", "gif z filmu"]
+  it: ["fare una gif", "convertire in gif", "gif da video"]
+  ar: ["عمل gif", "تحويل إلى gif", "gif من فيديو"]
+  zh: ["做 gif", "视频转 gif", "生成动图"]
+description:
+  en: "Converts a clip into an animated GIF."
+  ru: "Превращает ролик в анимированный GIF."
+  es: "Convierte un clip en un GIF animado."
+  pt: "Transforma um clipe num GIF animado."
+  fr: "Transforme un clip en GIF animé."
+  de: "Macht aus einem Clip ein animiertes GIF."
+  pl: "Zamienia klip w animowanego GIF-a."
+  it: "Trasforma un clip in una GIF animata."
+  ar: "يحوّل مقطعاً إلى صورة GIF متحركة."
+  zh: "把片段变成动图 GIF。"
 input: {types: [video]}
 params:
-  - {key: fps, type: enum, values: ["10", "15", "24"], default: "15", label: {en: FPS, ru: Кадров/с}}
-  - {key: width, type: enum, values: ["320", "480", "640"], default: "480", label: {en: Width, ru: Ширина}}
+  - {key: fps, type: enum, values: ["10", "15", "24"], default: "15", label: {en: FPS, ru: Кадров/с, es: "FPS", pt: "FPS", fr: "Images/s", de: "Bilder/s", pl: "Kl./s", it: "FPS", ar: "إطار/ث", zh: "帧率"}}
+  - {key: width, type: enum, values: ["320", "480", "640"], default: "480", label: {en: Width, ru: Ширина, es: "Ancho", pt: "Largura", fr: "Largeur", de: "Breite", pl: "Szerokość", it: "Larghezza", ar: "العرض", zh: "宽度"}}
 engine: ffmpeg
 args: ["-i", "{input}", "-vf", "fps={fps},scale={width}:-1:flags=lanczos", "{output}"]
 output: {ext: gif}

@@ -2,7 +2,12 @@ import type { Locale } from "./i18n";
 import type { Theme } from "./theme";
 
 export type MediaType = "video" | "audio" | "image" | "subtitle" | "any";
-export type Loc = { en: string; ru: string };
+/**
+ * Подпись из каталога на нескольких языках. Ключи — коды языков, `en` есть
+ * всегда: Rust не примет рецепт без него, а `loc` откатывается именно туда.
+ */
+export type Loc = { en: string } & Partial<Record<Locale, string>>;
+export type LocList = { en: string[] } & Partial<Record<Locale, string[]>>;
 
 /**
  * The preferences the Settings screen edits — mirrors `AppSettings` in
@@ -45,7 +50,7 @@ export interface Recipe {
   id: string;
   category: string;
   title: Loc;
-  aliases: { en: string[]; ru: string[] };
+  aliases: LocList;
   description: Loc;
   input: { types: MediaType[] };
   params: Param[];

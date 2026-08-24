@@ -1,10 +1,38 @@
 id: resize-720p
 category: geometry
-title: {en: "Resize video to 720p", ru: "Уменьшить видео до 720p"}
+title:
+  en: "Resize video to 720p"
+  ru: "Уменьшить видео до 720p"
+  es: "Reducir el vídeo a 720p"
+  pt: "Reduzir o vídeo para 720p"
+  fr: "Réduire la vidéo en 720p"
+  de: "Video auf 720p verkleinern"
+  pl: "Zmniejsz wideo do 720p"
+  it: "Riduci il video a 720p"
+  ar: "تصغير الفيديو إلى 720p"
+  zh: "把视频缩到 720p"
 aliases:
   en: [resize video, 720p, downscale]
   ru: [уменьшить разрешение, видео в 720п, даунскейл]
-description: {en: "Scales to 720p height keeping aspect ratio.", ru: "Масштабирует до высоты 720p с сохранением пропорций."}
+  es: ["cambiar el tamaño del vídeo", "vídeo a 720p", "bajar la resolución"]
+  pt: ["redimensionar vídeo", "vídeo para 720p", "baixar a resolução"]
+  fr: ["redimensionner une vidéo", "vidéo en 720p", "baisser la résolution"]
+  de: ["videogröße ändern", "video auf 720p", "auflösung verringern"]
+  pl: ["zmienić rozmiar wideo", "wideo do 720p", "zmniejszyć rozdzielczość"]
+  it: ["ridimensionare video", "video a 720p", "abbassare la risoluzione"]
+  ar: ["تغيير حجم الفيديو", "فيديو 720p", "خفض الدقة"]
+  zh: ["调整视频尺寸", "视频转 720p", "降低分辨率"]
+description:
+  en: "Scales to 720p height keeping aspect ratio."
+  ru: "Масштабирует до высоты 720p с сохранением пропорций."
+  es: "Escala a 720p de altura manteniendo la proporción."
+  pt: "Redimensiona para 720p de altura mantendo a proporção."
+  fr: "Met à l'échelle en 720p de hauteur en gardant les proportions."
+  de: "Skaliert auf 720p Höhe und behält das Seitenverhältnis."
+  pl: "Skaluje do wysokości 720p z zachowaniem proporcji."
+  it: "Scala a 720p di altezza mantenendo le proporzioni."
+  ar: "يقيس الارتفاع إلى 720p مع الحفاظ على النسبة."
+  zh: "缩放到 720p 高度并保持比例。"
 input: {types: [video]}
 params: []
 engine: ffmpeg

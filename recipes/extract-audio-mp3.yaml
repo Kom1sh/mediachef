@@ -1,13 +1,41 @@
 id: extract-audio-mp3
 category: extract
-title: {en: "Extract audio to MP3", ru: "Извлечь аудио в MP3"}
+title:
+  en: "Extract audio to MP3"
+  ru: "Извлечь аудио в MP3"
+  es: "Extraer audio a MP3"
+  pt: "Extrair áudio para MP3"
+  fr: "Extraire l'audio en MP3"
+  de: "Audio als MP3 extrahieren"
+  pl: "Wyciągnij audio do MP3"
+  it: "Estrai audio in MP3"
+  ar: "استخراج الصوت إلى MP3"
+  zh: "提取音频为 MP3"
 aliases:
   en: [video to mp3, rip audio from video, get sound from video, mp4 to mp3]
   ru: [видео в мп3, вытащить звук из видео, аудио из ролика, мп4 в мп3]
-description: {en: "Saves the audio track of a video as MP3.", ru: "Сохраняет звуковую дорожку видео в MP3."}
+  es: ["vídeo a mp3", "sacar el audio de un vídeo", "extraer sonido del vídeo", "mp4 a mp3"]
+  pt: ["vídeo para mp3", "tirar o áudio do vídeo", "extrair som do vídeo", "mp4 para mp3"]
+  fr: ["vidéo en mp3", "extraire le son d'une vidéo", "récupérer l'audio d'une vidéo", "mp4 en mp3"]
+  de: ["video in mp3", "ton aus video extrahieren", "audio aus video holen", "mp4 in mp3"]
+  pl: ["wideo na mp3", "wyciągnąć dźwięk z wideo", "audio z filmu", "mp4 na mp3"]
+  it: ["video in mp3", "estrarre l'audio da un video", "prendere il suono dal video", "mp4 in mp3"]
+  ar: ["فيديو إلى mp3", "استخراج الصوت من الفيديو", "سحب الصوت من فيديو", "mp4 إلى mp3"]
+  zh: ["视频转 mp3", "提取视频声音", "从视频里提取音频", "mp4 转 mp3"]
+description:
+  en: "Saves the audio track of a video as MP3."
+  ru: "Сохраняет звуковую дорожку видео в MP3."
+  es: "Guarda la pista de audio de un vídeo como MP3."
+  pt: "Salva a trilha de áudio de um vídeo como MP3."
+  fr: "Enregistre la piste audio d'une vidéo en MP3."
+  de: "Speichert die Tonspur eines Videos als MP3."
+  pl: "Zapisuje ścieżkę dźwiękową wideo jako MP3."
+  it: "Salva la traccia audio di un video come MP3."
+  ar: "يحفظ المسار الصوتي للفيديو بصيغة MP3."
+  zh: "把视频的音轨保存为 MP3。"
 input: {types: [video]}
 params:
-  - {key: bitrate, type: enum, values: ["128k", "192k", "320k"], default: "192k", label: {en: Bitrate, ru: Битрейт}}
+  - {key: bitrate, type: enum, values: ["128k", "192k", "320k"], default: "192k", label: {en: Bitrate, ru: Битрейт, es: "Bitrate", pt: "Bitrate", fr: "Débit", de: "Bitrate", pl: "Bitrate", it: "Bitrate", ar: "معدل البت", zh: "码率"}}
 engine: ffmpeg
 args: ["-i", "{input}", "-vn", "-b:a", "{bitrate}", "{output}"]
 output: {ext: mp3, suffix: audio}

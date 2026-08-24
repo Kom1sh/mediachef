@@ -40,3 +40,5 @@ export const setSettings = (s: AppSettings) => invoke<AppSettings>("settings_set
 // `null` means the user closed the dialog — not an error, and above all not a
 // reason to clear the folder they had chosen before.
 export const pickFolder = () => invoke<string | null>("pick_folder");
+/** Язык ОС как BCP-47. Пустая строка — система не сказала. */
+export const systemLocale = () => invoke<string>("system_locale");

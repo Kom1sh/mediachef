@@ -1,14 +1,42 @@
 id: transcribe-to-txt
 category: transcribe
-title: {en: "Transcribe audio to text", ru: "Аудио в текст"}
+title:
+  en: "Transcribe audio to text"
+  ru: "Аудио в текст"
+  es: "Transcribir audio a texto"
+  pt: "Transcrever áudio para texto"
+  fr: "Transcrire l'audio en texte"
+  de: "Audio in Text transkribieren"
+  pl: "Przepisz audio na tekst"
+  it: "Trascrivi audio in testo"
+  ar: "تفريغ الصوت إلى نص"
+  zh: "把音频转成文字"
 aliases:
   en: [mp3 to text, audio to text, transcribe audio, speech to text, audio to txt]
   ru: [перевод мп3 в текст, расшифровка аудио, транскрибация, аудио в текст, речь в текст, мп3 в текст, перевод аудио в текст, перевод речи в текст, текст из аудио]
-description: {en: "Turns speech into plain text locally (Whisper).", ru: "Превращает речь в обычный текст локально (Whisper)."}
+  es: ["mp3 a texto", "audio a texto", "transcribir audio", "voz a texto", "pasar audio a texto"]
+  pt: ["mp3 para texto", "áudio para texto", "transcrever áudio", "voz para texto", "passar áudio para texto"]
+  fr: ["mp3 en texte", "audio en texte", "transcrire un audio", "voix en texte", "passer un audio en texte"]
+  de: ["mp3 in text", "audio in text", "audio transkribieren", "sprache in text", "audio abtippen"]
+  pl: ["mp3 na tekst", "audio na tekst", "transkrypcja audio", "mowa na tekst", "przepisać nagranie"]
+  it: ["mp3 in testo", "audio in testo", "trascrivere audio", "voce in testo", "sbobinare audio"]
+  ar: ["mp3 إلى نص", "صوت إلى نص", "تفريغ صوتي", "كلام إلى نص", "تحويل الصوت إلى كتابة"]
+  zh: ["mp3 转文字", "音频转文字", "语音转文字", "音频转写", "把录音变成文字"]
+description:
+  en: "Turns speech into plain text locally (Whisper)."
+  ru: "Превращает речь в обычный текст локально (Whisper)."
+  es: "Convierte la voz en texto plano, en local (Whisper)."
+  pt: "Transforma a fala em texto simples, localmente (Whisper)."
+  fr: "Transforme la parole en texte brut, en local (Whisper)."
+  de: "Macht aus Sprache reinen Text, lokal (Whisper)."
+  pl: "Zamienia mowę w zwykły tekst, lokalnie (Whisper)."
+  it: "Trasforma il parlato in testo semplice, in locale (Whisper)."
+  ar: "يحوّل الكلام إلى نص عادي محلياً (Whisper)."
+  zh: "在本地把语音变成纯文本（Whisper）。"
 input: {types: [audio, video]}
 params:
-  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель}}
-  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык}}
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель, es: "Modelo", pt: "Modelo", fr: "Modèle", de: "Modell", pl: "Model", it: "Modello", ar: "النموذج", zh: "模型"}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык, es: "Idioma", pt: "Idioma", fr: "Langue", de: "Sprache", pl: "Język", it: "Lingua", ar: "اللغة", zh: "语言"}}
 engine: whisper
 args: []
 output: {ext: txt, suffix: transcript}

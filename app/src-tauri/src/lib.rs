@@ -339,6 +339,14 @@ fn settings_set(
 /// `async` is load-bearing and not just good manners: `blocking_pick_folder`
 /// pumps the dialog on the calling thread and must never be called on the main
 /// one.
+/// Язык операционной системы в виде BCP-47 («ru-RU», «pt-BR»), пустая строка —
+/// если система не сказала. Фронт приводит его к своему списку языков сам:
+/// здесь мы ничего не решаем, только сообщаем факт.
+#[tauri::command]
+fn system_locale() -> String {
+    sys_locale::get_locale().unwrap_or_default()
+}
+
 #[tauri::command(async)]
 fn pick_folder(app: AppHandle) -> Option<String> {
     use tauri_plugin_dialog::DialogExt;
@@ -798,7 +806,8 @@ pub fn run() {
             models_delete,
             settings_get,
             settings_set,
-            pick_folder
+            pick_folder,
+            system_locale
         ])
         // `build` + `run(callback)` rather than plain `run(context)`, which is the
         // same thing with an empty callback — the callback is the only place a

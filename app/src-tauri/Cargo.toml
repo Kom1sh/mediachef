@@ -28,6 +28,11 @@ serde_json = "1"
 # Free-space check before a job starts (wave 3 / T4). Declared here with the
 # settings work because both land in the same enqueue path.
 fs2 = "0.4"
+# Язык операционной системы для настройки «как в системе». Webview его знает
+# ненадёжно: на macOS WKWebView сообщает локаль приложения, а не системы, и у
+# нелокализованной сборки это всегда en-US — то есть «как в системе» молча
+# означало бы «английский» на любой машине.
+sys-locale = "0.3"
 mediachef-core = { path = "../core" }
 
 [dev-dependencies]

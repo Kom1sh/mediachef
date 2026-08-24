@@ -9,7 +9,7 @@ import { QueuePanel } from "./components/QueuePanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Sidebar, type Tab } from "./components/Sidebar";
 import { LocaleProvider, makeT, resolveLocale, localeDir } from "./lib/i18n";
-import { getRecipes, getSettings, onJobUpdate, probeFile, setSettings as saveSettings } from "./lib/ipc";
+import { getRecipes, getSettings, onJobUpdate, probeFile, setSettings as saveSettings, systemLocale } from "./lib/ipc";
 import { applicable, buildIndex, search } from "./lib/search";
 import { applyTheme } from "./lib/theme";
 import type { AppSettings, ProbeInfo, Recipe } from "./lib/types";
@@ -47,6 +47,11 @@ export default function App() {
   const filesRef = useRef<Entry[]>([]);
 
   useEffect(() => { getRecipes().then(setRecipes); }, []);
+
+  // Язык операционной системы: спрашиваем Rust один раз при старте. Пока ответа
+  // нет, `resolveLocale` обходится тем, что знает webview, — интерфейс не ждёт.
+  const [osLocale, setOsLocale] = useState("");
+  useEffect(() => { systemLocale().then(setOsLocale).catch(() => {}); }, []);
 
   // Takes a settings value as the truth and makes the app agree with it. The
   // theme is applied here rather than in an effect keyed on `settings.theme`
@@ -213,7 +218,7 @@ export default function App() {
   // second copy of it in state is a second thing that can be stale. Until the
   // first `settings_get` answers, "system" — the same guess the fresh-install
   // default makes.
-  const locale = resolveLocale(settings?.language ?? "system");
+  const locale = resolveLocale(settings?.language ?? "system", osLocale);
   // App *provides* the locale, so it cannot consume its own context: these three
   // strings go through the same pure translator `useT` hands to everyone below.
   const t = useMemo(() => makeT(locale), [locale]);

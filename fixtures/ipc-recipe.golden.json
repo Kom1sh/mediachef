@@ -1,14 +1,57 @@
 {
   "aliases": {
+    "ar": [
+      "ضغط فيديو",
+      "تصغير حجم الفيديو",
+      "تقليل حجم الفيديو"
+    ],
+    "de": [
+      "video komprimieren",
+      "video verkleinern",
+      "videogröße reduzieren"
+    ],
     "en": [
       "compress video",
       "reduce video size",
       "make video smaller"
     ],
+    "es": [
+      "comprimir vídeo",
+      "reducir tamaño de vídeo",
+      "hacer el vídeo más pequeño",
+      "bajar peso del vídeo"
+    ],
+    "fr": [
+      "compresser une vidéo",
+      "réduire la taille d'une vidéo",
+      "alléger une vidéo"
+    ],
+    "it": [
+      "comprimere video",
+      "ridurre le dimensioni del video",
+      "alleggerire un video"
+    ],
+    "pl": [
+      "skompresować wideo",
+      "zmniejszyć rozmiar wideo",
+      "zmniejszyć film"
+    ],
+    "pt": [
+      "comprimir vídeo",
+      "reduzir tamanho do vídeo",
+      "deixar o vídeo menor",
+      "diminuir vídeo"
+    ],
     "ru": [
       "сжать видео",
       "уменьшить размер видео",
       "видео весит меньше"
+    ],
+    "zh": [
+      "压缩视频",
+      "视频压缩",
+      "减小视频体积",
+      "视频变小"
     ]
   },
   "args": [
@@ -28,8 +71,16 @@
   ],
   "category": "compress",
   "description": {
+    "ar": "يعيد الترميز بصيغة H.264 بمستوى الجودة المختار.",
+    "de": "Kodiert mit H.264 in der gewählten Qualitätsstufe neu.",
     "en": "Re-encodes with H.264 at a chosen quality level.",
-    "ru": "Перекодирует в H.264 с выбранным уровнем качества."
+    "es": "Recodifica en H.264 con el nivel de calidad elegido.",
+    "fr": "Réencode en H.264 au niveau de qualité choisi.",
+    "it": "Ricodifica in H.264 al livello di qualità scelto.",
+    "pl": "Koduje ponownie w H.264 z wybranym poziomem jakości.",
+    "pt": "Recodifica em H.264 com o nível de qualidade escolhido.",
+    "ru": "Перекодирует в H.264 с выбранным уровнем качества.",
+    "zh": "以选定的质量等级重新编码为 H.264。"
   },
   "engine": "ffmpeg",
   "id": "compress-video-crf",
@@ -48,8 +99,16 @@
       "default": "28",
       "key": "crf",
       "label": {
+        "ar": "الجودة (أقل = أفضل)",
+        "de": "Qualität (kleiner = besser)",
         "en": "Quality (lower = better)",
-        "ru": "Качество (меньше = лучше)"
+        "es": "Calidad (menos = mejor)",
+        "fr": "Qualité (plus bas = meilleur)",
+        "it": "Qualità (più basso = migliore)",
+        "pl": "Jakość (mniej = lepiej)",
+        "pt": "Qualidade (menor = melhor)",
+        "ru": "Качество (меньше = лучше)",
+        "zh": "质量（数值越小越好）"
       },
       "max": null,
       "min": null,
@@ -67,8 +126,16 @@
     "slug": "compress-video"
   },
   "title": {
+    "ar": "ضغط الفيديو (إعداد جودة)",
+    "de": "Video komprimieren (Qualitätsvorgabe)",
     "en": "Compress video (quality preset)",
-    "ru": "Сжать видео (пресет качества)"
+    "es": "Comprimir vídeo (ajuste de calidad)",
+    "fr": "Compresser la vidéo (préréglage de qualité)",
+    "it": "Comprimi video (preset di qualità)",
+    "pl": "Skompresuj wideo (ustawienie jakości)",
+    "pt": "Comprimir vídeo (predefinição de qualidade)",
+    "ru": "Сжать видео (пресет качества)",
+    "zh": "压缩视频（质量预设）"
   },
   "whisper": null
 }

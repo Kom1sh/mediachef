@@ -1,15 +1,43 @@
 id: custom-ffmpeg
 category: advanced
-title: {en: "Custom FFmpeg command", ru: "Своя команда FFmpeg"}
+title:
+  en: "Custom FFmpeg command"
+  ru: "Своя команда FFmpeg"
+  es: "Comando propio de FFmpeg"
+  pt: "Comando próprio do FFmpeg"
+  fr: "Commande FFmpeg personnalisée"
+  de: "Eigener FFmpeg-Befehl"
+  pl: "Własne polecenie FFmpeg"
+  it: "Comando FFmpeg personalizzato"
+  ar: "أمر FFmpeg خاص بك"
+  zh: "自定义 FFmpeg 命令"
 aliases:
   en: [custom command, raw ffmpeg, expert mode]
   ru: [своя команда, ручной ffmpeg, экспертный режим]
-description: {en: "Run any FFmpeg arguments. {input} and {output} are substituted.", ru: "Любые аргументы FFmpeg. {input} и {output} подставляются."}
+  es: ["comando propio", "ffmpeg manual", "modo experto"]
+  pt: ["comando próprio", "ffmpeg manual", "modo avançado"]
+  fr: ["commande personnalisée", "ffmpeg brut", "mode expert"]
+  de: ["eigener befehl", "ffmpeg von hand", "expertenmodus"]
+  pl: ["własne polecenie", "ręczny ffmpeg", "tryb eksperta"]
+  it: ["comando personalizzato", "ffmpeg manuale", "modalità esperto"]
+  ar: ["أمر خاص", "ffmpeg يدوي", "وضع متقدم"]
+  zh: ["自定义命令", "手动 ffmpeg", "专家模式"]
+description:
+  en: "Run any FFmpeg arguments. {input} and {output} are substituted."
+  ru: "Любые аргументы FFmpeg. {input} и {output} подставляются."
+  es: "Ejecuta cualquier argumento de FFmpeg. {input} y {output} se sustituyen."
+  pt: "Executa quaisquer argumentos do FFmpeg. {input} e {output} são substituídos."
+  fr: "Exécute n'importe quels arguments FFmpeg. {input} et {output} sont substitués."
+  de: "Führt beliebige FFmpeg-Argumente aus. {input} und {output} werden eingesetzt."
+  pl: "Uruchamia dowolne argumenty FFmpeg. {input} i {output} są podstawiane."
+  it: "Esegue qualsiasi argomento di FFmpeg. {input} e {output} vengono sostituiti."
+  ar: "ينفّذ أي معاملات لـ FFmpeg. يُستبدل {input} و{output}."
+  zh: "运行任意 FFmpeg 参数。{input} 和 {output} 会被替换。"
 input: {types: [any]}
 params:
   # Wave 1 always writes .mp4 here (`output.ext` below). A user-chosen output
   # extension needs plan_output to honour it — wave 3 re-adds the param wired.
-  - {key: cmd, type: string, default: "-i {input} -c copy {output}", label: {en: Arguments, ru: Аргументы}}
+  - {key: cmd, type: string, default: "-i {input} -c copy {output}", label: {en: Arguments, ru: Аргументы, es: "Argumentos", pt: "Argumentos", fr: "Arguments", de: "Argumente", pl: "Argumenty", it: "Argomenti", ar: "المعاملات", zh: "参数"}}
 engine: ffmpeg
 args: ["{cmd:split}"]
 output: {ext: mp4, suffix: custom}
