@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Bell, FolderOpen, Gauge, Languages, Palette } from "lucide-react";
-import { useT } from "../lib/i18n";
+import { useT, LOCALES, LOCALE_NAMES } from "../lib/i18n";
 import { pickFolder } from "../lib/ipc";
 import type { AppSettings } from "../lib/types";
 import type { LucideIcon } from "lucide-react";
@@ -162,8 +162,7 @@ export function SettingsPanel({
   // "System" is the exception — it is a word about the setting, not a language.
   const LANGUAGES: readonly Choice<AppSettings["language"]>[] = [
     { value: "system", label: t("optSystem") },
-    { value: "en", label: "English" },
-    { value: "ru", label: "Русский" },
+    ...LOCALES.map((l) => ({ value: l, label: LOCALE_NAMES[l] })),
   ];
   const THEMES: readonly Choice<AppSettings["theme"]>[] = [
     { value: "system", label: t("optSystem") },

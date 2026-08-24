@@ -1,3 +1,4 @@
+import type { Locale } from "./i18n";
 import type { Theme } from "./theme";
 
 export type MediaType = "video" | "audio" | "image" | "subtitle" | "any";
@@ -13,7 +14,7 @@ export type Loc = { en: string; ru: string };
  */
 export interface AppSettings {
   /** "system" follows the OS locale. */
-  language: "system" | "en" | "ru";
+  language: "system" | Locale;
   theme: Theme;
   /** "beside" writes next to the input file, "fixed" always into `output_dir`. */
   output_mode: "beside" | "fixed";

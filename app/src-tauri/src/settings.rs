@@ -155,7 +155,13 @@ fn one_of(v: String, allowed: &[&str], fallback: &str) -> String {
 /// the other side — picking "fixed" opens the folder dialog and commits nothing
 /// if it is cancelled — so the two never disagree about what the radio shows.
 pub fn sanitize(mut s: AppSettings) -> AppSettings {
-    s.language = one_of(s.language, &["system", "en", "ru"], "system");
+    // Тот же список, что в src/lib/i18n.tsx. Незнакомое значение
+    // (правка settings.json руками, откат на старую сборку) — «system».
+s.language = one_of(
+        s.language,
+        &["system", "en", "ru", "es", "pt", "fr", "de", "pl", "it", "ar", "zh"],
+        "system",
+    );
     s.theme = one_of(s.theme, &["system", "light", "dark"], "system");
     s.output_mode = one_of(s.output_mode, &["beside", "fixed"], "beside");
     if s.output_mode == "fixed" && s.output_dir.as_deref().unwrap_or("").is_empty() {

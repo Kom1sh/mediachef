@@ -59,6 +59,8 @@ describe("resolveLocale", () => {
   it("takes an explicit choice as given", () => {
     expect(resolveLocale("en")).toBe("en");
     expect(resolveLocale("ru")).toBe("ru");
+    expect(resolveLocale("ar")).toBe("ar");
+    expect(resolveLocale("zh")).toBe("zh");
   });
 
   it("follows the browser for «system»", () => {
@@ -66,8 +68,16 @@ describe("resolveLocale", () => {
     expect(resolveLocale("system")).toBe("ru");
     vi.stubGlobal("navigator", { language: "en-GB" });
     expect(resolveLocale("system")).toBe("en");
-    // Neither of the two locales this app ships: English is the fallback.
+    // Match is on the primary subtag, so a regional variant lands on its language
+    // rather than on English: pt-BR is Portuguese, zh-Hans is Chinese.
     vi.stubGlobal("navigator", { language: "de-DE" });
+    expect(resolveLocale("system")).toBe("de");
+    vi.stubGlobal("navigator", { language: "pt-BR" });
+    expect(resolveLocale("system")).toBe("pt");
+    vi.stubGlobal("navigator", { language: "zh-Hans-CN" });
+    expect(resolveLocale("system")).toBe("zh");
+    // A language this app does not ship still falls back to English.
+    vi.stubGlobal("navigator", { language: "ja-JP" });
     expect(resolveLocale("system")).toBe("en");
     vi.unstubAllGlobals();
   });

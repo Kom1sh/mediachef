@@ -1,5 +1,6 @@
 /**
- * The app's two languages, in one file.
+ * The app's ten languages. The words live one file per language in `locales/`;
+ * this module is the wiring around them.
  *
  * Three rules hold the whole thing together:
  *
@@ -17,280 +18,52 @@
  *     signal to add a `plural(n, forms)` helper, not to guess one form.
  *
  * Text that comes from the catalog rather than from here — recipe titles,
- * descriptions, parameter labels, model notes — is a `{ en, ru }` pair on the
- * wire; `loc` picks a side of it.
+ * descriptions, parameter labels — arrives as a map of language code to string;
+ * `loc` picks one side of it and falls back to English.
  */
 import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { dict as en, type Key } from "./locales/en";
+import { dict as ru } from "./locales/ru";
+import { dict as es } from "./locales/es";
+import { dict as pt } from "./locales/pt";
+import { dict as fr } from "./locales/fr";
+import { dict as de } from "./locales/de";
+import { dict as pl } from "./locales/pl";
+import { dict as it } from "./locales/it";
+import { dict as ar } from "./locales/ar";
+import { dict as zh } from "./locales/zh";
 
-export type Locale = "en" | "ru";
+export const DICTS = { en, ru, es, pt, fr, de, pl, it, ar, zh } as const;
 
-/** The English dictionary is the source of truth for the key set: `TKey` is
- *  derived from it, and the Russian one below is typed to match. */
-const EN = {
-  // ── Shell ────────────────────────────────────────────────────────────────
-  appName: "MediaChef",
-  navSections: "Sections",
-  navConvert: "Convert",
-  navModels: "Models",
-  navSettings: "Settings",
+export type Locale = keyof typeof DICTS;
 
-  // ── Board: drop zone, search, recipe list ────────────────────────────────
-  // The board's own two lines: the invitation, and the formats under it. The
-  // invitation names both ways in (drag and click) because the board is a button
-  // that does not look like one.
-  dropHint: "Drop files here — or click to choose",
-  dropSub: "MP4, MKV, MOV, MP3, WAV, SRT and more",
-  // Both example queries stay in both locales on purpose: the Russian one shows a
-  // Russian speaker that their own words work, the English one that the search is
-  // not fussy about which language it is asked in.
-  searchPlaceholder: "Search: «видео в мп3», «make gif»…",
-  nothingFound: "Nothing found",
-  clearSearch: "Clear search",
-  popular: "Popular",
-  // The screen with nothing on it yet. Display face, asked as a question — the
-  // one place the app speaks in the first person plural, because a kitchen does.
-  emptyTitle: "What are we cooking?",
-  emptySub: "Put a file on the board and pick a recipe.",
+/** Порядок здесь — порядок в списке языков в настройках. */
+export const LOCALES = Object.keys(DICTS) as Locale[];
 
-  // ── File card ────────────────────────────────────────────────────────────
-  clearNamed: "Clear {name}",
-  // The chip that holds a bare clock, named in its tooltip: the digits alone do
-  // not say which quantity they are.
-  durationNamed: "Duration: {time}",
-  unitKB: "KB",
-  unitMB: "MB",
-  unitGB: "GB",
-  // What a probed file's tile glyph is called — read out, not written out (the
-  // card shows the icon alone). "any" is the catalog's wildcard and never the
-  // answer to "what is this file", but the map is exhaustive by type.
-  mt_video: "video",
-  mt_audio: "audio",
-  mt_image: "image",
-  mt_subtitle: "subtitle",
-  mt_any: "any",
-
-  // ── Recipe form ──────────────────────────────────────────────────────────
-  advanced: "Advanced",
-  close: "Close",
-  addToQueue: "Add to queue",
-  adding: "Adding…",
-  addingN: "Adding {n}…",
-  addAllN: "Add all {n} files",
-  retryOne: "Retry",
-  retryN: "Retry {n}",
-  clickToCopy: "Click to copy",
-  clickToCopyPreview: "Click to copy — illustrative, not runnable as-is",
-  copied: "Copied to clipboard",
-  previewOnly: "# preview only — the queue decodes a 16 kHz WAV first, so this is not runnable as-is",
-  loadingModels: "Loading models…",
-  openModels: "Open Models",
-  downloadModelPrompt: "Download a model → Models",
-
-  // ── Queue ────────────────────────────────────────────────────────────────
-  queue: "Queue",
-  // The header counter's own name. The badge itself is a bare numeral — this is
-  // what it says on hover, and what a screen reader reads instead of "2".
-  activeN: "{n} active",
-  queueEmpty: "Jobs will appear here.",
-  st_queued: "queued",
-  st_running: "running",
-  st_done: "done",
-  st_error: "error",
-  st_cancelled: "cancelled",
-  cancel: "Cancel",
-  // The progress bar's accessible name. Named, not bare: several cards can be in
-  // flight at once, and "Progress, 40%" three times over says nothing about which
-  // job is where. The percentage itself is not in the string — `aria-valuenow`
-  // carries it, and a screen reader speaks the two together.
-  jobProgressNamed: "Job progress: {name}",
-  etaLeft: "~{time} left",
-  showInFinder: "Show in Finder",
-  copyLog: "Copy log",
-  failed: "Failed",
-  notifyDone: "Done: {name}",
-
-  // ── Models ───────────────────────────────────────────────────────────────
-  modelsTitle: "Whisper models",
-  modelsBlurb: "Transcription runs locally. A model is downloaded once.",
-  download: "Download",
-  deleteModel: "Delete",
-  // Same shape as `jobProgressNamed`, and named for the same reason: the models
-  // list can have more than one row downloading.
-  downloadProgressNamed: "Download progress: {name}",
-  cancelling: "Cancelling…",
-  cancelDownload: "Cancel download",
-  cancelHint: "A cancel lands at the download's next read — up to 30s if the connection died.",
-  // Whisper ran fine and heard nothing worth writing down. The one Rust-side error
-  // the queue card says in the user's own language (Ruling W3-4): the failure it
-  // replaces carries a `no_speech` marker, and the raw text stays one click away
-  // under the summary.
-  noSpeech: "No speech detected in the file",
-
-  // ── Settings ─────────────────────────────────────────────────────────────
-  loadingSettings: "Loading settings…",
-  // Shared by the language and the theme control, so the Russian side has to work
-  // for both — hence "как в системе" rather than an adjective that would have to
-  // agree with one noun or the other.
-  optSystem: "System",
-  themeLight: "Light",
-  themeDark: "Dark",
-  setLanguage: "Language",
-  setLanguageHint: "«System» follows your OS.",
-  setTheme: "Theme",
-  setThemeHint: "Applies immediately.",
-  setOutput: "Output folder",
-  setOutputHint: "Where finished files are written.",
-  outBeside: "Next to input",
-  outFixed: "Fixed folder",
-  change: "Change…",
-  setNotifications: "Notifications",
-  setNotificationsHint: "A desktop alert when a job finishes.",
-  setWorkers: "Parallel conversions",
-  setWorkersHint: "How many ffmpeg jobs run at once. Takes effect after a restart.",
-
-  // ── Recipe categories ────────────────────────────────────────────────────
-  // One per key of `CATEGORY_ICON` in icons.ts, reached through `categoryLabel`
-  // so an unknown category from the YAML catalog renders its own name instead of
-  // a missing key.
-  "cat_convert-video": "Convert video",
-  "cat_convert-audio": "Convert audio",
-  cat_extract: "Extract",
-  cat_compress: "Compress",
-  cat_cut: "Cut",
-  cat_geometry: "Size",
-  cat_gif: "GIF",
-  "cat_audio-in-video": "Audio in video",
-  "cat_mux-subs": "Subtitles",
-  cat_speed: "Speed",
-  cat_transcribe: "Transcribe",
-  cat_translate: "Translate",
-  cat_advanced: "Advanced",
-} as const;
-
-export type TKey = keyof typeof EN;
-
-/** `Record<TKey, string>` is the compile-time half of the key-parity guarantee: a
- *  key added to `EN` and forgotten here is a type error, and a key here that `EN`
- *  does not have is too. `i18n.test.ts` checks the same thing at runtime. */
-const RU: Record<TKey, string> = {
-  appName: "MediaChef",
-  navSections: "Разделы",
-  navConvert: "Конвертация",
-  navModels: "Модели",
-  navSettings: "Настройки",
-
-  dropHint: "Перетащите файлы сюда — или нажмите, чтобы выбрать",
-  dropSub: "MP4, MKV, MOV, MP3, WAV, SRT и другие",
-  searchPlaceholder: "Поиск: «видео в мп3», «make gif»…",
-  nothingFound: "Ничего не нашлось",
-  clearSearch: "Очистить поиск",
-  popular: "Популярное",
-  // «Что готовим?» — вопрос, а не заголовок раздела: экран пустой, и первое слово
-  // приложения должно приглашать, а не описывать.
-  emptyTitle: "Что готовим?",
-  emptySub: "Положите файл на доску и выберите рецепт.",
-
-  clearNamed: "Убрать {name}",
-  durationNamed: "Длительность: {time}",
-  unitKB: "КБ",
-  unitMB: "МБ",
-  unitGB: "ГБ",
-  mt_video: "видео",
-  mt_audio: "аудио",
-  mt_image: "изображение",
-  mt_subtitle: "субтитры",
-  mt_any: "любой",
-
-  advanced: "Дополнительно",
-  close: "Закрыть",
-  addToQueue: "В очередь",
-  adding: "Добавляю…",
-  addingN: "Добавляю {n}…",
-  addAllN: "Добавить все файлы ({n})",
-  retryOne: "Повторить",
-  retryN: "Повторить ({n})",
-  clickToCopy: "Нажмите, чтобы скопировать",
-  clickToCopyPreview: "Нажмите, чтобы скопировать — команда только для наглядности, в таком виде она не запустится",
-  copied: "Скопировано в буфер обмена",
-  previewOnly: "# только для наглядности — очередь сначала готовит WAV 16 кГц, поэтому в таком виде команда не запустится",
-  // "Получаю список", not "Загружаю": next to a «Скачать» button, "загружаю"
-  // reads as *downloading a model* rather than as fetching the list of them.
-  loadingModels: "Получаю список моделей…",
-  openModels: "Открыть «Модели»",
-  downloadModelPrompt: "Скачать модель → «Модели»",
-
-  queue: "Очередь",
-  // «Активных: 2», not «2 активных» — the counted noun stays out of agreement
-  // position, so one form works for 1, 2 and 5 (i18n rule 3).
-  activeN: "Активных: {n}",
-  queueEmpty: "Здесь появятся задачи.",
-  st_queued: "в очереди",
-  st_running: "выполняется",
-  st_done: "готово",
-  st_error: "ошибка",
-  st_cancelled: "отменено",
-  cancel: "Отменить",
-  // «Ход задачи», а не «Прогресс задачи»: по-русски о выполняющемся процессе
-  // говорят «ход», и слово согласуется с `st_running` — «выполняется».
-  jobProgressNamed: "Ход задачи: {name}",
-  etaLeft: "осталось ~{time}",
-  showInFinder: "Показать в Finder",
-  copyLog: "Скопировать лог",
-  failed: "Не удалось",
-  notifyDone: "Готово: {name}",
-
-  modelsTitle: "Модели Whisper",
-  modelsBlurb: "Расшифровка идёт на вашем компьютере. Модель скачивается один раз.",
-  download: "Скачать",
-  deleteModel: "Удалить",
-  // «Загрузки» здесь — скачивание модели, тем же словом, что и `cancelDownload`.
-  downloadProgressNamed: "Ход загрузки: {name}",
-  cancelling: "Отмена…",
-  cancelDownload: "Отменить загрузку",
-  // «При следующем обращении к сети», а не «на следующем чтении из сети»: второе —
-  // калька с английского read, по-русски так о загрузке не говорят.
-  cancelHint: "Отмена применится при следующем обращении к сети — на зависшем соединении это может занять до 30 с.",
-  // «Не обнаружена», а не «не распознана»: распознать не удалось бы плохую запись,
-  // а здесь речи в файле нет вовсе — и это не ошибка пользователя.
-  noSpeech: "Речь в файле не обнаружена",
-
-  loadingSettings: "Загружаю настройки…",
-  optSystem: "Как в системе",
-  themeLight: "Светлая",
-  themeDark: "Тёмная",
-  setLanguage: "Язык",
-  setLanguageHint: "«Как в системе» — язык вашей ОС.",
-  setTheme: "Тема",
-  setThemeHint: "Применяется сразу.",
-  setOutput: "Папка для результатов",
-  setOutputHint: "Куда складывать готовые файлы.",
-  outBeside: "Рядом с исходным",
-  outFixed: "Выбранная папка",
-  change: "Изменить…",
-  setNotifications: "Уведомления",
-  setNotificationsHint: "Уведомление на рабочем столе, когда задача готова.",
-  setWorkers: "Параллельные конвертации",
-  // «Сколько задач … выполняется», singular: "сколько" + genitive plural takes a
-  // singular predicate. "Выполняется" is also the word st_running uses for a job
-  // that is running, so the setting and the queue name the same thing the same way.
-  setWorkersHint: "Сколько задач ffmpeg выполняется одновременно. Применится после перезапуска.",
-
-  "cat_convert-video": "Конвертация видео",
-  "cat_convert-audio": "Конвертация аудио",
-  cat_extract: "Извлечение",
-  cat_compress: "Сжатие",
-  cat_cut: "Обрезка",
-  cat_geometry: "Размер",
-  cat_gif: "GIF",
-  "cat_audio-in-video": "Звук в видео",
-  "cat_mux-subs": "Субтитры",
-  cat_speed: "Скорость",
-  cat_transcribe: "Расшифровка",
-  cat_translate: "Перевод",
-  cat_advanced: "Для продвинутых",
+/**
+ * Самоназвание языка. В настройках язык подписан на себе: человек, попавший
+ * в чужой интерфейс, ищет глазами «Español», а не «Spanish».
+ */
+export const LOCALE_NAMES: Record<Locale, string> = {
+  en: "English",
+  ru: "Русский",
+  es: "Español",
+  pt: "Português",
+  fr: "Français",
+  de: "Deutsch",
+  pl: "Polski",
+  it: "Italiano",
+  ar: "العربية",
+  zh: "中文",
 };
 
-export const DICTS = { en: EN, ru: RU } as const;
+/** Языки с письмом справа налево. Атрибут dir проставляет App. */
+const RTL: ReadonlySet<string> = new Set(["ar"]);
+
+export const localeDir = (locale: Locale): "rtl" | "ltr" => (RTL.has(locale) ? "rtl" : "ltr");
+
+/** Ключ словаря. Набор задаёт английский файл — он эталон. */
+export type TKey = Key;
 
 /** What `useT` hands out. `vars` fills `{name}` placeholders. */
 export type TFn = (key: TKey, vars?: Record<string, string | number>) => string;
@@ -324,9 +97,11 @@ export function makeT(locale: Locale): TFn {
  * rendering keys.
  */
 export function resolveLocale(setting: string): Locale {
-  if (setting === "ru" || setting === "en") return setting;
+  if (setting in DICTS) return setting as Locale;
   const lang = typeof navigator === "undefined" ? "" : navigator.language || "";
-  return lang.toLowerCase().startsWith("ru") ? "ru" : "en";
+  // Совпадение по основному субтегу: pt-BR — это pt, zh-Hans — zh.
+  const primary = lang.toLowerCase().split("-")[0];
+  return (LOCALES.find((l) => l === primary) ?? "en") as Locale;
 }
 
 // English rather than a "no locale chosen" sentinel: a component rendered outside
@@ -351,15 +126,15 @@ export function useT(): TFn {
 }
 
 /**
- * A side of a `{ en, ru }` pair from the catalog.
+ * One side of a language map from the catalog.
  *
- * A blank Russian side falls back to English: recipes and model notes are
- * hand-written YAML, so a missing `ru:` is a matter of when rather than if, and an
- * English label beats an empty card.
+ * A missing or blank side falls back to English: recipes are hand-written YAML,
+ * so a language that has not been filled in yet is a matter of when rather than
+ * if, and an English label beats an empty card.
  */
-export function loc(l: { en: string; ru: string }, locale: Locale): string {
-  if (locale === "ru" && l.ru && l.ru.trim() !== "") return l.ru;
-  return l.en;
+export function loc(l: Partial<Record<Locale, string>> & { en: string }, locale: Locale): string {
+  const own = l[locale];
+  return own && own.trim() !== "" ? own : l.en;
 }
 
 /**
@@ -369,5 +144,5 @@ export function loc(l: { en: string; ru: string }, locale: Locale): string {
  */
 export function categoryLabel(category: string, locale: Locale): string {
   const key = `cat_${category}` as TKey;
-  return key in EN ? makeT(locale)(key) : category;
+  return key in en ? makeT(locale)(key) : category;
 }

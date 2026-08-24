@@ -8,7 +8,7 @@ import { RecipeList } from "./components/RecipeList";
 import { QueuePanel } from "./components/QueuePanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Sidebar, type Tab } from "./components/Sidebar";
-import { LocaleProvider, makeT, resolveLocale } from "./lib/i18n";
+import { LocaleProvider, makeT, resolveLocale, localeDir } from "./lib/i18n";
 import { getRecipes, getSettings, onJobUpdate, probeFile, setSettings as saveSettings } from "./lib/ipc";
 import { applicable, buildIndex, search } from "./lib/search";
 import { applyTheme } from "./lib/theme";
@@ -221,7 +221,12 @@ export default function App() {
   // Tells the browser (and through it a screen reader's pronunciation, and CSS
   // `:lang()`) which language the interface is in. index.html ships `lang="en"`
   // for the first paint; from here on this owns it.
-  useEffect(() => { document.documentElement.lang = locale; }, [locale]);
+  // Язык и направление письма — на <html>: от dir зависит вся раскладка,
+  // а логические свойства в CSS считают отступы уже от него.
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.documentElement.dir = localeDir(locale);
+  }, [locale]);
 
   const index = useMemo(() => buildIndex(recipes), [recipes]);
   const results = useMemo(
