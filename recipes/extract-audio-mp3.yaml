@@ -12,16 +12,16 @@ title:
   ar: "استخراج الصوت إلى MP3"
   zh: "提取音频为 MP3"
 aliases:
-  en: [video to mp3, rip audio from video, get sound from video, mp4 to mp3]
-  ru: [видео в мп3, вытащить звук из видео, аудио из ролика, мп4 в мп3]
-  es: ["vídeo a mp3", "sacar el audio de un vídeo", "extraer sonido del vídeo", "mp4 a mp3"]
-  pt: ["vídeo para mp3", "tirar o áudio do vídeo", "extrair som do vídeo", "mp4 para mp3"]
-  fr: ["vidéo en mp3", "extraire le son d'une vidéo", "récupérer l'audio d'une vidéo", "mp4 en mp3"]
-  de: ["video in mp3", "ton aus video extrahieren", "audio aus video holen", "mp4 in mp3"]
-  pl: ["wideo na mp3", "wyciągnąć dźwięk z wideo", "audio z filmu", "mp4 na mp3"]
-  it: ["video in mp3", "estrarre l'audio da un video", "prendere il suono dal video", "mp4 in mp3"]
-  ar: ["فيديو إلى mp3", "استخراج الصوت من الفيديو", "سحب الصوت من فيديو", "mp4 إلى mp3"]
-  zh: ["视频转 mp3", "提取视频声音", "从视频里提取音频", "mp4 转 mp3"]
+  en: [video to mp3, rip audio from video, get sound from video, mp4 to mp3, "change mp4 to mp3", "convert video to audio"]
+  ru: [видео в мп3, вытащить звук из видео, аудио из ролика, мп4 в мп3, "переделать видео в мп3", "перевести mp4 в mp3"]
+  es: ["vídeo a mp3", "sacar el audio de un vídeo", "extraer sonido del vídeo", "mp4 a mp3", "pasar vídeo a mp3", "pasar mp4 a mp3"]
+  pt: ["vídeo para mp3", "tirar o áudio do vídeo", "extrair som do vídeo", "mp4 para mp3", "transformar vídeo em mp3", "transformar mp4 em mp3"]
+  fr: ["vidéo en mp3", "extraire le son d'une vidéo", "récupérer l'audio d'une vidéo", "mp4 en mp3", "transformer une vidéo en mp3", "transformer mp4 en mp3"]
+  de: ["video in mp3", "ton aus video extrahieren", "audio aus video holen", "mp4 in mp3", "mp4 in mp3 konvertieren", "video zu mp3 konvertieren"]
+  pl: ["wideo na mp3", "wyciągnąć dźwięk z wideo", "audio z filmu", "mp4 na mp3", "zmienić mp4 na mp3", "zamienić wideo na mp3"]
+  it: ["video in mp3", "estrarre l'audio da un video", "prendere il suono dal video", "mp4 in mp3", "trasformare un video in mp3", "trasformare mp4 in mp3"]
+  ar: ["فيديو إلى mp3", "استخراج الصوت من الفيديو", "سحب الصوت من فيديو", "mp4 إلى mp3", "تحويل mp4 إلى mp3", "تحويل فيديو إلى صوت"]
+  zh: ["视频转 mp3", "提取视频声音", "从视频里提取音频", "mp4 转 mp3", "mp4转mp3", "视频转mp3"]
 description:
   en: "Saves the audio track of a video as MP3."
   ru: "Сохраняет звуковую дорожку видео в MP3."

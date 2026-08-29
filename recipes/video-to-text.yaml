@@ -12,16 +12,16 @@ title:
   ar: "استخراج النص من فيديو"
   zh: "从视频里取出文字"
 aliases:
-  en: [video to text, text from video, transcribe video, get text from video, mp4 to text]
-  ru: [видео в текст, текст из видео, расшифровка видео, транскрибация видео, мп4 в текст, перевод видео в текст]
-  es: ["vídeo a texto", "texto de un vídeo", "transcribir vídeo", "mp4 a texto"]
-  pt: ["vídeo para texto", "texto de um vídeo", "transcrever vídeo", "mp4 para texto"]
-  fr: ["vidéo en texte", "texte d'une vidéo", "transcrire une vidéo", "mp4 en texte"]
-  de: ["video in text", "text aus video", "video transkribieren", "mp4 in text"]
-  pl: ["wideo na tekst", "tekst z filmu", "transkrypcja wideo", "mp4 na tekst"]
-  it: ["video in testo", "testo da un video", "trascrivere un video", "mp4 in testo"]
-  ar: ["فيديو إلى نص", "نص من فيديو", "تفريغ فيديو", "mp4 إلى نص"]
-  zh: ["视频转文字", "从视频提取文字", "视频转写", "mp4 转文字"]
+  en: [video to text, text from video, transcribe video, get text from video, mp4 to text, "change video to text", "video to subtitles text"]
+  ru: [видео в текст, текст из видео, расшифровка видео, транскрибация видео, мп4 в текст, перевод видео в текст, "переделать видео в текст", "перевести видео в текст"]
+  es: ["vídeo a texto", "texto de un vídeo", "transcribir vídeo", "mp4 a texto", "pasar vídeo a texto", "pasar un vídeo a texto"]
+  pt: ["vídeo para texto", "texto de um vídeo", "transcrever vídeo", "mp4 para texto", "transformar vídeo em texto", "transformar um vídeo em texto"]
+  fr: ["vidéo en texte", "texte d'une vidéo", "transcrire une vidéo", "mp4 en texte", "transformer une vidéo en texte", "changer une vidéo en texte"]
+  de: ["video in text", "text aus video", "video transkribieren", "mp4 in text", "video in text umwandeln", "video zu text konvertieren"]
+  pl: ["wideo na tekst", "tekst z filmu", "transkrypcja wideo", "mp4 na tekst", "zamienić wideo na tekst", "zmienić wideo na tekst"]
+  it: ["video in testo", "testo da un video", "trascrivere un video", "mp4 in testo", "trasformare un video in testo", "trasformare video in testo"]
+  ar: ["فيديو إلى نص", "نص من فيديو", "تفريغ فيديو", "mp4 إلى نص", "تغيير فيديو إلى نص", "تفريغ الفيديو نصيًا"]
+  zh: ["视频转文字", "从视频提取文字", "视频转写", "mp4 转文字", "mp4转文字"]
 description:
   en: "Writes down everything said in the video as plain text (Whisper)."
   ru: "Записывает всё сказанное в видео обычным текстом (Whisper)."

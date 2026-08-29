@@ -12,16 +12,16 @@ title:
   ar: "تفريغ الصوت إلى نص"
   zh: "把音频转成文字"
 aliases:
-  en: [mp3 to text, audio to text, transcribe audio, speech to text, audio to txt]
-  ru: [перевод мп3 в текст, расшифровка аудио, транскрибация, аудио в текст, речь в текст, мп3 в текст, перевод аудио в текст, перевод речи в текст, текст из аудио]
-  es: ["mp3 a texto", "audio a texto", "transcribir audio", "voz a texto", "pasar audio a texto"]
-  pt: ["mp3 para texto", "áudio para texto", "transcrever áudio", "voz para texto", "passar áudio para texto"]
-  fr: ["mp3 en texte", "audio en texte", "transcrire un audio", "voix en texte", "passer un audio en texte"]
-  de: ["mp3 in text", "audio in text", "audio transkribieren", "sprache in text", "audio abtippen"]
-  pl: ["mp3 na tekst", "audio na tekst", "transkrypcja audio", "mowa na tekst", "przepisać nagranie"]
-  it: ["mp3 in testo", "audio in testo", "trascrivere audio", "voce in testo", "sbobinare audio"]
-  ar: ["mp3 إلى نص", "صوت إلى نص", "تفريغ صوتي", "كلام إلى نص", "تحويل الصوت إلى كتابة"]
-  zh: ["mp3 转文字", "音频转文字", "语音转文字", "音频转写", "把录音变成文字"]
+  en: [mp3 to text, audio to text, transcribe audio, speech to text, audio to txt, "change audio to text", "turn speech into text"]
+  ru: [перевод мп3 в текст, расшифровка аудио, транскрибация, аудио в текст, речь в текст, мп3 в текст, перевод аудио в текст, перевод речи в текст, текст из аудио, "переделать аудио в текст", "перевести речь в текст"]
+  es: ["mp3 a texto", "audio a texto", "transcribir audio", "voz a texto", "pasar audio a texto", "pasar una grabación a texto"]
+  pt: ["mp3 para texto", "áudio para texto", "transcrever áudio", "voz para texto", "passar áudio para texto", "transformar áudio em texto", "transformar gravação em texto"]
+  fr: ["mp3 en texte", "audio en texte", "transcrire un audio", "voix en texte", "passer un audio en texte", "transformer un audio en texte", "changer la voix en texte"]
+  de: ["mp3 in text", "audio in text", "audio transkribieren", "sprache in text", "audio abtippen", "audio in text umwandeln", "sprache zu text konvertieren"]
+  pl: ["mp3 na tekst", "audio na tekst", "transkrypcja audio", "mowa na tekst", "przepisać nagranie", "zamienić audio na tekst", "zmienić nagranie na tekst"]
+  it: ["mp3 in testo", "audio in testo", "trascrivere audio", "voce in testo", "sbobinare audio", "trasformare un audio in testo", "trasformare la voce in testo"]
+  ar: ["mp3 إلى نص", "صوت إلى نص", "تفريغ صوتي", "كلام إلى نص", "تحويل الصوت إلى كتابة", "تغيير الصوت إلى نص", "تفريغ التسجيل نصيًا"]
+  zh: ["mp3 转文字", "音频转文字", "语音转文字", "音频转写", "把录音变成文字", "录音转文字"]
 description:
   en: "Turns speech into plain text locally (Whisper)."
   ru: "Превращает речь в обычный текст локально (Whisper)."
