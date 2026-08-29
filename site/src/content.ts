@@ -19,7 +19,7 @@ import shotDark from "./assets/app-main-dark.png";
 
 export { SITE, LINKS, FACTS } from "./facts";
 
-export type PageId = "home" | "mp3" | "transcribe";
+export type PageId = "home" | "mp3" | "transcribe" | "catalog";
 
 /**
  * Языки с полным переводом. `name` — самоназвание: в переключателе язык
@@ -51,6 +51,7 @@ export const ROUTES: Record<PageId, Record<Locale, string>> = {
   home: { en: "", ru: "", zh: "", ar: "", it: "", pl: "", de: "", fr: "", pt: "", es: "" },
   mp3: { en: "convert-mp4-to-mp3", zh: "mp4-zhuan-mp3", ar: "tahwil-mp4-ila-mp3", it: "convertire-mp4-in-mp3", pl: "konwersja-mp4-na-mp3", de: "mp4-in-mp3-umwandeln", fr: "convertir-mp4-en-mp3", pt: "converter-mp4-em-mp3", ru: "mp4-v-mp3", es: "convertir-mp4-a-mp3" },
   transcribe: { en: "transcribe-audio-to-text", zh: "yinpin-zhuan-wenzi", ar: "tafrigh-sawti-ila-nass", it: "trascrivere-audio-in-testo", pl: "transkrypcja-audio-na-tekst", de: "audio-in-text-umwandeln", fr: "transcrire-audio-en-texte", pt: "transcrever-audio-para-texto", ru: "transkribaciya-audio-v-tekst", es: "transcribir-audio-a-texto" },
+  catalog: { en: "recipes", zh: "caipu", ar: "wasafat", it: "ricette", pl: "przepisy", de: "rezepte", fr: "recettes", pt: "receitas", ru: "recepty", es: "recetas" },
 };
 
 /** Путь страницы внутри локали, всегда со слешем на конце. */
@@ -141,7 +142,27 @@ export const T: Record<Locale, UiCopy> = {
   es: es.ui,
 };
 
-export const LANDINGS: Record<Exclude<PageId, "home">, Record<Locale, LandingCopy>> = {
+/** Страницы под один поисковый интент — те, что рисует Intent.astro.
+ *  «home» и «catalog» устроены иначе и у каждой свой макет. */
+export type IntentId = Exclude<PageId, "home" | "catalog">;
+
+/** Тексты каталога выведены из английского файла — форма проверяется присваиванием. */
+export type CatalogCopy = typeof en.catalog;
+
+export const CATALOG: Record<Locale, CatalogCopy> = {
+  en: en.catalog,
+  zh: zh.catalog,
+  ar: ar.catalog,
+  it: it.catalog,
+  pl: pl.catalog,
+  de: de.catalog,
+  fr: fr.catalog,
+  pt: pt.catalog,
+  ru: ru.catalog,
+  es: es.catalog,
+};
+
+export const LANDINGS: Record<IntentId, Record<Locale, LandingCopy>> = {
   mp3: {
     en: en.landings.mp3,
     zh: zh.landings.mp3,

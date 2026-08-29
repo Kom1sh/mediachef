@@ -13,3 +13,6 @@ dist-release/
 # Sidecar engines (ffmpeg/ffprobe/whisper-cli, ~130MB): put there by
 # scripts/fetch-sidecars.sh from pinned sources, never committed.
 app/src-tauri/binaries/
+
+# артефакты браузерных проверок
+.playwright-mcp/

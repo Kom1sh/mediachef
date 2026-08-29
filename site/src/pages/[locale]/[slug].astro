@@ -1,13 +1,14 @@
 ---
-// Посадочные: /<locale>/<slug>/. Слаг у каждого языка свой — он берётся
-// из ROUTES, а сама страница определяется пропсом page.
+// Страницы внутри локали: /<locale>/<slug>/. Слаг у каждого языка свой — он
+// берётся из ROUTES, а какой макет рисовать, решает пропс page.
 import Intent from "../../layouts/Intent.astro";
-import { LOCALES, ROUTES, type Locale, type PageId } from "../../content";
+import Catalog from "../../layouts/Catalog.astro";
+import { LOCALES, ROUTES, type Locale, type PageId, type IntentId } from "../../content";
 
 export function getStaticPaths() {
-  const intents = (Object.keys(ROUTES) as PageId[]).filter((p) => p !== "home");
+  const pages = (Object.keys(ROUTES) as PageId[]).filter((p) => p !== "home");
   return LOCALES.flatMap((locale) =>
-    intents.map((page) => ({
+    pages.map((page) => ({
       params: { locale, slug: ROUTES[page][locale] },
       props: { page },
     })),
@@ -17,4 +18,4 @@ export function getStaticPaths() {
 const locale = Astro.params.locale as Locale;
 const { page } = Astro.props as { page: Exclude<PageId, "home"> };
 ---
-<Intent locale={locale} page={page} />
+{page === "catalog" ? <Catalog locale={locale} /> : <Intent locale={locale} page={page as IntentId} />}

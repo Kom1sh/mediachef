@@ -1,7 +1,7 @@
 // Навигация и футер: один источник для шапки, бургера и подвала. Добавили
 // посадочную — дописали строку сюда, и она появилась во всех трёх местах.
 // Сам список страниц для sitemap.xml берётся из ROUTES в content.ts.
-import { FACTS, LINKS, T, pathFor, type Locale, type PageId } from "./content";
+import { CATALOG, FACTS, LINKS, T, pathFor, type Locale, type PageId } from "./content";
 
 /** Прямая ссылка на файл релиза: качается сразу, без похода на страницу GitHub. */
 const REL = `https://github.com/Kom1sh/mediachef/releases/download/v${FACTS.version}`;
@@ -120,6 +120,9 @@ export function navFor(locale: Locale, page: PageId): readonly NavEntry[] {
         ] },
       ],
     },
+    // Каталог — прямая ссылка, а не выпадающий список: внутри одна страница,
+    // а подпись у неё уже переведена в блоке catalog, отдельного ключа не надо.
+    { label: CATALOG[locale].crumb, href: pathFor("catalog", locale) },
     {
       label: u.download,
       groups: [
@@ -148,6 +151,7 @@ export function footerFor(locale: Locale, page: PageId): readonly NavGroup[] {
       { label: u.sFaq, href: a("faq") },
     ] },
     { label: u.footGuides, items: [
+      { label: CATALOG[locale].h1, href: pathFor("catalog", locale) },
       { label: u.pMp3, href: pathFor("mp3", locale) },
       { label: u.pTranscribe, href: pathFor("transcribe", locale) },
     ] },

@@ -86,6 +86,7 @@ export const ui = {
     { h: "Ehrliches Ergebnis.", p: "Enthält eine Datei keine Sprache, sagt MediaChef „Keine Sprache erkannt“ — statt eine leere Datei mit grünem Haken abzuliefern." },
   ],
   recipesLink: "Ausführliche Anleitung: MP4 in MP3 umwandeln →",
+  catalogLink: `Alle ${FACTS.recipeCount} Rezepte, nach Kategorien →`,
   trLink: "Ausführliche Anleitung: Audio in Text transkribieren →",
   privTitle: "Ihre Dateien gehen nirgendwohin",
   privLead:
@@ -217,6 +218,7 @@ export const landings = {
     ctaTitle: "Holen Sie das MP3 aus diesem Video",
     ctaSub: `MediaChef ${FACTS.version} — kostenlos, quelloffen, macOS · Windows · Linux.`,
     also: [
+      { page: "catalog", label: "Der vollständige Rezeptkatalog, nach Kategorien" },
       { page: "transcribe", label: "Audio in Text transkribieren — offline, mit Whisper" },
       { page: "home", label: `Alle ${FACTS.recipeCount} Rezepte und wie MediaChef arbeitet` },
     ],
@@ -277,10 +279,54 @@ export const landings = {
     ctaTitle: "Machen Sie Text aus dieser Aufnahme",
     ctaSub: `MediaChef ${FACTS.version} — Whisper lokal, kostenlos und quelloffen.`,
     also: [
+      { page: "catalog", label: "Der vollständige Rezeptkatalog, nach Kategorien" },
       { page: "mp3", label: "MP4 in MP3 umwandeln — kostenlos und offline" },
       { page: "home", label: `Alle ${FACTS.recipeCount} Rezepte und wie MediaChef arbeitet` },
     ],
   },
 };
 
-export default { ui, landings };
+/** Каталог рецептов: /<locale>/<slug>/. Названия рецептов, описания и алиасы
+ *  берутся из recipes/*.yaml — здесь только обвязка страницы. */
+export const catalog = {
+  title: `Alle ${FACTS.recipeCount} MediaChef-Rezepte — Video, Audio und Transkription`,
+  description: "Alle Rezepte, die MediaChef mitbringt: Video und Audio umwandeln, komprimieren, zuschneiden, Größe ändern, den Ton herausholen, ein GIF erzeugen, Sprache mit Whisper in Text transkribieren. Kostenlos, quelloffen, läuft ohne Verbindung auf macOS, Windows und Linux.",
+  h1: `Alle ${FACTS.recipeCount} Rezepte`,
+  crumb: "Rezepte",
+  lead: "MediaChef verlangt keine Kommandozeilenoptionen. Jede Aufgabe ist eine Karte: Datei ablegen, Karte wählen, starten. Das hier ist der vollständige Katalog, so wie er ausgeliefert wird — was jedes Rezept annimmt, was es zurückgibt und was Sie in die Suche der Anwendung tippen können, um es zu finden.",
+  // Разделы страницы. Категории из YAML сведены в них по смыслу
+  // результата — см. BUCKET в recipes.ts.
+  sections: {
+    speech: "Sprache, Text und Untertitel",
+    video: "Video",
+    audio: "Audio",
+    advanced: "Erweitert",
+  },
+  // Названия категорий совпадают с теми, что человек увидит в самом приложении.
+  cats: {
+    "extract": "Extrahieren",
+    "transcribe": "Transkribieren",
+    "convert-video": "Video umwandeln",
+    "convert-audio": "Audio umwandeln",
+    "compress": "Komprimieren",
+    "cut": "Zuschneiden",
+    "geometry": "Größe",
+    "gif": "GIF",
+    "audio-in-video": "Ton im Video",
+    "advanced": "Erweitert",
+  },
+  accepts: "Nimmt",
+  produces: "Gibt",
+  settings: "Einstellungen",
+  searchAs: "Zu finden auch über",
+  types: { video: "Video", audio: "Audio", any: "jede Datei" },
+  noParams: "Nichts einzustellen.",
+  ctaTitle: "Den ganzen Satz holen",
+  ctaSub: `MediaChef ${FACTS.version} — kostenlos, quelloffen, macOS · Windows · Linux.`,
+  also: [
+    { page: "mp3", label: "MP4 in MP3 umwandeln — kostenlos und offline" },
+    { page: "transcribe", label: "Audio in Text transkribieren — offline, mit Whisper" },
+  ],
+};
+
+export default { ui, landings, catalog };

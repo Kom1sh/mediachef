@@ -91,7 +91,10 @@ const jsonLd = [
             </tbody>
           </table>
         </div>
-        <p class="onward"><a href={pathFor("mp3", locale)}>{t.recipesLink}</a></p>
+        <p class="onward">
+          <a href={pathFor("catalog", locale)}>{t.catalogLink}</a>
+          <a href={pathFor("mp3", locale)}>{t.recipesLink}</a>
+        </p>
       </div>
     </section>
 

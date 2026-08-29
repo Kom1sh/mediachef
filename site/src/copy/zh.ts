@@ -86,6 +86,7 @@ export const ui = {
     { h: "结果如实。", p: "如果文件里没有语音，MediaChef 会直说「未检测到语音」——绝不会交出一个打着绿勾的空文件。" },
   ],
   recipesLink: "完整指南：把 MP4 转成 MP3 →",
+  catalogLink: `全部 ${FACTS.recipeCount} 个菜谱，按类别 →`,
   trLink: "完整指南：把音频转成文字 →",
   privTitle: "你的文件哪儿也不去",
   privLead:
@@ -217,6 +218,7 @@ export const landings = {
     ctaTitle: "把那段视频里的 MP3 取出来",
     ctaSub: `MediaChef ${FACTS.version} — 免费、开源，macOS · Windows · Linux。`,
     also: [
+      { page: "catalog", label: "完整的菜谱目录，按类别排列" },
       { page: "transcribe", label: "把音频转成文字 — 离线，用 Whisper" },
       { page: "home", label: `全部 ${FACTS.recipeCount} 个配方与 MediaChef 的工作方式` },
     ],
@@ -277,10 +279,54 @@ export const landings = {
     ctaTitle: "把那段录音变成文字",
     ctaSub: `MediaChef ${FACTS.version} — Whisper 本地运行，免费且开源。`,
     also: [
+      { page: "catalog", label: "完整的菜谱目录，按类别排列" },
       { page: "mp3", label: "把 MP4 转成 MP3 — 免费且离线" },
       { page: "home", label: `全部 ${FACTS.recipeCount} 个配方与 MediaChef 的工作方式` },
     ],
   },
 };
 
-export default { ui, landings };
+/** Каталог рецептов: /<locale>/<slug>/. Названия рецептов, описания и алиасы
+ *  берутся из recipes/*.yaml — здесь только обвязка страницы. */
+export const catalog = {
+  title: `MediaChef 的全部 ${FACTS.recipeCount} 个菜谱 — 视频、音频与转写`,
+  description: "MediaChef 自带的全部菜谱：转换视频和音频、压缩、剪切、改尺寸、提取声音、做 GIF、用 Whisper 把语音转成文字。免费、开源，在 macOS、Windows 和 Linux 上无需联网即可运行。",
+  h1: `全部 ${FACTS.recipeCount} 个菜谱`,
+  crumb: "菜谱",
+  lead: "MediaChef 不要求你去背命令行参数。每件事都是一张卡片：把文件拖进来，选卡片，按开始。这里是随程序一起发布的完整目录——每个菜谱接受什么、给回什么，以及在应用的搜索框里输入什么可以找到它。",
+  // Разделы страницы. Категории из YAML сведены в них по смыслу
+  // результата — см. BUCKET в recipes.ts.
+  sections: {
+    speech: "语音、文字与字幕",
+    video: "视频",
+    audio: "音频",
+    advanced: "高级",
+  },
+  // Названия категорий совпадают с теми, что человек увидит в самом приложении.
+  cats: {
+    "extract": "提取",
+    "transcribe": "语音转文字",
+    "convert-video": "转换视频",
+    "convert-audio": "转换音频",
+    "compress": "压缩",
+    "cut": "剪切",
+    "geometry": "尺寸",
+    "gif": "GIF",
+    "audio-in-video": "视频里的声音",
+    "advanced": "高级",
+  },
+  accepts: "接受",
+  produces: "给回",
+  settings: "设置",
+  searchAs: "也可以这样搜到",
+  types: { video: "视频", audio: "音频", any: "任意文件" },
+  noParams: "无需设置。",
+  ctaTitle: "把整套拿走",
+  ctaSub: `MediaChef ${FACTS.version} — 免费、开源，macOS · Windows · Linux。`,
+  also: [
+    { page: "mp3", label: "把 MP4 转成 MP3 — 免费且离线" },
+    { page: "transcribe", label: "把音频转成文字 — 离线，用 Whisper" },
+  ],
+};
+
+export default { ui, landings, catalog };

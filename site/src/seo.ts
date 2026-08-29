@@ -68,6 +68,25 @@ export function breadcrumbLd(home: { name: string; url: string }, current: { nam
   };
 }
 
+/**
+ * Каталог рецептов как перечень. Элементы — просто имя и описание, без url:
+ * у рецепта нет отдельной страницы, он живёт секцией внутри каталога, и
+ * выдумывать ему адрес значило бы обещать поисковику несуществующую цель.
+ */
+export function itemListLd(items: readonly { name: string; description: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    numberOfItems: items.length,
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      description: it.description,
+    })),
+  };
+}
+
 export function howToLd(opts: {
   name: string;
   description: string;

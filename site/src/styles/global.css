@@ -307,7 +307,9 @@ section { padding: 60px 0; }
 p.lead { margin-top: 14px; color: var(--ink-2); max-width: 44em; font-size: 1.05rem; }
 .lead-tight { margin-top: 10px; }
 .sub-h { margin-top: 52px; font-size: 1.2rem; font-family: "Unbounded", "Manrope", sans-serif; font-weight: 600; }
-.onward { margin-top: 20px; font-weight: 700; font-size: 0.95rem; }
+/* Ссылок «дальше» может быть несколько (каталог и посадочная), поэтому flex
+   с переносом: на узком экране они встают столбиком, а не слипаются в строку. */
+.onward { margin-top: 20px; font-weight: 700; font-size: 0.95rem; display: flex; flex-wrap: wrap; gap: 8px 28px; }
 .onward a { color: var(--basil); text-decoration: none; }
 .onward a:hover { text-decoration: underline; }
 

@@ -88,6 +88,7 @@ export const ui = {
     { h: "Честный результат.", p: "Если в файле нет речи, MediaChef так и скажет: «Речь не обнаружена» — вместо пустого файла с зелёной галочкой." },
   ],
   recipesLink: "Подробный разбор: MP4 в MP3 →",
+  catalogLink: `Все ${FACTS.recipeCount} рецептов по категориям →`,
   trLink: "Подробный разбор: транскрибация аудио в текст →",
   privTitle: "Ваши файлы никуда не уезжают",
   privLead:
@@ -220,6 +221,7 @@ export const landings = {
     ctaTitle: "Достаньте MP3 из этого видео",
     ctaSub: `MediaChef ${FACTS.version} — бесплатно, открытый код, macOS · Windows · Linux.`,
     also: [
+      { page: "catalog", label: "Полный каталог рецептов по категориям" },
       { page: "transcribe", label: "Транскрибация аудио в текст — офлайн, через Whisper" },
       { page: "home", label: `Все ${FACTS.recipeCount} рецептов и как устроен MediaChef` },
     ],
@@ -280,10 +282,54 @@ export const landings = {
     ctaTitle: "Превратите эту запись в текст",
     ctaSub: `MediaChef ${FACTS.version} — Whisper работает локально, бесплатно и с открытым кодом.`,
     also: [
+      { page: "catalog", label: "Полный каталог рецептов по категориям" },
       { page: "mp3", label: "MP4 в MP3 — бесплатно и офлайн" },
       { page: "home", label: `Все ${FACTS.recipeCount} рецептов и как устроен MediaChef` },
     ],
   },
 };
 
-export default { ui, landings };
+/** Каталог рецептов: /<locale>/<slug>/. Названия рецептов, описания и алиасы
+ *  берутся из recipes/*.yaml — здесь только обвязка страницы. */
+export const catalog = {
+  title: `Все ${FACTS.recipeCount} рецептов MediaChef — видео, звук и расшифровка`,
+  description: "Полный набор рецептов MediaChef: конвертация видео и аудио, сжатие, обрезка, изменение размера, звук из видео, GIF, расшифровка речи в текст через Whisper. Бесплатно, открытый код, работает без интернета на macOS, Windows и Linux.",
+  h1: `Все ${FACTS.recipeCount} рецептов`,
+  crumb: "Рецепты",
+  lead: "MediaChef не заставляет учить ключи командной строки. Любая задача — карточка: бросьте файл, выберите карточку, нажмите старт. Здесь весь каталог как он есть: что рецепт принимает, что отдаёт и что набрать в поиске приложения, чтобы его найти.",
+  // Разделы страницы. Категории из YAML сведены в них по смыслу
+  // результата — см. BUCKET в recipes.ts.
+  sections: {
+    speech: "Речь, текст и субтитры",
+    video: "Видео",
+    audio: "Звук",
+    advanced: "Для продвинутых",
+  },
+  // Названия категорий совпадают с теми, что человек увидит в самом приложении.
+  cats: {
+    "extract": "Извлечение",
+    "transcribe": "Расшифровка",
+    "convert-video": "Конвертация видео",
+    "convert-audio": "Конвертация аудио",
+    "compress": "Сжатие",
+    "cut": "Обрезка",
+    "geometry": "Размер",
+    "gif": "GIF",
+    "audio-in-video": "Звук в видео",
+    "advanced": "Для продвинутых",
+  },
+  accepts: "Принимает",
+  produces: "Отдаёт",
+  settings: "Настройки",
+  searchAs: "Найдётся также по",
+  types: { video: "видео", audio: "аудио", any: "любой файл" },
+  noParams: "Настраивать нечего.",
+  ctaTitle: "Забрать весь набор",
+  ctaSub: `MediaChef ${FACTS.version} — бесплатно, открытый код, macOS · Windows · Linux.`,
+  also: [
+    { page: "mp3", label: "MP4 в MP3 — бесплатно и офлайн" },
+    { page: "transcribe", label: "Транскрибация аудио в текст — офлайн, через Whisper" },
+  ],
+};
+
+export default { ui, landings, catalog };

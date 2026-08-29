@@ -87,6 +87,7 @@ export const ui = {
     { h: "نتيجة صادقة.", p: "إن لم يكن في الملف كلام، يقولها MediaChef صراحة: «لم يُكتشف كلام» — بدل ملف فارغ بعلامة خضراء." },
   ],
   recipesLink: "الدليل الكامل: تحويل MP4 إلى MP3 ←",
+  catalogLink: `كل الوصفات الـ${FACTS.recipeCount} حسب الفئة ←`,
   trLink: "الدليل الكامل: تفريغ الصوت إلى نص ←",
   privTitle: "ملفاتك لا تسافر إلى أي مكان",
   privLead:
@@ -220,6 +221,7 @@ export const landings = {
     ctaTitle: "أخرج ملف MP3 من ذلك الفيديو",
     ctaSub: `MediaChef ${FACTS.version} — مجاني، مفتوح المصدر، macOS · Windows · Linux.`,
     also: [
+      { page: "catalog", label: "كتالوج الوصفات كاملًا، حسب الفئة" },
       { page: "transcribe", label: "تفريغ الصوت إلى نص — دون إنترنت، عبر Whisper" },
       { page: "home", label: `الوصفات الـ${FACTS.recipeCount} وكيف يعمل MediaChef` },
     ],
@@ -280,10 +282,54 @@ export const landings = {
     ctaTitle: "حوّل ذلك التسجيل إلى نص",
     ctaSub: `MediaChef ${FACTS.version} — ‏Whisper يعمل محلياً، مجاناً ومفتوح المصدر.`,
     also: [
+      { page: "catalog", label: "كتالوج الوصفات كاملًا، حسب الفئة" },
       { page: "mp3", label: "تحويل MP4 إلى MP3 — مجاناً ودون إنترنت" },
       { page: "home", label: `الوصفات الـ${FACTS.recipeCount} وكيف يعمل MediaChef` },
     ],
   },
 };
 
-export default { ui, landings };
+/** Каталог рецептов: /<locale>/<slug>/. Названия рецептов, описания и алиасы
+ *  берутся из recipes/*.yaml — здесь только обвязка страницы. */
+export const catalog = {
+  title: `كل وصفات MediaChef الـ${FACTS.recipeCount} — فيديو وصوت وتفريغ نصي`,
+  description: "كل الوصفات التي يأتي بها MediaChef: تحويل الفيديو والصوت، والضغط، والقص، وتغيير الحجم، واستخراج الصوت، وصنع GIF، وتفريغ الكلام إلى نص عبر Whisper. مجاني ومفتوح المصدر ويعمل بدون إنترنت على macOS وWindows وLinux.",
+  h1: `كل الوصفات الـ${FACTS.recipeCount}`,
+  crumb: "الوصفات",
+  lead: "لا يطلب منك MediaChef حفظ خيارات سطر الأوامر. كل مهمة بطاقة: أفلِت الملف، واختر البطاقة، واضغط ابدأ. هذا هو الكتالوج كاملًا كما يُسلَّم: ما تقبله كل وصفة، وما تعيده، وما يمكنك كتابته في بحث التطبيق للعثور عليها.",
+  // Разделы страницы. Категории из YAML сведены в них по смыслу
+  // результата — см. BUCKET в recipes.ts.
+  sections: {
+    speech: "الكلام والنص والترجمات",
+    video: "الفيديو",
+    audio: "الصوت",
+    advanced: "متقدّم",
+  },
+  // Названия категорий совпадают с теми, что человек увидит в самом приложении.
+  cats: {
+    "extract": "الاستخراج",
+    "transcribe": "التفريغ النصي",
+    "convert-video": "تحويل الفيديو",
+    "convert-audio": "تحويل الصوت",
+    "compress": "الضغط",
+    "cut": "القص",
+    "geometry": "الحجم",
+    "gif": "GIF",
+    "audio-in-video": "الصوت في الفيديو",
+    "advanced": "متقدّم",
+  },
+  accepts: "يقبل",
+  produces: "يعيد",
+  settings: "الإعدادات",
+  searchAs: "يُعثر عليها أيضًا بـ",
+  types: { video: "فيديو", audio: "صوت", any: "أي ملف" },
+  noParams: "لا شيء لضبطه.",
+  ctaTitle: "احصل على الطقم كاملًا",
+  ctaSub: `MediaChef ${FACTS.version} — مجاني ومفتوح المصدر، macOS · Windows · Linux.`,
+  also: [
+    { page: "mp3", label: "تحويل MP4 إلى MP3 — مجاناً ودون إنترنت" },
+    { page: "transcribe", label: "تفريغ الصوت إلى نص — دون إنترنت، عبر Whisper" },
+  ],
+};
+
+export default { ui, landings, catalog };

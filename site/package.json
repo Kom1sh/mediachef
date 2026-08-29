@@ -15,5 +15,8 @@
     "@fontsource/manrope": "^5.2.0",
     "@fontsource/unbounded": "^5.2.0",
     "astro": "^5.1.0"
+  },
+  "devDependencies": {
+    "yaml": "^2.9.0"
   }
 }
