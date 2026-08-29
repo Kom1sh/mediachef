@@ -61,8 +61,29 @@ const homePath = pathFor("home", locale);
     <meta name="theme-color" content="#F7F8FA" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0E1116" media="(prefers-color-scheme: dark)" />
     {jsonLd.map((ld) => <script type="application/ld+json" set:html={JSON.stringify(ld)} />)}
+
+    {/* Яндекс.Метрика, счётчик 112053786. Домен .com, а не .ru: с него отдаётся
+        тот же tag.js, но он не заблокирован там, где резолв mc.yandex.ru ломается.
+
+        `is:inline` обязателен — иначе Astro утащит сниппет в свой бандл и
+        перепишет, а сторонний счётчик должен уехать в страницу дословно.
+        Это единственный клиентский JS на сайте: всё остальное статика. */}
+    <script type="text/javascript" is:inline>
+        (function(m,e,t,r,i,k,a){
+            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document,'script','https://mc.yandex.com/metrika/tag.js?id=112053786', 'ym');
+
+        ym(112053786, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+    </script>
   </head>
   <body>
+    {/* Часть счётчика для отключённого JS. Живёт в body, а не в head: noscript
+        в голове документа невалиден. */}
+    <noscript><div><img src="https://mc.yandex.com/watch/112053786" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+
     <a class="skip" href="#main">{t.skipToContent}</a>
 
     <Nav locale={locale} page={page} homePath={homePath} />
