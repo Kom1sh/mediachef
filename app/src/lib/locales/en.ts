@@ -122,6 +122,24 @@ export const dict = {
   setWorkers: "Parallel conversions",
   setWorkersHint: "How many ffmpeg jobs run at once. Takes effect after a restart.",
 
+  // ── Updates ──────────────────────────────────────────────────────────────
+  // Проверка при старте молчалива; вслух отвечает только кнопка ниже.
+  setUpdates: "Updates",
+  setUpdatesHint: "Version {version} is installed.",
+  setUpdatesHintPlain: "Check whether a newer version is out.",
+  updCheck: "Check",
+  updChecking: "Checking…",
+  updCurrent: "This is the latest version.",
+  updFound: "Version {version} is out.",
+  updInstall: "Update",
+  updDownloading: "Downloading the update…",
+  updDownloadingPct: "Downloading the update — {percent}%",
+  updReady: "Update installed. Restart to finish.",
+  updRestart: "Restart",
+  updLater: "Later",
+  updFailed: "Could not check: {reason}",
+  updManual: "This copy was installed by a package manager — update it the same way.",
+
   // ── Recipe categories ────────────────────────────────────────────────────
   // One per key of `CATEGORY_ICON` in icons.ts, reached through `categoryLabel`
   // so an unknown category from the YAML catalog renders its own name instead of

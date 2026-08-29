@@ -157,9 +157,11 @@ fn one_of(v: String, allowed: &[&str], fallback: &str) -> String {
 pub fn sanitize(mut s: AppSettings) -> AppSettings {
     // Тот же список, что в src/lib/i18n.tsx. Незнакомое значение
     // (правка settings.json руками, откат на старую сборку) — «system».
-s.language = one_of(
+    s.language = one_of(
         s.language,
-        &["system", "en", "ru", "es", "pt", "fr", "de", "pl", "it", "ar", "zh"],
+        &[
+            "system", "en", "ru", "es", "pt", "fr", "de", "pl", "it", "ar", "zh",
+        ],
         "system",
     );
     s.theme = one_of(s.theme, &["system", "light", "dark"], "system");

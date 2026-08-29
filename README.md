@@ -116,6 +116,68 @@ The file is sanitized on the way in as well as on the way out, so a hand-edited
 `ffmpeg_workers: 99` is read as `3` rather than honoured, and an unparseable file
 or an unknown key falls back to the defaults above instead of stopping the app.
 
+## Installing (the channels we publish to)
+
+```bash
+# macOS — Apple Silicon
+brew tap kom1sh/mediachef https://github.com/Kom1sh/mediachef
+brew install --cask mediachef
+
+# Windows
+winget install Kom1sh.MediaChef
+scoop bucket add mediachef https://github.com/Kom1sh/mediachef && scoop install mediachef
+```
+
+The Homebrew cask and the Scoop bucket live in this repository — `Casks/` and
+`bucket/` at the root, which is where both tools look after a `tap`/`bucket add`
+of an arbitrary URL. That saves two satellite repositories that would need a
+second commit on every release. The winget manifests under `packaging/winget/`
+are a staging copy: the real ones go to `microsoft/winget-pkgs` by pull request.
+
+All three are regenerated from the published release, never by hand:
+
+```bash
+python3 scripts/packaging.py          # version from tauri.conf.json
+python3 scripts/packaging.py 0.7.0
+```
+
+It streams each asset from the release page to compute its sha256, so a manifest
+cannot end up describing a build that was never published. A manifest whose
+asset is missing from that release is skipped with a line saying which.
+
+## Updating in place
+
+The app checks `releases/latest/download/latest.json` once at start and offers
+what it finds; Settings has a manual check. Two properties are worth knowing
+before touching any of it:
+
+- **The check at start is silent about failure.** No network, run from source,
+  installed from a `.deb` — none of those are things the user asked about, so
+  none of them produce a message. Only the button in Settings answers out loud.
+- **The private signing key is required to build a release.**
+  `bundle.createUpdaterArtifacts` is on, so `tauri build` signs the update
+  packages and fails without a key. The `preflight` job in `release.yml` checks
+  the secret is present before spending twenty minutes on three runners.
+
+The keypair was generated with `tauri signer generate`. The public half is in
+`app/src-tauri/tauri.conf.json` under `plugins.updater.pubkey`; the private half
+belongs in exactly two places — the repository secret and an offline backup:
+
+```bash
+gh secret set TAURI_SIGNING_PRIVATE_KEY < ~/.tauri/mediachef.key
+```
+
+Losing it means no installed copy can ever be updated again: the public key is
+baked into every build that is already out there, and a package signed by a new
+key is rejected by design.
+
+`scripts/make-latest-json.py` builds the manifest in the `updater` job from the
+three `.sig` files the platform jobs produce. It derives each package name from
+its signature's filename rather than rebuilding it from a template, so the
+manifest cannot drift from whatever Tauri actually named the file, and it fails
+if any of the three platforms is missing rather than quietly publishing a
+manifest that leaves one of them behind.
+
 ## Tests
 
 Generate the media fixtures once — the core suite and the smoke runner both

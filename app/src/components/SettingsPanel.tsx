@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Bell, FolderOpen, Gauge, Languages, Monitor, Palette } from "lucide-react";
+import { Bell, FolderOpen, Gauge, Languages, Monitor, Palette, RefreshCw } from "lucide-react";
 import { useT, LOCALES, LOCALE_FLAGS, LOCALE_NAMES } from "../lib/i18n";
 import { Flag } from "./Flag";
 import { pickFolder } from "../lib/ipc";
+import { isUnsupportedInstall } from "../lib/updater";
+import type { Updater } from "../lib/useUpdater";
 import type { AppSettings } from "../lib/types";
 import type { LucideIcon } from "lucide-react";
 
@@ -163,11 +165,14 @@ export function SettingsPanel({
   settings: s,
   onChange,
   error,
+  updater,
 }: {
   settings: AppSettings;
   onChange: (s: AppSettings) => void;
   /** A failed save, shown where the user just clicked. */
   error?: string;
+  /** Общее с полосой над рабочей областью состояние обновления. */
+  updater: Updater;
 }) {
   const t = useT();
   const [pickError, setPickError] = useState("");
@@ -211,6 +216,18 @@ export function SettingsPanel({
     else if (s.output_dir) onChange({ ...s, output_mode: "fixed" });
     else void choose();
   };
+
+  // Строка под кнопкой проверки. Показывает только то, что человек сам вызвал:
+  // найденное обновление и ход установки живут в полосе наверху, дублировать их
+  // здесь незачем. Отдельно разобран случай, когда сборка поставлена способом,
+  // который обновляться сам не умеет (deb, пакетный менеджер) — это не поломка,
+  // а свойство установки, и звучать должно соответственно.
+  const u = updater.state;
+  const status =
+    u.kind === "current" ? t("updCurrent")
+    : u.kind === "failed" ? (isUnsupportedInstall(u.reason) ? t("updManual") : t("updFailed", { reason: u.reason }))
+    : "";
+  const busy = u.kind === "checking" || u.kind === "downloading";
 
   const notice = error || pickError;
   return (
@@ -280,6 +297,22 @@ export function SettingsPanel({
             choices={WORKERS}
             onPick={v => onChange({ ...s, ffmpeg_workers: Number(v) })}
           />
+        </Row>
+
+        <Row
+          icon={RefreshCw}
+          label={t("setUpdates")}
+          // Версия работающей сборки стоит именно здесь: это единственное место,
+          // где она человеку нужна — рядом с кнопкой «а есть ли новее».
+          hint={updater.current ? t("setUpdatesHint", { version: updater.current }) : t("setUpdatesHintPlain")}
+          footer={status ? <p className="w-full border-t border-line pt-3 text-xs text-ink-2">{status}</p> : undefined}
+        >
+          <button
+            type="button" onClick={updater.checkNow} disabled={busy}
+            className="shrink-0 rounded-md border border-line-strong bg-card-2 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-paper disabled:opacity-50"
+          >
+            {u.kind === "checking" ? t("updChecking") : t("updCheck")}
+          </button>
         </Row>
       </div>
     </section>

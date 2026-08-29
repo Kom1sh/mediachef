@@ -105,6 +105,22 @@ export const dict: Dict = {
   // that is running, so the setting and the queue name the same thing the same way.
   setWorkersHint: "Сколько задач ffmpeg выполняется одновременно. Применится после перезапуска.",
 
+  setUpdates: "Обновления",
+  setUpdatesHint: "Установлена версия {version}.",
+  setUpdatesHintPlain: "Проверить, не вышла ли новая версия.",
+  updCheck: "Проверить",
+  updChecking: "Проверяем…",
+  updCurrent: "Это последняя версия.",
+  updFound: "Вышла версия {version}.",
+  updInstall: "Обновить",
+  updDownloading: "Скачиваем обновление…",
+  updDownloadingPct: "Скачиваем обновление — {percent}%",
+  updReady: "Обновление установлено. Перезапустите, чтобы завершить.",
+  updRestart: "Перезапустить",
+  updLater: "Позже",
+  updFailed: "Не удалось проверить: {reason}",
+  updManual: "Эта копия поставлена через пакетный менеджер — обновляйте её тем же способом.",
+
   "cat_convert-video": "Конвертация видео",
   "cat_convert-audio": "Конвертация аудио",
   cat_extract: "Извлечение",

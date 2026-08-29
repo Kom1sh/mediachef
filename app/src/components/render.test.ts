@@ -17,6 +17,8 @@ import { FileCard } from "./FileCard";
 import { JobCard } from "./QueuePanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { DICTS, LocaleProvider, type Locale } from "../lib/i18n";
+import { UpdateBar } from "./UpdateBar";
+import type { Updater } from "../lib/useUpdater";
 import type { AppSettings, JobView } from "../lib/types";
 
 /** The component under the locale the app would give it. */
@@ -115,6 +117,17 @@ describe("JobCard", () => {
   });
 });
 
+/** Апдейтер в покое: настройки рисуются одинаково, пока никто не нажал «Проверить». */
+const idleUpdater: Updater = {
+  state: { kind: "idle" },
+  current: "0.6.1",
+  checkNow: () => {},
+  install: () => {},
+  restart: () => {},
+  dismiss: () => {},
+  dismissed: false,
+};
+
 describe("SettingsPanel", () => {
   /* Every control shows what is actually stored. The screen owns no state of its own,
      so a control bound to the wrong field (or to nothing) would show a choice the user
@@ -133,7 +146,7 @@ describe("SettingsPanel", () => {
     };
     const markup = render(
       "ru",
-      createElement(SettingsPanel, { settings, onChange: () => {}, error: "" }),
+      createElement(SettingsPanel, { settings, onChange: () => {}, error: "", updater: idleUpdater }),
     );
     // One radio group per stored choice, each with the stored value checked.
     for (const [name, value] of [
@@ -151,6 +164,76 @@ describe("SettingsPanel", () => {
     // And the fixed folder is printed, because a path the app will write into is not
     // something to keep behind a dialog.
     expect(markup).toContain("/Users/me/Готовое");
+  });
+
+  /* Версия работающей сборки и ответ на нажатие «Проверить» — единственное, что
+     эта строка обязана сказать. Найденное обновление и ход загрузки живут
+     в полосе наверху: если бы они дублировались здесь, два места про одно и то же
+     разошлись бы при первой же правке. */
+  it("shows the running version and answers a check that found nothing", () => {
+    const settings: AppSettings = {
+      language: "ru", theme: "dark", output_mode: "beside",
+      output_dir: null, notifications: false, ffmpeg_workers: 1,
+    };
+    const at = (state: Updater["state"]) =>
+      render("ru", createElement(SettingsPanel, {
+        settings, onChange: () => {}, error: "", updater: { ...idleUpdater, state },
+      }));
+
+    expect(at({ kind: "idle" })).toContain("Установлена версия 0.6.1.");
+    expect(at({ kind: "current" })).toContain("Это последняя версия.");
+    // Установка из пакетного менеджера — это свойство установки, а не поломка,
+    // и звучать она должна не как ошибка.
+    const deb = at({ kind: "failed", reason: "AppImage not supported" });
+    expect(deb).toContain("пакетный менеджер");
+    expect(deb).not.toContain("Не удалось проверить");
+    expect(at({ kind: "failed", reason: "dns error" })).toContain("Не удалось проверить: dns error");
+  });
+});
+
+describe("UpdateBar", () => {
+  const bar = (state: Updater["state"], over: Partial<Updater> = {}) =>
+    render("ru", createElement(UpdateBar, { updater: { ...idleUpdater, state, ...over } }));
+
+  /* Полоса заговаривает сама, поэтому молчать она должна везде, где сказать
+     нечего. Состояние «проверяем» и «всё актуально» сюда не относятся: о них
+     человек спросил в настройках, там и ответ. */
+  it("says nothing until there is something to install", () => {
+    for (const state of [
+      { kind: "idle" }, { kind: "checking" }, { kind: "current" },
+      { kind: "failed", reason: "dns error" },
+    ] as Updater["state"][]) {
+      expect(bar(state), state.kind).toBe("");
+    }
+  });
+
+  it("offers the found version, and goes quiet when dismissed", () => {
+    const found: Updater["state"] = { kind: "found", version: "0.7.0", notes: "" };
+    expect(bar(found)).toContain("Вышла версия 0.7.0.");
+    expect(bar(found, { dismissed: true })).toBe("");
+  });
+
+  /* Доля рисуется полосой только когда известен размер; иначе о ходе загрузки
+     говорят словами, а не врущей на глаз шкалой. */
+  it("draws a bar only for a download whose size is known", () => {
+    const known = bar({ kind: "downloading", percent: 0.42 });
+    expect(known).toContain("Скачиваем обновление — 42%");
+    expect(known).toContain("width:42%");
+
+    const unknown = bar({ kind: "downloading", percent: null });
+    expect(unknown).toContain("Скачиваем обновление…");
+    expect(unknown).not.toContain("width:");
+  });
+
+  /* Крестик есть только у предложения: убирать полосу, за которой идёт работа
+     или ждёт перезапуск, было бы некуда. */
+  it("can only be closed while it is still an offer", () => {
+    expect(bar({ kind: "found", version: "0.7.0", notes: "" })).toContain('aria-label="Позже"');
+    expect(bar({ kind: "downloading", percent: 0.5 })).not.toContain('aria-label="Позже"');
+
+    const ready = bar({ kind: "ready" });
+    expect(ready).toContain("Перезапустить");
+    expect(ready).not.toContain('aria-label="Позже"');
   });
 });
 

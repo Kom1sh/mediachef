@@ -8,6 +8,8 @@
     "dialog:default",
     "opener:default",
     "notification:default",
-    "core:event:default"
+    "core:event:default",
+    "updater:default",
+    "process:allow-restart"
   ]
 }

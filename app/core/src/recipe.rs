@@ -40,11 +40,16 @@ pub struct LocList(pub BTreeMap<String, Vec<String>>);
 
 fn check_locale_keys<V>(map: &BTreeMap<String, V>) -> Result<(), String> {
     if !map.contains_key("en") {
-        return Err("localised value has no `en` — it is the fallback for every other language".into());
+        return Err(
+            "localised value has no `en` — it is the fallback for every other language".into(),
+        );
     }
     for key in map.keys() {
         if !LOCALES.contains(&key.as_str()) {
-            return Err(format!("unknown language `{key}` (known: {})", LOCALES.join(", ")));
+            return Err(format!(
+                "unknown language `{key}` (known: {})",
+                LOCALES.join(", ")
+            ));
         }
     }
     Ok(())

@@ -8,6 +8,8 @@ import { RecipeList } from "./components/RecipeList";
 import { QueuePanel } from "./components/QueuePanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Sidebar, type Tab } from "./components/Sidebar";
+import { UpdateBar } from "./components/UpdateBar";
+import { useUpdater } from "./lib/useUpdater";
 import { LocaleProvider, makeT, resolveLocale, localeDir } from "./lib/i18n";
 import { getRecipes, getSettings, onJobUpdate, probeFile, setSettings as saveSettings, systemLocale } from "./lib/ipc";
 import { applicable, buildIndex, search } from "./lib/search";
@@ -233,6 +235,10 @@ export default function App() {
     document.documentElement.dir = localeDir(locale);
   }, [locale]);
 
+  // Проверка обновления живёт здесь, а не в настройках: её результат читают и
+  // полоса над рабочей областью, и строка в настройках, и расходиться им нельзя.
+  const updater = useUpdater();
+
   const index = useMemo(() => buildIndex(recipes), [recipes]);
   const results = useMemo(
     () => search(index, query, activeInfo?.media_type),
@@ -255,11 +261,16 @@ export default function App() {
           the icon plus the same 4px focus ring the wide rail is drawn for. At a 760px
           window the board goes from 312px to 344px — the width of one more chip on a
           file card's row. */}
-      <main className="grid h-screen grid-cols-[88px_minmax(0,1fr)_360px] max-[800px]:grid-cols-[56px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)] bg-paper text-ink">
+      {/* Колонка вокруг сетки, а не лишний ряд внутри неё: полосы обновления
+          обычно нет, а пустой ряд `auto` в grid забрал бы себе рельс, доску и
+          очередь и раздал бы им высоту по содержимому — со сломанной прокруткой. */}
+      <div className="flex h-screen flex-col bg-paper text-ink">
+      <UpdateBar updater={updater} />
+      <main className="grid min-h-0 flex-1 grid-cols-[88px_minmax(0,1fr)_360px] max-[800px]:grid-cols-[56px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)]">
         <Sidebar tab={tab} onTab={setTab} />
         {tab === "models" ? <ModelsPanel /> : tab === "settings" ? (
           settings
-            ? <SettingsPanel settings={settings} onChange={changeSettings} error={settingsError} />
+            ? <SettingsPanel settings={settings} onChange={changeSettings} error={settingsError} updater={updater} />
             // Either the round trip is still in flight (milliseconds) or it failed,
             // in which case the reason is the only thing this screen can honestly
             // show — controls without settings behind them would be a lie.
@@ -349,6 +360,7 @@ export default function App() {
           <QueuePanel recipes={recipes} notificationsEnabled={settings?.notifications ?? false} />
         </div>
       </main>
+      </div>
     </LocaleProvider>
   );
 }
