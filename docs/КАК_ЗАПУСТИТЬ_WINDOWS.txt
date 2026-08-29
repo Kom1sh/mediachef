@@ -1,9 +1,9 @@
-MediaChef 0.6.1 (Windows x64)
+MediaChef 0.7.0 (Windows x64)
 =============================
 
 УСТАНОВКА
 ---------
-1. Запусти MediaChef_0.6.1_x64-setup.exe.
+1. Запусти MediaChef_0.7.0_x64-setup.exe.
 2. SmartScreen может предупредить (установщик пока не подписан):
    «Подробнее» → «Выполнить в любом случае».
 3. WebView2 (движок интерфейса) установщик подтянет сам, если его нет.
@@ -21,7 +21,7 @@ whisper-cli.exe не нужны. Модели скачиваются в само
 
 INSTALL (EN)
 ------------
-1. Run MediaChef_0.6.1_x64-setup.exe.
+1. Run MediaChef_0.7.0_x64-setup.exe.
 2. SmartScreen may warn (unsigned yet): "More info" → "Run anyway".
 3. WebView2 is bootstrapped automatically if missing.
 
