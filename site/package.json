@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "indexnow": "node scripts/indexnow.mjs",
+    "deploy": "astro build && wrangler pages deploy dist --project-name=mediachef --branch=main && node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.0",
