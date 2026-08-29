@@ -42,7 +42,15 @@ const homePath = pathFor("home", locale);
     <link rel="canonical" href={canonical} />
     {alternates.map((a) => <link rel="alternate" hreflang={a.l} href={a.href} />)}
     <link rel="alternate" hreflang="x-default" href={xDefault} />
+    {/* Порядок не случаен. Первым — /favicon.ico: именно его роботы Яндекса и
+        Bing запрашивают вслепую, не читая разметку, и его у сайта не было
+        совсем. Дальше SVG для браузеров (Яндекс его тоже понимает и даже
+        предпочитает) и растр 120×120, который Яндекс называет удобным для
+        своих сервисов. Все три лежат в public/ и раздаются с корня без хеша
+        в имени — иначе слепой запрос /favicon.ico опять упрётся в 404. */}
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-120.png" type="image/png" sizes="120x120" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MediaChef" />

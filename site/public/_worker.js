@@ -84,8 +84,18 @@ export default {
     // Заголовки ответа ASSETS иммутабельны — правим копию.
     const out = new Response(asset.body, asset);
     for (const [name, value] of Object.entries(SECURITY)) out.headers.set(name, value);
-    const cc = cacheControlFor(url.pathname);
-    if (cc) out.headers.set("cache-control", cc);
+    // Долгий кеш — только на успешный ответ. Раньше max-age вешался на любой,
+    // включая 404, и это выстрелило: сразу после выкладки часть узлов ещё
+    // отдаёт прошлую сборку, её 404 на новый файл получал `max-age=86400`
+    // и залипал в кеше на сутки — свежий /favicon.ico был не виден никому,
+    // включая роботов. Ошибку не кешируем вовсе: пусть следующий запрос
+    // дойдёт до узла, который уже обновился.
+    if (out.ok) {
+      const cc = cacheControlFor(url.pathname);
+      if (cc) out.headers.set("cache-control", cc);
+    } else {
+      out.headers.set("cache-control", "no-store");
+    }
     return out;
   },
 };
