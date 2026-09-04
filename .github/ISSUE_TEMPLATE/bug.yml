@@ -1,0 +1,50 @@
+name: Something is broken
+description: A conversion failed, the app misbehaved, or a file came out wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write in whatever language you are comfortable with — English and Russian
+        are read directly, everything else through a translator. A short report
+        in your own words beats a polished one you never send.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got instead.
+      placeholder: |
+        I dropped a 40-minute MP4, picked "Extract audio to MP3" at 192k, pressed start.
+        The job went red after a few seconds. No MP3 next to the video.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: MediaChef version and system
+      description: >-
+        Settings shows the version. The app's own "Something is broken" button
+        fills this in for you.
+      placeholder: 0.7.0 · macos aarch64
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Error text, if there was one
+      description: >-
+        A failed job in the queue has a button that copies its log. Paste it here —
+        it usually names the cause outright.
+      render: text
+
+  - type: textarea
+    id: file
+    attributes:
+      label: About the file, if the problem is one specific file
+      description: >-
+        Format, rough length and size are enough. Please do not attach the file
+        itself unless asked; it is yours and we do not need it to start.
+      placeholder: MP4 from an iPhone, about 40 minutes, 1.8 GB

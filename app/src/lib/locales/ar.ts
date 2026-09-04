@@ -105,6 +105,11 @@ export const dict: Dict = {
   updFailed: "تعذّر التحقّق: {reason}",
   updManual: "ثُبِّتت هذه النسخة عبر مدير حزم — حدِّثها بالطريقة نفسها.",
 
+  setFeedback: "الملاحظات",
+  setFeedbackHint: "يفتح تقريرًا مُعدًّا في المتصفح. لا يُرسَل شيء من هنا.",
+  fbBug: "شيء لا يعمل",
+  fbIdea: "اقترح شيئًا",
+
   "cat_convert-video": "تحويل الفيديو",
   "cat_convert-audio": "تحويل الصوت",
   cat_extract: "الاستخراج",

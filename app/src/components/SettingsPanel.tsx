@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Bell, FolderOpen, Gauge, Languages, Monitor, Palette, RefreshCw } from "lucide-react";
+import { Bell, FolderOpen, Gauge, Languages, MessageSquare, Monitor, Palette, RefreshCw } from "lucide-react";
 import { useT, LOCALES, LOCALE_FLAGS, LOCALE_NAMES } from "../lib/i18n";
 import { Flag } from "./Flag";
 import { pickFolder } from "../lib/ipc";
+import { openFeedback } from "../lib/feedback";
 import { isUnsupportedInstall } from "../lib/updater";
 import type { Updater } from "../lib/useUpdater";
 import type { AppSettings } from "../lib/types";
@@ -313,6 +314,25 @@ export function SettingsPanel({
           >
             {u.kind === "checking" ? t("updChecking") : t("updCheck")}
           </button>
+        </Row>
+
+        {/* Единственная внешняя ссылка в приложении. До неё человеку, у которого
+            что-то не сработало, было физически некуда пойти из окна. */}
+        <Row icon={MessageSquare} label={t("setFeedback")} hint={t("setFeedbackHint")}>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button" onClick={() => void openFeedback("bug")}
+              className="shrink-0 rounded-md border border-line-strong bg-card-2 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-paper"
+            >
+              {t("fbBug")}
+            </button>
+            <button
+              type="button" onClick={() => void openFeedback("idea")}
+              className="shrink-0 rounded-md border border-line-strong bg-card-2 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-paper"
+            >
+              {t("fbIdea")}
+            </button>
+          </div>
         </Row>
       </div>
     </section>

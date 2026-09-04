@@ -1,0 +1,38 @@
+name: Suggest something
+description: A recipe, a format, a language, or anything that would make MediaChef fit your work better.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write in whatever language you are comfortable with. What matters most is
+        the second field: the job you were trying to get done. A described task
+        gets solved; a described solution often gets solved the wrong way.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What you would like
+      placeholder: A recipe that burns subtitles into the video instead of writing an SRT next to it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: What you were trying to do
+      description: >-
+        The actual task, not the feature. This is what decides whether the answer
+        is a new recipe, a parameter on an existing one, or something else entirely.
+      placeholder: >-
+        I post clips to Instagram, and there subtitles have to be part of the picture —
+        a separate SRT file is ignored.
+    validations:
+      required: true
+
+  - type: input
+    id: today
+    attributes:
+      label: How you do it today
+      description: If you already have a way, what is wrong with it.
+      placeholder: HandBrake, but it re-encodes the whole thing and takes half an hour.

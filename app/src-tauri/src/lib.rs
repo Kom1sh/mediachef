@@ -347,6 +347,18 @@ fn system_locale() -> String {
     sys_locale::get_locale().unwrap_or_default()
 }
 
+/// Система и разрядность — «macos aarch64», «windows x86_64».
+///
+/// Нужны ровно для одного: подставить их в отчёт об ошибке. Сообщение «не
+/// работает конвертация» без системы и разрядности разобрать нельзя, а спрашивать
+/// это у человека письмом — потерять половину отвечающих. Берём из констант
+/// компилятора, поэтому цифры описывают именно ту сборку, которая запущена,
+/// а не то, что о ней думает webview.
+#[tauri::command]
+fn platform_info() -> String {
+    format!("{} {}", std::env::consts::OS, std::env::consts::ARCH)
+}
+
 #[tauri::command(async)]
 fn pick_folder(app: AppHandle) -> Option<String> {
     use tauri_plugin_dialog::DialogExt;
@@ -809,7 +821,8 @@ pub fn run() {
             settings_get,
             settings_set,
             pick_folder,
-            system_locale
+            system_locale,
+            platform_info
         ])
         // `build` + `run(callback)` rather than plain `run(context)`, which is the
         // same thing with an empty callback — the callback is the only place a

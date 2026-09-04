@@ -42,3 +42,5 @@ export const setSettings = (s: AppSettings) => invoke<AppSettings>("settings_set
 export const pickFolder = () => invoke<string | null>("pick_folder");
 /** Язык ОС как BCP-47. Пустая строка — система не сказала. */
 export const systemLocale = () => invoke<string>("system_locale");
+/** Система и разрядность запущенной сборки — для отчёта об ошибке. */
+export const platformInfo = () => invoke<string>("platform_info");

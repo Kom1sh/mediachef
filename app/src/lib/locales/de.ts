@@ -104,6 +104,11 @@ export const dict: Dict = {
   updFailed: "Prüfen nicht möglich: {reason}",
   updManual: "Diese Kopie wurde über einen Paketmanager installiert — aktualisieren Sie sie ebenso.",
 
+  setFeedback: "Rückmeldung",
+  setFeedbackHint: "Öffnet einen vorbereiteten Bericht im Browser. Von hier wird nichts gesendet.",
+  fbBug: "Etwas funktioniert nicht",
+  fbIdea: "Etwas vorschlagen",
+
   "cat_convert-video": "Video umwandeln",
   "cat_convert-audio": "Audio umwandeln",
   cat_extract: "Extrahieren",

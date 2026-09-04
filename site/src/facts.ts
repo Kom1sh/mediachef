@@ -8,8 +8,13 @@ export const SITE = "https://mediachef.app";
 const RELEASES = "https://github.com/Kom1sh/mediachef/releases/latest";
 const GITHUB = "https://github.com/Kom1sh/mediachef";
 const NOTICE = "https://github.com/Kom1sh/mediachef/blob/main/NOTICE.md";
+// Единственный канал обратной связи, который работает сегодня. Когда на домене
+// появится почта (Cloudflare Email Routing), сюда встанет `mailto:` — от аккаунта
+// GitHub человек, пришедший по рекомендации ассистента, отказывается чаще, чем
+// пишет письмо. Меняется одна строка, всё остальное уже готово.
+const FEEDBACK = "https://github.com/Kom1sh/mediachef/issues/new/choose";
 
-export const LINKS = { releases: RELEASES, github: GITHUB, notice: NOTICE };
+export const LINKS = { releases: RELEASES, github: GITHUB, notice: NOTICE, feedback: FEEDBACK };
 
 export const FACTS = {
   version: "0.7.0",

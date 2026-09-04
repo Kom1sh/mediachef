@@ -140,6 +140,15 @@ export const dict = {
   updFailed: "Could not check: {reason}",
   updManual: "This copy was installed by a package manager — update it the same way.",
 
+  // ── Feedback ─────────────────────────────────────────────────────────────
+  // Единственная внешняя ссылка в приложении. Открывает форму в браузере,
+  // само ничего не отправляет — иначе обещание «файлы не уезжают» стало бы
+  // условным.
+  setFeedback: "Feedback",
+  setFeedbackHint: "Opens a prefilled report in your browser. Nothing is sent from here.",
+  fbBug: "Something is broken",
+  fbIdea: "Suggest something",
+
   // ── Recipe categories ────────────────────────────────────────────────────
   // One per key of `CATEGORY_ICON` in icons.ts, reached through `categoryLabel`
   // so an unknown category from the YAML catalog renders its own name instead of

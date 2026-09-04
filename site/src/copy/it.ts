@@ -143,6 +143,7 @@ export const ui = {
     license: "Licenza GPL-3.0",
     notice: "Cosa c'è dentro — NOTICE.md",
     sourceCode: "Codice sorgente su GitHub",
+    feedback: "Segnalare un problema o chiedere una funzione",
     releases: "Tutte le versioni",
     langLabel: "Lingua",
     // Подпись на схеме окна приложения в hero.
