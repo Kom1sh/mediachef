@@ -38,13 +38,13 @@ $Out = Join-Path $Repo 'app/src-tauri/binaries'
 # и «latest», — под теми же адресами лежит меняющееся содержимое. Брать только
 # versioned-релиз autobuild-ГГГГ-ММ-ДД-ЧЧ-ММ. Релиз и версия те же, что у
 # linux-скрипта: одна поставка ffmpeg на две платформы.
-$BtbnTag = 'autobuild-2026-08-19-19-21'
-$FfmpegVersion = 'n9.0.1-6-g9d4ca21220'
+$BtbnTag = 'autobuild-2026-09-03-13-17'
+$FfmpegVersion = 'n9.0.1-11-ge47273f4d9'
 $FfmpegArchive = "ffmpeg-$FfmpegVersion-win64-gpl-9.0.zip"
 $FfmpegArchiveUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/$BtbnTag/$FfmpegArchive"
-$FfmpegArchiveSha = 'cd46a93210aaabd7d56c36e5d82d12568456ecc47ce2c03cae7485cb3ee11274'
-$FfmpegBinSha = '52abe5768c7078ada552188d023c0f7c1fbb02dbdb7cde5b48eae1066ee876cb'
-$FfprobeBinSha = 'b0e3dbeec1a5795192717c4e95e5c733a72da4b533f86f8d55b0c9e6f4770ad6'
+$FfmpegArchiveSha = 'cf2beec370200044af55f6bed072bb7aa4cdf49901812e249c8a00ce2a7cba0c'
+$FfmpegBinSha = '201e75ed6372057c8c6a70bbffdb498724b1662c620e837dfae9147a4472ef1c'
+$FfprobeBinSha = '20ff4fea81502abcfc0de0fd062fed0afa5387c672a1ccaf89b6791f86d37809'
 
 # whisper.cpp: тот же тег, что на маке и линуксе, — одна версия движка на все
 # поставки. Флаги:

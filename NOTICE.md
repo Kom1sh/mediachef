@@ -16,7 +16,7 @@ Windows/Linux get FFmpeg from different builders.
 | Build | Files | Ships in | License |
 | --- | --- | --- | --- |
 | FFmpeg **9.0.1**, macOS arm64 static build by ffmpeg.martin-riedl.de | `ffmpeg`, `ffprobe` | macOS (Apple Silicon): `.app`, `.dmg`, `.zip` | GPL v3 |
-| FFmpeg **n9.0.1-6-g9d4ca21220** from BtbN/FFmpeg-Builds (`win64-gpl`, `linux64-gpl`) | `ffmpeg(.exe)`, `ffprobe(.exe)` | Windows installer; Linux AppImage and `.deb` | GPL v3 |
+| FFmpeg **n9.0.1-11-ge47273f4d9** from BtbN/FFmpeg-Builds (`win64-gpl`, `linux64-gpl`) | `ffmpeg(.exe)`, `ffprobe(.exe)` | Windows installer; Linux AppImage and `.deb` | GPL v3 |
 | whisper.cpp **v1.7.6**, compiled from source in our CI | `whisper-cli(.exe)` | all three platforms | MIT |
 
 ### FFmpeg 9.0.1 — macOS arm64 (builder: Martin Riedl)
@@ -36,12 +36,12 @@ Windows/Linux get FFmpeg from different builders.
   licensed and therefore GPLv3-compatible, which is why no non-free flag is
   needed and why the result stays redistributable.
 
-### FFmpeg n9.0.1-6-g9d4ca21220 — Windows x64, Linux x64 (builder: BtbN)
+### FFmpeg n9.0.1-11-ge47273f4d9 — Windows x64, Linux x64 (builder: BtbN)
 
 - Obtained from release
-  <https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-08-19-19-21>
-  — assets `ffmpeg-n9.0.1-6-g9d4ca21220-win64-gpl-9.0.zip` and
-  `ffmpeg-n9.0.1-6-g9d4ca21220-linux64-gpl-9.0.tar.xz`, pinned by SHA-256 in
+  <https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-09-03-13-17>
+  — assets `ffmpeg-n9.0.1-11-ge47273f4d9-win64-gpl-9.0.zip` and
+  `ffmpeg-n9.0.1-11-ge47273f4d9-linux64-gpl-9.0.tar.xz`, pinned by SHA-256 in
   `scripts/fetch-sidecars-windows.ps1` and `scripts/fetch-sidecars-linux.sh`.
 - Upstream source: the version string is `git describe` output, so the exact
   revision is FFmpeg commit `9d4ca21220`, six commits after tag `n9.0.1` on the

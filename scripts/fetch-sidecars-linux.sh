@@ -29,13 +29,13 @@ OUT="app/src-tauri/binaries"
 # GPL-3.0). Линия n9.0.1 — самая свежая версионная в этом релизе (там же есть
 # master-снапшот N-126217 и линия n8.1.2, они нам не нужны). Обе sha сверены с
 # checksums.sha256 из ассетов того же релиза.
-BTBN_TAG="autobuild-2026-08-19-19-21"
-FFMPEG_VERSION="n9.0.1-6-g9d4ca21220"
+BTBN_TAG="autobuild-2026-09-03-13-17"
+FFMPEG_VERSION="n9.0.1-11-ge47273f4d9"
 FFMPEG_ARCHIVE="ffmpeg-$FFMPEG_VERSION-linux64-gpl-9.0.tar.xz"
 FFMPEG_ARCHIVE_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/$BTBN_TAG/$FFMPEG_ARCHIVE"
-FFMPEG_ARCHIVE_SHA="281e0717db7b4fc1d3326e92fef6f2fd716b6a833e0f093e1b750848da7c69c5"
-FFMPEG_BIN_SHA="a2c66e9918b0eb1619cd4a3b029860c8aafcee86c7c9a415761f225e0640d1df"
-FFPROBE_BIN_SHA="138a6f6079913f202f953fe8801af1a4e460b7cd3e3e145c9d33a867c1e50202"
+FFMPEG_ARCHIVE_SHA="61b26047e134db2caa32d1391a707bd260e549fb80c80bf5b26bfa2c7179b048"
+FFMPEG_BIN_SHA="1ccb9e5a3d0e8f50e93f551541fae67f04b31e679f6334b9436aeb380c66ae91"
+FFPROBE_BIN_SHA="e338afbef8729f89da3f9f593d10d723481532d450109fe26f8fdf83c56dec95"
 
 # whisper.cpp: тот же тег, что на маке, — одна версия движка на все поставки.
 # Флаги отличаются от маковых ровно платформой: Metal тут нет, зато нужны те же

@@ -21,13 +21,13 @@ release cut right after a green CI run fetches nothing and builds nothing.
 
 | | macOS arm64 | Linux x64 | Windows x64 |
 |---|---|---|---|
-| Version | `9.0.1` | `n9.0.1-6-g9d4ca21220` | `n9.0.1-6-g9d4ca21220` |
+| Version | `9.0.1` | `n9.0.1-11-ge47273f4d9` | `n9.0.1-11-ge47273f4d9` |
 | Builder | ffmpeg.martin-riedl.de (release build, GPL) | BtbN/FFmpeg-Builds `linux64-gpl` | BtbN/FFmpeg-Builds `win64-gpl` |
-| Release | `download/macos/arm64/1787073674_9.0.1` | tag `autobuild-2026-08-19-19-21` | tag `autobuild-2026-08-19-19-21` |
-| Archive | `ffmpeg.zip` + `ffprobe.zip` (separate) | `ffmpeg-n9.0.1-6-g9d4ca21220-linux64-gpl-9.0.tar.xz` | `ffmpeg-n9.0.1-6-g9d4ca21220-win64-gpl-9.0.zip` |
-| Archive sha256 | `8287a1b2…07fe` / `102a26b8…741a` | `281e0717…c69c5` | `cd46a932…1274` |
-| ffmpeg sha256 | `393e4c39…1611` | `a2c66e99…d1df` | `52abe576…76cb` |
-| ffprobe sha256 | `7abc49fb…71bc` | `138a6f60…0202` | `b0e3dbee…70ad6` |
+| Release | `download/macos/arm64/1787073674_9.0.1` | tag `autobuild-2026-09-03-13-17` | tag `autobuild-2026-09-03-13-17` |
+| Archive | `ffmpeg.zip` + `ffprobe.zip` (separate) | `ffmpeg-n9.0.1-11-ge47273f4d9-linux64-gpl-9.0.tar.xz` | `ffmpeg-n9.0.1-11-ge47273f4d9-win64-gpl-9.0.zip` |
+| Archive sha256 | `8287a1b2…07fe` / `102a26b8…741a` | `61b26047…b048` | `cf2beec3…ba0c` |
+| ffmpeg sha256 | `393e4c39…1611` | `1ccb9e5a…ae91` | `201e75ed…ef1c` |
+| ffprobe sha256 | `7abc49fb…71bc` | `e338afbe…ec95` | `20ff4fea…7809` |
 | Pins live in | `scripts/fetch-sidecars.sh:28-33` | `scripts/fetch-sidecars-linux.sh:31-37` | `scripts/fetch-sidecars-windows.ps1:34-40` |
 
 Notes:
@@ -39,18 +39,38 @@ Notes:
 - **Both sha sources agree.** Each pinned value was computed locally from the
   actual download *and* compared with the checksum the builder publishes —
   `checksums.sha256` among BtbN's release assets, and `<file>.zip.sha256` next
-  to each martin-riedl zip. Verified 2026-08-19.
+  to each martin-riedl zip. martin-riedl verified 2026-08-19, BtbN re-verified
+  2026-09-04 on the re-pin below.
 - **No floating tags.** BtbN also publishes a release tagged `latest`, and
   assets whose names carry "master" and "latest" in place of a version; both
   change contents under a stable URL and neither may be used here. The pin must
   be an `autobuild-YYYY-MM-DD-HH-MM` tag.
-  `n9.0.1-6-g9d4ca21220` is the newest *version line* in that release (it also
-  carries a master snapshot `N-126217-ge1e325235e` and an `n8.1.2-44` line,
+  `n9.0.1-11-ge47273f4d9` is the newest *version line* in that release (it also
+  carries a master snapshot `N-126390-g9fc8c785e2` and an `n8.1.2-50` line,
   which we do not use).
-- **BtbN prunes old autobuilds.** The releases list currently reaches back to
-  `autobuild-2024-09-30-15-36`, but retention is theirs, not ours: if a pinned
-  tag ever 404s, re-pin to a fresh versioned release (never to `latest`) and
-  redo the sha cross-check.
+- **BtbN prunes old autobuilds, and the window is about a week.** This is not
+  theoretical: the v0.7.1 release failed on it. The pin was
+  `autobuild-2026-08-19-19-21`, sixteen days old, and by then the releases list
+  reached back only to `autobuild-2026-08-28`. Linux and Windows both died on a
+  404 from the fetch script; macOS was fine, because martin-riedl serves stable
+  numbered releases and prunes nothing.
+
+  What made it survivable for a while is the `binaries/` cache: as long as a
+  cache entry exists, the script restores it and never touches the network. The
+  0.7.0 release, four days earlier, hit the cache and passed — so the pin was
+  already dead then and nobody could tell. The failure surfaced only when
+  GitHub evicted the Windows and Linux entries.
+
+  **Consequence for whoever cuts the next release: a pin older than about a
+  week is a landmine, and a green earlier release proves nothing about it.**
+  Either re-pin as part of release prep, or mirror the two archives onto an
+  asset of our own release and point the scripts there — the second removes the
+  problem permanently and is the better fix if this bites again.
+
+  When re-pinning: pick a fresh versioned release (never `latest`), redo the
+  sha cross-check, and remember there are **five** values per platform — tag,
+  version, archive sha and two binary shas. The doc tables carry truncated
+  shas; do not reconstruct full values from them, read the scripts.
 - **The two ffmpeg lines are deliberately different builders.** martin-riedl is
   the only source of static macOS arm64 builds; BtbN is the standard source for
   linux64/win64. Versions happen to agree at 9.0.1 today; they are not required
@@ -169,8 +189,8 @@ that layout is what NSIS copies into Program Files).
    sidecars are unsigned throughout.
 2. **NOTICE must list the ffmpeg builds separately.** macOS ships ffmpeg
    **9.0.1** from `https://ffmpeg.martin-riedl.de/download/macos/arm64/1787073674_9.0.1`;
-   Linux and Windows ship **n9.0.1-6-g9d4ca21220** from
-   `https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-08-19-19-21`
+   Linux and Windows ship **n9.0.1-11-ge47273f4d9** from
+   `https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-09-03-13-17`
    (`linux64-gpl` / `win64-gpl`). Both are GPL builds, so the GPL-3.0 notice
    needs upstream sources (ffmpeg.org, tag `n9.0.1`) plus the build recipes
    (the two builder projects). whisper.cpp is MIT, tag `v1.7.6`, from
