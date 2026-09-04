@@ -31,6 +31,16 @@ import gifPl from "./copy/gif/pl";
 import gifIt from "./copy/gif/it";
 import gifAr from "./copy/gif/ar";
 import gifZh from "./copy/gif/zh";
+import compressEn from "./copy/compress/en";
+import compressRu from "./copy/compress/ru";
+import compressEs from "./copy/compress/es";
+import compressPt from "./copy/compress/pt";
+import compressFr from "./copy/compress/fr";
+import compressDe from "./copy/compress/de";
+import compressPl from "./copy/compress/pl";
+import compressIt from "./copy/compress/it";
+import compressAr from "./copy/compress/ar";
+import compressZh from "./copy/compress/zh";
 import { type Locale, type PageId } from "./content";
 
 type Row = readonly string[];
@@ -82,7 +92,7 @@ export interface GuideCopy {
 }
 
 /** Идентификаторы гайдов. Растёт по одному на рецепт. */
-export type GuideId = "gif";
+export type GuideId = "gif" | "compress";
 
 export const GUIDES: Record<GuideId, Record<Locale, GuideCopy>> = {
   gif: {
@@ -96,6 +106,18 @@ export const GUIDES: Record<GuideId, Record<Locale, GuideCopy>> = {
     it: gifIt,
     ar: gifAr,
     zh: gifZh,
+  },
+  compress: {
+    en: compressEn,
+    ru: compressRu,
+    es: compressEs,
+    pt: compressPt,
+    fr: compressFr,
+    de: compressDe,
+    pl: compressPl,
+    it: compressIt,
+    ar: compressAr,
+    zh: compressZh,
   },
 };
 
