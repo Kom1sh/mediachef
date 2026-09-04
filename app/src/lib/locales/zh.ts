@@ -105,7 +105,7 @@ export const dict: Dict = {
   updManual: "这份副本由包管理器安装 — 请用同样的方式更新。",
 
   setFeedback: "反馈",
-  setFeedbackHint: "会在浏览器里打开已填好的报告。这里不会发送任何东西。",
+  setFeedbackHint: "会写信到 {email}，版本和系统已经填好。这里不会发送任何东西。",
   fbBug: "有问题",
   fbIdea: "提个建议",
 

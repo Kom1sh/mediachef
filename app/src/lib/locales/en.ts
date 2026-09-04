@@ -145,7 +145,7 @@ export const dict = {
   // само ничего не отправляет — иначе обещание «файлы не уезжают» стало бы
   // условным.
   setFeedback: "Feedback",
-  setFeedbackHint: "Opens a prefilled report in your browser. Nothing is sent from here.",
+  setFeedbackHint: "Writes to {email} with your version and system already filled in. Nothing is sent from here.",
   fbBug: "Something is broken",
   fbIdea: "Suggest something",
 

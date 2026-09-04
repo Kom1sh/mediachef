@@ -105,7 +105,7 @@ export const dict: Dict = {
   updManual: "Diese Kopie wurde über einen Paketmanager installiert — aktualisieren Sie sie ebenso.",
 
   setFeedback: "Rückmeldung",
-  setFeedbackHint: "Öffnet einen vorbereiteten Bericht im Browser. Von hier wird nichts gesendet.",
+  setFeedbackHint: "Schreibt an {email}, Version und System sind schon eingetragen. Von hier wird nichts gesendet.",
   fbBug: "Etwas funktioniert nicht",
   fbIdea: "Etwas vorschlagen",
 

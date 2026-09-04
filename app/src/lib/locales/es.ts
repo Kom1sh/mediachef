@@ -106,7 +106,7 @@ export const dict: Dict = {
   updManual: "Esta copia se instaló con un gestor de paquetes: actualízala del mismo modo.",
 
   setFeedback: "Comentarios",
-  setFeedbackHint: "Abre un informe ya rellenado en tu navegador. Desde aquí no se envía nada.",
+  setFeedbackHint: "Escribe a {email} con tu versión y sistema ya rellenados. Desde aquí no se envía nada.",
   fbBug: "Algo no funciona",
   fbIdea: "Proponer algo",
 

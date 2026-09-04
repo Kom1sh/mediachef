@@ -3,7 +3,7 @@ import { Bell, FolderOpen, Gauge, Languages, MessageSquare, Monitor, Palette, Re
 import { useT, LOCALES, LOCALE_FLAGS, LOCALE_NAMES } from "../lib/i18n";
 import { Flag } from "./Flag";
 import { pickFolder } from "../lib/ipc";
-import { openFeedback } from "../lib/feedback";
+import { openFeedback, FEEDBACK_EMAIL } from "../lib/feedback";
 import { isUnsupportedInstall } from "../lib/updater";
 import type { Updater } from "../lib/useUpdater";
 import type { AppSettings } from "../lib/types";
@@ -318,20 +318,26 @@ export function SettingsPanel({
 
         {/* Единственная внешняя ссылка в приложении. До неё человеку, у которого
             что-то не сработало, было физически некуда пойти из окна. */}
-        <Row icon={MessageSquare} label={t("setFeedback")} hint={t("setFeedbackHint")}>
+        <Row
+          icon={MessageSquare}
+          label={t("setFeedback")}
+          // Адрес в подсказке текстом: `mailto:` молча ничего не делает, если
+          // почтовый клиент в системе не настроен, и тогда написанный адрес —
+          // единственное, что остаётся человеку.
+          hint={t("setFeedbackHint", { email: FEEDBACK_EMAIL })}
+        >
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button" onClick={() => void openFeedback("bug")}
-              className="shrink-0 rounded-md border border-line-strong bg-card-2 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-paper"
-            >
-              {t("fbBug")}
-            </button>
-            <button
-              type="button" onClick={() => void openFeedback("idea")}
-              className="shrink-0 rounded-md border border-line-strong bg-card-2 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-paper"
-            >
-              {t("fbIdea")}
-            </button>
+            {/* Тема письма — подпись нажатой кнопки: она уже переведена и точно
+                описывает то, что человек выбрал. */}
+            {([t("fbBug"), t("fbIdea")] as const).map((label) => (
+              <button
+                key={label}
+                type="button" onClick={() => void openFeedback(label)}
+                className="shrink-0 rounded-md border border-line-strong bg-card-2 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-paper"
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </Row>
       </div>
