@@ -1,0 +1,247 @@
+---
+// Страница-гайд: подробный разбор одной задачи.
+//
+// Порядок разделов задан не вкусом, а тем, как страницу читают. Прямой ответ
+// и сводка фактов стоят ДО всего остального: и человек, пришедший за одним
+// числом, и движок, собирающий ответ, находят его в первых ста словах. Дальше
+// шаги, таблицы с измерениями, честный раздел «когда не надо» и большой FAQ.
+//
+// Клиентского JS здесь нет, как и на всём сайте: ChatGPT его не исполняет,
+// и страница обязана быть полной в исходном HTML.
+import Base from "./Base.astro";
+import Toc from "../components/Toc.astro";
+import Ctas from "../components/Ctas.astro";
+import Contact from "../components/Contact.astro";
+import Shot from "../components/Shot.astro";
+import { T, SITE, pathFor, type Locale, type PageId } from "../content";
+import { GUIDES, type GuideId } from "../guides";
+import { SHOTS } from "../shots";
+import {
+  organizationLd,
+  softwareApplicationLd,
+  breadcrumbLd,
+  howToLd,
+  faqLd,
+  guideArticleLd,
+  guideBody,
+} from "../seo";
+
+interface Props { locale: Locale; guide: GuideId; page: PageId }
+const { locale, guide, page } = Astro.props;
+const t = T[locale];
+const g = GUIDES[guide][locale];
+
+const pageUrl = SITE + pathFor(page, locale);
+const homePath = pathFor("home", locale);
+const check = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
+
+const jsonLd = [
+  organizationLd(),
+  softwareApplicationLd(locale, pageUrl),
+  breadcrumbLd(
+    { name: t.breadcrumbHome, url: SITE + homePath },
+    { name: g.crumb, url: pageUrl },
+  ),
+  guideArticleLd({
+    locale,
+    url: pageUrl,
+    headline: g.h1,
+    description: g.description,
+    body: guideBody(g),
+    imageUrl: SITE + SHOTS[locale].light,
+  }),
+  howToLd({ name: g.stepsTitle, description: g.description, url: pageUrl, steps: g.steps }),
+  faqLd(g.faq),
+];
+---
+
+<Base locale={locale} page={page} title={g.title} description={g.description} jsonLd={jsonLd} ogType="article">
+  <main id="main">
+    <div class="band band-hero">
+      <div class="wrap guide-hero">
+        <p class="crumbs"><a href={homePath}>MediaChef</a> <span aria-hidden="true">/</span> {g.crumb}</p>
+        <h1>{g.h1}</h1>
+
+        {/* Ответ первым абзацем и крупнее остального текста: это главное, что
+            страница обязана сказать, и человек не должен его искать. */}
+        <p class="answer">{g.answer}</p>
+
+        {/* Сводка списком определений, а не абзацем: пара «поле — значение»
+            размечена связанной, и её невозможно прочитать вразнобой. */}
+        <dl class="facts">
+          {g.facts.map((f) => (
+            <div class="fact">
+              <dt>{f.k}</dt>
+              <dd>{f.v}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <Toc label={t.tocLabel} items={g.toc.map((i) => ({ label: i.label, href: `#${i.id}` }))} />
+        <Ctas locale={locale} anchor />
+      </div>
+    </div>
+
+    <section id="how" class="band">
+      <div class="wrap">
+        <h2>{g.stepsTitle}</h2>
+        <ol class="steps steps-flow">
+          {g.steps.map((s, i) => (
+            <li class="step">
+              <div class="n" aria-hidden="true">{i + 1}</div>
+              <h3>{s.h}</h3>
+              <p>{s.p}</p>
+            </li>
+          ))}
+        </ol>
+        <Shot locale={locale} alt={g.shotAlt} caption={g.shotCaption} />
+      </div>
+    </section>
+
+    {g.tables.map((tbl, i) => (
+      <section id={tbl.id} class={`band${i % 2 === 0 ? " band-tint" : ""}`}>
+        <div class="wrap">
+          <h2 id={`${tbl.id}-h`}>{tbl.title}</h2>
+          <p class="lead">{tbl.lead}</p>
+          <div class="table-wrap">
+            <table class="ref" aria-labelledby={`${tbl.id}-h`}>
+              <thead>
+                <tr>{tbl.head.map((h) => <th scope="col">{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {tbl.rows.map((r) => (
+                  <tr>
+                    {r.map((cell, ci) => (ci === 0
+                      ? <th scope="row">{cell}</th>
+                      : <td>{cell}</td>))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {tbl.note && <p class="table-note">{tbl.note}</p>}
+        </div>
+      </section>
+    ))}
+
+    <section id="why" class="band">
+      <div class="wrap">
+        <h2>{g.whyTitle}</h2>
+        <div class="bullets bullets-two">
+          {g.whyBullets.map((b) => (
+            <div class="bullet">
+              <Fragment set:html={check} />
+              <p><strong>{b.h}</strong> {b.p}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* Раздел «когда не надо» — не самокритика ради красоты. Это вопрос, который
+        человек задаёт следующим, и страница, которая на него отвечает, снимает
+        возражение вместо того, чтобы оставить его читателю. */}
+    <section id="notfor" class="band band-tint">
+      <div class="wrap">
+        <h2>{g.notForTitle}</h2>
+        <p class="lead">{g.notForLead}</p>
+        <ol class="steps steps-flow">
+          {g.notFor.map((b, i) => (
+            <li class="step">
+              <div class="n n-warn" aria-hidden="true">{i + 1}</div>
+              <h3>{b.h}</h3>
+              <p>{b.p}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section id="faq" class="band">
+      <div class="wrap">
+        <h2>{g.faqTitle}</h2>
+        <div class="faq">
+          {g.faq.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="band band-close">
+      <div class="wrap">
+        <div class="cta-final">
+          <h2>{g.ctaTitle}</h2>
+          <p class="lead">{g.ctaSub}</p>
+          <Ctas locale={locale} />
+          <p class="ctas-note note-wide">{t.betaNote}</p>
+          <Contact locale={locale} />
+        </div>
+
+        <nav class="also" aria-label={t.alsoLabel}>
+          <p class="eyebrow">{t.alsoLabel}</p>
+          <ul>
+            {g.also.map((a) => <li><a href={pathFor(a.page, locale)}>{a.label}</a></li>)}
+          </ul>
+        </nav>
+      </div>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .guide-hero {
+    max-width: 52rem;
+  }
+
+  /* Ответ крупнее основного текста, но не как заголовок: он читается первым
+     и должен выглядеть ответом, а не подзаголовком. */
+  .answer {
+    margin: 18px 0 0;
+    font-size: 1.12rem;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1px;
+    margin: 26px 0 0;
+    padding: 0;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .fact {
+    background: var(--card);
+    padding: 12px 14px;
+  }
+
+  .fact dt {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  .fact dd {
+    margin: 3px 0 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+
+  /* Номера в разделе «когда не надо» — янтарные, а не зелёные: это не шаги
+     инструкции, и красить их как шаги значило бы предлагать по ним идти. */
+  .n-warn {
+    background: var(--t-ochre-bg) !important;
+    color: var(--t-ochre) !important;
+  }
+</style>

@@ -105,6 +105,108 @@ export function itemListLd(items: readonly { name: string; description: string }
   };
 }
 
+/**
+ * Гайд как статья, вместе с полным текстом в `articleBody`.
+ *
+ * Зачем дублировать текст в разметку. Ассистенты забирают страницу по-разному:
+ * часть просит markdown через content negotiation, часть берёт HTML как есть,
+ * а ChatGPT не исполняет JS вообще. `articleBody` — способ отдать всем один
+ * и тот же чистый текст без вёрстки, независимо от того, как страницу тянут;
+ * приём проверен на живом кейсе, где им заменили markdown-отдачу.
+ *
+ * Текст собирается из тех же полей, что рисуются на странице, а не пишется
+ * отдельно: разойтись они тогда не могут. Дублирование видимого текста —
+ * не скрытый контент: это ровно то, что человек видит глазами.
+ *
+ * `dateModified` двигается вместе с FACTS.updated, который правится руками при
+ * правке текстов. Дата, которая не двигается при реальных изменениях, — частая
+ * и бессмысленная ошибка: свежесть влияет на цитируемость, но только настоящая.
+ */
+export function guideArticleLd(opts: {
+  locale: Locale;
+  url: string;
+  headline: string;
+  description: string;
+  body: string;
+  imageUrl: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id": `${opts.url}#article`,
+    headline: opts.headline,
+    description: opts.description,
+    inLanguage: opts.locale,
+    url: opts.url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": opts.url },
+    datePublished: FACTS.updated,
+    dateModified: FACTS.updated,
+    author: { "@id": ORG_ID },
+    publisher: { "@id": ORG_ID },
+    image: opts.imageUrl,
+    about: { "@id": APP_ID },
+    articleBody: opts.body,
+  };
+}
+
+/**
+ * Плоский текст гайда для `articleBody`. Порядок тот же, что на странице:
+ * ответ, шаги, таблицы, ограничения, вопросы — чтобы пересказ по этому тексту
+ * начинался с того же, с чего начинается страница.
+ */
+export function guideBody(g: {
+  h1: string;
+  answer: string;
+  facts: readonly { k: string; v: string }[];
+  stepsTitle: string;
+  steps: readonly { h: string; p: string }[];
+  tables: readonly {
+    title: string;
+    lead: string;
+    head: readonly string[];
+    rows: readonly (readonly string[])[];
+    note?: string;
+  }[];
+  whyTitle: string;
+  whyBullets: readonly { h: string; p: string }[];
+  notForTitle: string;
+  notForLead: string;
+  notFor: readonly { h: string; p: string }[];
+  faqTitle: string;
+  faq: readonly { q: string; a: string }[];
+}): string {
+  const parts: string[] = [g.h1, g.answer];
+
+  parts.push(g.facts.map((f) => `${f.k}: ${f.v}`).join("\n"));
+
+  parts.push(g.stepsTitle);
+  parts.push(g.steps.map((s, i) => `${i + 1}. ${s.h} — ${s.p}`).join("\n"));
+
+  for (const t of g.tables) {
+    parts.push(t.title);
+    parts.push(t.lead);
+    // Таблица разворачивается в строки «шапка: значение»: так пара
+    // «столбец — число» остаётся связанной и после пересказа.
+    parts.push(
+      t.rows
+        .map((r) => r.map((cell, i) => `${t.head[i]}: ${cell}`).join("; "))
+        .join("\n"),
+    );
+    if (t.note) parts.push(t.note);
+  }
+
+  parts.push(g.whyTitle);
+  parts.push(g.whyBullets.map((b) => `${b.h} ${b.p}`).join("\n"));
+
+  parts.push(g.notForTitle, g.notForLead);
+  parts.push(g.notFor.map((b) => `${b.h} ${b.p}`).join("\n"));
+
+  parts.push(g.faqTitle);
+  parts.push(g.faq.map((f) => `${f.q}\n${f.a}`).join("\n\n"));
+
+  return parts.join("\n\n");
+}
+
 export function howToLd(opts: {
   name: string;
   description: string;

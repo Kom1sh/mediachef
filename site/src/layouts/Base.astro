@@ -16,8 +16,11 @@ interface Props {
   title: string;
   description: string;
   jsonLd: unknown[];
+  /** «article» для страниц-гайдов: это разбор темы, а не раздел сайта.
+   *  Тип влияет на то, как ссылку разворачивают соцсети и чат-клиенты. */
+  ogType?: "website" | "article";
 }
-const { locale, page, title, description, jsonLd } = Astro.props;
+const { locale, page, title, description, jsonLd, ogType = "website" } = Astro.props;
 const t = T[locale];
 const meta = LOCALE_META[locale];
 
@@ -52,7 +55,7 @@ const homePath = pathFor("home", locale);
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon-120.png" type="image/png" sizes="120x120" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content="MediaChef" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

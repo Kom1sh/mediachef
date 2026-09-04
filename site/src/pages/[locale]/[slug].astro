@@ -3,7 +3,9 @@
 // берётся из ROUTES, а какой макет рисовать, решает пропс page.
 import Intent from "../../layouts/Intent.astro";
 import Catalog from "../../layouts/Catalog.astro";
+import Guide from "../../layouts/Guide.astro";
 import { LOCALES, ROUTES, type Locale, type PageId, type IntentId } from "../../content";
+import { GUIDE_IDS, type GuideId } from "../../guides";
 
 export function getStaticPaths() {
   const pages = (Object.keys(ROUTES) as PageId[]).filter((p) => p !== "home");
@@ -17,5 +19,13 @@ export function getStaticPaths() {
 
 const locale = Astro.params.locale as Locale;
 const { page } = Astro.props as { page: Exclude<PageId, "home"> };
+
+// Идентификатор гайда совпадает с идентификатором страницы: у каждого рецепта,
+// который дорастает до своей страницы, одно имя в обоих списках.
+const guide = (GUIDE_IDS as string[]).includes(page) ? (page as GuideId) : null;
 ---
-{page === "catalog" ? <Catalog locale={locale} /> : <Intent locale={locale} page={page as IntentId} />}
+{guide
+  ? <Guide locale={locale} guide={guide} page={page} />
+  : page === "catalog"
+    ? <Catalog locale={locale} />
+    : <Intent locale={locale} page={page as IntentId} />}
