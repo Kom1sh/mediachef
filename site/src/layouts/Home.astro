@@ -6,7 +6,7 @@ import Ctas from "../components/Ctas.astro";
 import Contact from "../components/Contact.astro";
 import AppWindow from "../components/AppWindow.astro";
 import Shot from "../components/Shot.astro";
-import { T, LINKS, MODELS, SITE, pathFor, type Locale } from "../content";
+import { T, LANDINGS, LINKS, MODELS, SITE, pathFor, type Locale } from "../content";
 import { homeToc } from "../nav";
 import { organizationLd, softwareApplicationLd, faqLd } from "../seo";
 
@@ -21,6 +21,17 @@ const jsonLd = [
   softwareApplicationLd(locale, pageUrl),
   faqLd(t.faq),
 ];
+
+// Образец расшифровки для иллюстрации ниже. Берём тот же текст, что показывает
+// посадочная про расшифровку: он уже переведён на все десять языков. До этого
+// строки были вписаны в разметку как «если ru — по-русски, иначе по-английски»,
+// и восемь локалей из десяти видели английский в интерфейсе своей страницы.
+const sample = LANDINGS.transcribe[locale].outSample!
+  .split("\n")
+  .map((line) => {
+    const m = line.match(/^(\d\d:\d\d:\d\d) {2}(.*)$/);
+    return { time: m ? m[1] : "", text: m ? m[2] : line };
+  });
 ---
 
 <Base locale={locale} page="home" title={t.title} description={t.description} jsonLd={jsonLd}>
@@ -54,7 +65,7 @@ const jsonLd = [
           ))}
         </ol>
 
-        <Shot alt={t.shotAlt} caption={t.shotCaption} />
+        <Shot locale={locale} alt={t.shotAlt} caption={t.shotCaption} />
       </div>
     </section>
 
@@ -113,7 +124,10 @@ const jsonLd = [
               ))}
             </div>
           </div>
-          <svg class="window" viewBox="0 0 520 300" role="img" aria-label={locale === "ru" ? "Расшифровка: звуковая волна и строки текста с таймкодами, результат в .srt и .txt" : "Transcription: a waveform and lines of text with timestamps, saved as .srt and .txt"}>
+          {/* Подпись картинки — из текстов локали, а не «ru или английский»:
+              рядом лежит `outLabel` посадочной про расшифровку, ровно про то же
+              самое и уже на десяти языках. */}
+          <svg class="window" viewBox="0 0 520 300" role="img" aria-label={`${t.trTitle} — ${LANDINGS.transcribe[locale].outLabel}`}>
             <rect width="520" height="300" fill="var(--card)"/>
             <g>
               <rect x="36" y="40" width="448" height="70" rx="14" fill="var(--paper)" stroke="var(--line)"/>
@@ -124,12 +138,12 @@ const jsonLd = [
               })}
             </g>
             <g font-family="JetBrains Mono, monospace" font-size="12" fill="var(--ink-2)">
-              <text x="36" y="150" fill="var(--amber)">00:00:04</text>
-              <text x="120" y="150" fill="var(--ink)">{locale === "ru" ? "Всем привет, начинаем встречу…" : "Hi everyone, let's get started…"}</text>
-              <text x="36" y="180" fill="var(--amber)">00:00:11</text>
-              <text x="120" y="180" fill="var(--ink)">{locale === "ru" ? "Первый вопрос — планы на квартал." : "First topic — plans for the quarter."}</text>
-              <text x="36" y="210" fill="var(--amber)">00:00:19</text>
-              <text x="120" y="210" fill="var(--ink)">{locale === "ru" ? "Есть три сценария, покажу таблицу." : "There are three scenarios, sharing now."}</text>
+              {sample.map((s, i) => (
+                <Fragment>
+                  <text x="36" y={150 + i * 30} fill="var(--amber)">{s.time}</text>
+                  <text x="120" y={150 + i * 30} fill="var(--ink)">{s.text}</text>
+                </Fragment>
+              ))}
             </g>
             <rect x="36" y="240" width="110" height="30" rx="9" fill="var(--basil)"/>
             <text x="91" y="260" text-anchor="middle" font-family="Manrope" font-size="12" font-weight="700" fill="var(--basil-ink)">.srt · .txt</text>

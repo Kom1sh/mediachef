@@ -1,6 +1,7 @@
 // Сборщики JSON-LD. Ни одного выдуманного факта: версия, движки, лицензия и
 // вопросы приходят из content.ts, а вопросы совпадают с видимым FAQ страницы.
-import { SITE, LINKS, FACTS, FEEDBACK_EMAIL, SHOT, T, type Locale } from "./content";
+import { SITE, LINKS, FACTS, FEEDBACK_EMAIL, LOCALES, T, type Locale } from "./content";
+import { SHOTS } from "./shots";
 
 const ORG_ID = `${SITE}/#organization`;
 const APP_ID = `${SITE}/#app`;
@@ -49,9 +50,13 @@ export function softwareApplicationLd(locale: Locale, pageUrl: string) {
     url: pageUrl,
     downloadUrl: LINKS.releases,
     installUrl: LINKS.releases,
-    screenshot: `${SITE}${SHOT.src}`,
+    // Снимок той локали, чью страницу описываем: в schema.org уходит один
+    // адрес, и он должен показывать интерфейс на языке этой страницы.
+    screenshot: `${SITE}${SHOTS[locale].light}`,
     license: "https://www.gnu.org/licenses/gpl-3.0.html",
-    inLanguage: ["en", "ru"],
+    // Все десять локалей интерфейса, а не две: до этого схема утверждала, что
+    // программа только на английском и русском, хотя переведена целиком.
+    inLanguage: [...LOCALES],
     isAccessibleForFree: true,
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     publisher: { "@id": ORG_ID },

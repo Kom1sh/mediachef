@@ -1,19 +1,24 @@
 ---
-// Скриншот приложения. Тем две, и показываем ту, в которой сидит посетитель:
-// светлый снимок в тёмной теме бьёт по глазам и наоборот.
-import { SHOT } from "../content";
+// Скриншот приложения. Две оси выбора, и обе про посетителя, а не про нас:
+// тема — та, в которой он сидит (светлый снимок в тёмной теме бьёт по глазам),
+// язык — тот, на котором он читает страницу. До этого кадр был один, снятый
+// с русского интерфейса, и на английской странице он говорил, что программа
+// русская, — ровно обратное правде.
+import { SHOTS } from "../shots";
+import type { Locale } from "../content";
 
-interface Props { alt: string; caption: string }
-const { alt, caption } = Astro.props;
+interface Props { locale: Locale; alt: string; caption: string }
+const { locale, alt, caption } = Astro.props;
+const shot = SHOTS[locale];
 ---
 
 <figure class="shot">
   <picture>
-    <source srcset={SHOT.dark} media="(prefers-color-scheme: dark)" />
+    <source srcset={shot.dark} media="(prefers-color-scheme: dark)" />
     <img
-      src={SHOT.light}
-      width={SHOT.w}
-      height={SHOT.h}
+      src={shot.light}
+      width={shot.w}
+      height={shot.h}
       alt={alt}
       loading="lazy"
       decoding="async"
