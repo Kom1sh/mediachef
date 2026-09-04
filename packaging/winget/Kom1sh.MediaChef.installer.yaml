@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
 PackageIdentifier: Kom1sh.MediaChef
-PackageVersion: "0.7.0"
+PackageVersion: "0.7.2"
 Platform:
   - Windows.Desktop
 MinimumOSVersion: 10.0.17763.0
@@ -13,7 +13,7 @@ InstallModes:
 UpgradeBehavior: install
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/Kom1sh/mediachef/releases/download/v0.7.0/MediaChef_0.7.0_x64-setup.exe
-    InstallerSha256: F8D24BFEC0EC0BEA335C911F2E0B212E3E0985F9D3102037C7D7541EC2C2467D
+    InstallerUrl: https://github.com/Kom1sh/mediachef/releases/download/v0.7.2/MediaChef_0.7.2_x64-setup.exe
+    InstallerSha256: 99A3F1D844C678533AC53E6FA226AFBBD38C22CB1E913287A2364865144EBB5B
 ManifestType: installer
 ManifestVersion: 1.12.0

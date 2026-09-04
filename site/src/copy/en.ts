@@ -118,7 +118,7 @@ export const ui = {
   betaNote:
     "MediaChef is young: builds are not yet signed by Apple or Microsoft, so the first launch asks for confirmation — a plain-text how-to ships inside every download.",
   contactNote:
-    "Something broken, or something missing? Write to us — a person reads every letter:",
+    "Something broken, or something missing? Write to us:",
   // ── общая обвязка ──
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "An open-source media kitchen.",
@@ -151,7 +151,6 @@ export const ui = {
     license: "License GPL-3.0",
     notice: "What is bundled — NOTICE.md",
     sourceCode: "Source code on GitHub",
-    feedback: "Report a problem or ask for a feature",
     releases: "All releases",
     langLabel: "Language",
     // Подпись на схеме окна приложения в hero.

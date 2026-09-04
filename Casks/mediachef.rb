@@ -1,6 +1,6 @@
 cask "mediachef" do
-  version "0.7.0"
-  sha256 "12afbe373d314be648e87386b4c1426a84b96de8afe174235b522d244950da3f"
+  version "0.7.2"
+  sha256 "b0997ac09b3411e80f9183b6780a771c33f682c4543fac739e2f611fdab14c05"
 
   url "https://github.com/Kom1sh/mediachef/releases/download/v#{version}/MediaChef-#{version}-macos-arm64.zip"
   name "MediaChef"

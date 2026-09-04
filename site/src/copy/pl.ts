@@ -115,7 +115,7 @@ export const ui = {
   betaNote:
     "MediaChef jest młody: kompilacje nie są jeszcze podpisane przez Apple ani Microsoft, więc pierwsze uruchomienie prosi o potwierdzenie — w każdym pobraniu jest instrukcja w zwykłym tekście.",
   contactNote:
-    "Coś nie działa albo czegoś brakuje? Napisz — każdy list czyta człowiek:",
+    "Coś nie działa albo czegoś brakuje? Napisz do nas:",
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Otwartoźródłowa kuchnia mediów.",
   tocLabel: "Na tej stronie",
@@ -145,7 +145,6 @@ export const ui = {
     license: "Licencja GPL-3.0",
     notice: "Co jest w środku — NOTICE.md",
     sourceCode: "Kod źródłowy na GitHubie",
-    feedback: "Zgłosić problem albo poprosić o funkcję",
     releases: "Wszystkie wydania",
     langLabel: "Język",
     // Подпись на схеме окна приложения в hero.

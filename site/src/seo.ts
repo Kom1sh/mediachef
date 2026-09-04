@@ -1,6 +1,6 @@
 // Сборщики JSON-LD. Ни одного выдуманного факта: версия, движки, лицензия и
 // вопросы приходят из content.ts, а вопросы совпадают с видимым FAQ страницы.
-import { SITE, LINKS, FACTS, SHOT, T, type Locale } from "./content";
+import { SITE, LINKS, FACTS, FEEDBACK_EMAIL, SHOT, T, type Locale } from "./content";
 
 const ORG_ID = `${SITE}/#organization`;
 const APP_ID = `${SITE}/#app`;
@@ -17,6 +17,19 @@ export function organizationLd() {
       url: `${SITE}/logo.png`,
       width: 512,
       height: 512,
+    },
+    // Адрес и в `email`, и в contactPoint: первое поле читают ассистенты и
+    // агрегаторы, второе — то, из чего Google собирает контакты организации.
+    // Оба указывают на один ящик, так что разойтись не могут.
+    email: FEEDBACK_EMAIL,
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: FEEDBACK_EMAIL,
+      url: `${SITE}/`,
+      // Языки, на которых письмо действительно прочтут, а не все десять локалей
+      // сайта: обещать поддержку на арабском мы не можем.
+      availableLanguage: ["en", "ru"],
     },
     sameAs: [LINKS.github],
   };

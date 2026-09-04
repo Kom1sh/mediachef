@@ -1,7 +1,7 @@
 // Навигация и футер: один источник для шапки, бургера и подвала. Добавили
 // посадочную — дописали строку сюда, и она появилась во всех трёх местах.
 // Сам список страниц для sitemap.xml берётся из ROUTES в content.ts.
-import { CATALOG, FACTS, LINKS, T, pathFor, type Locale, type PageId } from "./content";
+import { CATALOG, FACTS, FEEDBACK_EMAIL, LINKS, T, pathFor, type Locale, type PageId } from "./content";
 
 /** Прямая ссылка на файл релиза: качается сразу, без похода на страницу GitHub. */
 const REL = `https://github.com/Kom1sh/mediachef/releases/download/v${FACTS.version}`;
@@ -160,9 +160,11 @@ export function footerFor(locale: Locale, page: PageId): readonly NavGroup[] {
       { label: u.releases, href: LINKS.releases, ext: true },
     ] },
     { label: u.footProject, items: [
-      // Первой в колонке, а не последней: до этой ссылки уйти с сайта с вопросом
-      // было некуда — ни почты, ни формы, только сам репозиторий.
-      { label: u.feedback, href: LINKS.feedback, ext: true },
+      // Сам адрес, а не фраза «сообщить о проблеме»: в подвале его читают
+      // глазами и копируют руками, а приглашение написать уже стоит выше,
+      // в закрывающем блоке страницы. Первой в колонке — до этой строки уйти
+      // с сайта с вопросом было некуда, только в репозиторий.
+      { label: FEEDBACK_EMAIL, href: LINKS.feedback, ext: true },
       { label: u.sourceCode, href: LINKS.github, ext: true },
       { label: u.notice, href: LINKS.notice, ext: true },
       { label: u.license, href: "https://www.gnu.org/licenses/gpl-3.0.html", ext: true },

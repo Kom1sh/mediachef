@@ -115,7 +115,7 @@ export const ui = {
   betaNote:
     "MediaChef 还很年轻：安装包尚未由 Apple 或 Microsoft 签名，因此首次启动会要求确认——每个下载包里都附有纯文本说明。",
   contactNote:
-    "有问题，或者少了什么？给我们写信，每封都有人读：",
+    "有问题，或者少了什么？给我们写信：",
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "一间开源的媒体厨房。",
   tocLabel: "本页内容",
@@ -145,7 +145,6 @@ export const ui = {
     license: "许可证 GPL-3.0",
     notice: "包里有什么 — NOTICE.md",
     sourceCode: "GitHub 上的源代码",
-    feedback: "报告问题或提出需求",
     releases: "全部版本",
     langLabel: "语言",
     // Подпись на схеме окна приложения в hero.
