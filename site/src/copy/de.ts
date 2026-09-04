@@ -114,6 +114,8 @@ export const ui = {
   finalSub: `Kostenlos, quelloffen, ${FACTS.platformCount} Plattformen. Version ${FACTS.version}.`,
   betaNote:
     "MediaChef ist jung: Die Builds sind noch nicht von Apple oder Microsoft signiert, der erste Start fragt deshalb nach — in jedem Download liegt eine Anleitung als reiner Text bei.",
+  contactNote:
+    "Etwas kaputt oder fehlt etwas? Schreiben Sie uns — jede Nachricht liest ein Mensch:",
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Eine quelloffene Medienküche.",
   tocLabel: "Auf dieser Seite",

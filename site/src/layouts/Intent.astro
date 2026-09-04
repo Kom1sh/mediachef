@@ -3,6 +3,7 @@
 import Base from "./Base.astro";
 import Toc from "../components/Toc.astro";
 import Ctas from "../components/Ctas.astro";
+import Contact from "../components/Contact.astro";
 import AppWindow from "../components/AppWindow.astro";
 import Shot from "../components/Shot.astro";
 import { T, LINKS, LANDINGS, SITE, pathFor, type Locale, type PageId } from "../content";
@@ -148,6 +149,7 @@ const stamped = l.outSample
           <p class="lead">{l.ctaSub}</p>
           <Ctas locale={locale} />
           <p class="ctas-note note-wide">{t.betaNote}</p>
+          <Contact locale={locale} />
         </div>
 
         <nav class="also" aria-label={t.alsoLabel}>

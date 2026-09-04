@@ -3,6 +3,7 @@
 import Base from "./Base.astro";
 import Toc from "../components/Toc.astro";
 import Ctas from "../components/Ctas.astro";
+import Contact from "../components/Contact.astro";
 import AppWindow from "../components/AppWindow.astro";
 import Shot from "../components/Shot.astro";
 import { T, LINKS, MODELS, SITE, pathFor, type Locale } from "../content";
@@ -214,6 +215,7 @@ const jsonLd = [
           <p class="lead">{t.finalSub}</p>
           <Ctas locale={locale} />
           <p class="ctas-note note-wide">{t.betaNote}</p>
+          <Contact locale={locale} />
         </div>
       </div>
     </section>

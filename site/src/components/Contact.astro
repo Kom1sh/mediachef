@@ -1,0 +1,40 @@
+---
+// Приглашение написать. Стоит в закрывающем блоке каждой страницы — рядом
+// с честной припиской о том, что проект молодой и сборки без подписи. Ссылка
+// в подвале была и остаётся, но подвал пролистывают: человек, у которого
+// что-то не сработало, до конца страницы доходит, а до подвала — нет.
+//
+// Адрес выводится текстом, а не спрятан за словом «написать»: его копируют
+// руками чаще, чем нажимают, — почтовый клиент в системе настроен не у всех.
+import { T, FEEDBACK_EMAIL, type Locale } from "../content";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = T[locale];
+---
+
+<p class="contact">
+  {t.contactNote}{" "}
+  <a href={`mailto:${FEEDBACK_EMAIL}`}>{FEEDBACK_EMAIL}</a>
+</p>
+
+<style>
+  .contact {
+    margin-top: 14px;
+    font-size: 0.92rem;
+    color: var(--ink-2);
+  }
+
+  .contact a {
+    color: var(--basil);
+    font-weight: 700;
+    text-decoration: none;
+    /* Адрес — латиница внутри абзаца, который справа налево может быть целиком.
+       Без plaintext двунаправленный алгоритм уносит точку и собаку не туда. */
+    unicode-bidi: plaintext;
+  }
+
+  .contact a:hover {
+    text-decoration: underline;
+  }
+</style>

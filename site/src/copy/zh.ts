@@ -114,6 +114,8 @@ export const ui = {
   finalSub: `免费、开源、支持 ${FACTS.platformCount} 个平台。版本 ${FACTS.version}。`,
   betaNote:
     "MediaChef 还很年轻：安装包尚未由 Apple 或 Microsoft 签名，因此首次启动会要求确认——每个下载包里都附有纯文本说明。",
+  contactNote:
+    "有问题，或者少了什么？给我们写信，每封都有人读：",
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "一间开源的媒体厨房。",
   tocLabel: "本页内容",

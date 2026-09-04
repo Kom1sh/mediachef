@@ -17,7 +17,7 @@ import zh from "./copy/zh";
 import shotLight from "./assets/app-main-light.png";
 import shotDark from "./assets/app-main-dark.png";
 
-export { SITE, LINKS, FACTS } from "./facts";
+export { SITE, LINKS, FACTS, FEEDBACK_EMAIL } from "./facts";
 
 export type PageId = "home" | "mp3" | "transcribe" | "catalog";
 

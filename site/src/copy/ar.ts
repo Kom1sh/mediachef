@@ -115,6 +115,8 @@ export const ui = {
   finalSub: `مجاني، مفتوح المصدر، ${FACTS.platformCount} أنظمة. الإصدار ${FACTS.version}.`,
   betaNote:
     "‏MediaChef حديث: النسخ ليست موقّعة بعد من Apple ولا من Microsoft، لذا يطلب التشغيل الأول تأكيداً — وداخل كل تنزيل إرشادات بنص عادي.",
+  contactNote:
+    "شيء لا يعمل أو ينقص شيء؟ اكتب لنا — كل رسالة يقرأها إنسان:",
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "مطبخ وسائط مفتوح المصدر.",
   tocLabel: "في هذه الصفحة",

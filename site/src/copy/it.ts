@@ -114,6 +114,8 @@ export const ui = {
   finalSub: `Gratuito, open source, ${FACTS.platformCount} piattaforme. Versione ${FACTS.version}.`,
   betaNote:
     "MediaChef è giovane: le build non sono ancora firmate da Apple né da Microsoft, quindi il primo avvio chiede conferma — dentro ogni download c'è una guida in testo semplice.",
+  contactNote:
+    "Qualcosa non funziona o manca? Scrivici: ogni messaggio lo legge una persona:",
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Una cucina multimediale open source.",
   tocLabel: "In questa pagina",
