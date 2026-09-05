@@ -498,6 +498,38 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
 /// громким. Молчащая автовставка неотличима от сломанного приложения.
 fn deliver_text(app: &AppHandle, rt: &Arc<Runtime>, text: &str, delivery: &str) {
     let chars = text.chars().count();
+    if delivery == "type" {
+        match deliver::type_into_active_window(text) {
+            Ok(()) => {
+                trace(rt, &format!("напечатано в активное поле: {chars} знаков"));
+                // Буфер намеренно не тронут: в этом весь смысл режима.
+                return;
+            }
+            Err(e) if e == "no_accessibility" => {
+                trace(rt, "нет доступа к универсальному управлению");
+                // Текст всё равно спасаем в буфер: правило «ни один отказ не
+                // теряет надиктованное» сильнее обещания не трогать буфер.
+                let _ = deliver::to_clipboard(app, text);
+                deliver::notify(
+                    app,
+                    "Текст в буфере — вставьте сами",
+                    "Чтобы печатать в активное поле, нужен «Универсальный доступ». Открываю нужный раздел настроек: включите там MediaChef.",
+                );
+                deliver::open_accessibility_settings();
+                return;
+            }
+            Err(e) => {
+                trace(rt, &format!("печать не удалась: {e}"));
+                let _ = deliver::to_clipboard(app, text);
+                deliver::notify(
+                    app,
+                    "Текст в буфере — вставьте сами",
+                    &deliver::preview(text, PREVIEW_CHARS),
+                );
+                return;
+            }
+        }
+    }
     if delivery == "paste" {
         match deliver::to_active_window(app, text) {
             Ok(()) => {

@@ -93,6 +93,7 @@ export const dict: Dict = {
   setDictationDelivery: "Adónde va el texto",
   setDictationDeliveryHint: "Pegar exige el permiso de Accesibilidad; sin él el texto igual queda en el portapapeles.",
   optDeliveryClipboard: "Al portapapeles",
+  optDeliveryType: "Escribirlo",
   optDeliveryPaste: "Pegarlo",
   setWorkers: "Conversiones en paralelo",
   setWorkersHint: "Cuántas tareas de ffmpeg se ejecutan a la vez. Surte efecto tras reiniciar.",

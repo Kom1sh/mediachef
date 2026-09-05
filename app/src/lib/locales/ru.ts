@@ -106,6 +106,7 @@ export const dict: Dict = {
   setDictationDelivery: "Куда попадает текст",
   setDictationDeliveryHint: "Для вставки нужен «Универсальный доступ»; без него текст всё равно окажется в буфере.",
   optDeliveryClipboard: "В буфер",
+  optDeliveryType: "Печатать",
   optDeliveryPaste: "Вставить",
   setWorkers: "Параллельные конвертации",
   // «Сколько задач … выполняется», singular: "сколько" + genitive plural takes a

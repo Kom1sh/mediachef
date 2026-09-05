@@ -92,6 +92,7 @@ export const dict: Dict = {
   setDictationDelivery: "Dove finisce il testo",
   setDictationDeliveryHint: "Incollare richiede il permesso Accessibilità; senza, il testo finisce comunque negli appunti.",
   optDeliveryClipboard: "Negli appunti",
+  optDeliveryType: "Scriverlo",
   optDeliveryPaste: "Incollalo",
   setWorkers: "Conversioni in parallelo",
   setWorkersHint: "Quante attività ffmpeg girano insieme. Ha effetto dopo un riavvio.",

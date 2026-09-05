@@ -126,6 +126,7 @@ export const dict = {
   setDictationDelivery: "Where the text goes",
   setDictationDeliveryHint: "Pasting needs the Accessibility permission; without it the text still lands in the clipboard.",
   optDeliveryClipboard: "Clipboard",
+  optDeliveryType: "Type it",
   optDeliveryPaste: "Paste it",
   setWorkers: "Parallel conversions",
   setWorkersHint: "How many ffmpeg jobs run at once. Takes effect after a restart.",

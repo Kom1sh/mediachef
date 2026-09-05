@@ -48,6 +48,7 @@ export interface Dictation {
   model: string;
   language: string;
   dictionary: string;
+  /** "clipboard" | "type" | "paste" — см. `Dictation` в settings.rs. */
   delivery: string;
   history_depth: number;
 }
