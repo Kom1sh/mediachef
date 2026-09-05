@@ -51,6 +51,16 @@ import trimPl from "./copy/trim/pl";
 import trimIt from "./copy/trim/it";
 import trimAr from "./copy/trim/ar";
 import trimZh from "./copy/trim/zh";
+import srtEn from "./copy/srt/en";
+import srtRu from "./copy/srt/ru";
+import srtEs from "./copy/srt/es";
+import srtPt from "./copy/srt/pt";
+import srtFr from "./copy/srt/fr";
+import srtDe from "./copy/srt/de";
+import srtPl from "./copy/srt/pl";
+import srtIt from "./copy/srt/it";
+import srtAr from "./copy/srt/ar";
+import srtZh from "./copy/srt/zh";
 import { type Locale, type PageId } from "./content";
 
 type Row = readonly string[];
@@ -102,7 +112,7 @@ export interface GuideCopy {
 }
 
 /** Идентификаторы гайдов. Растёт по одному на рецепт. */
-export type GuideId = "gif" | "compress" | "trim";
+export type GuideId = "gif" | "compress" | "trim" | "srt";
 
 export const GUIDES: Record<GuideId, Record<Locale, GuideCopy>> = {
   gif: {
@@ -141,6 +151,18 @@ export const GUIDES: Record<GuideId, Record<Locale, GuideCopy>> = {
     ar: trimAr,
     zh: trimZh,
   },
+  srt: {
+    en: srtEn,
+    ru: srtRu,
+    es: srtEs,
+    pt: srtPt,
+    fr: srtFr,
+    de: srtDe,
+    pl: srtPl,
+    it: srtIt,
+    ar: srtAr,
+    zh: srtZh,
+  },
 };
 
 export const GUIDE_IDS = Object.keys(GUIDES) as GuideId[];
@@ -154,6 +176,7 @@ export const GUIDE_GROUP: Record<GuideId, "convert" | "transcribe"> = {
   gif: "convert",
   compress: "convert",
   trim: "convert",
+  srt: "transcribe",
 };
 
 /** Гайды одной группы, в порядке объявления. */
