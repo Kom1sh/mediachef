@@ -175,6 +175,33 @@ fn now_ms() -> u64 {
     epoch().elapsed().as_millis() as u64
 }
 
+/// Комбинация «надиктовать и нажать Enter» — та же, что основная, плюс Shift.
+///
+/// Выводится из основной, а не задаётся отдельной настройкой, и это решает
+/// сразу две задачи. Во-первых, две комбинации не могут разойтись: сменили
+/// основную — вторая переехала сама. Во-вторых, они физически не могут
+/// столкнуться друг с другом, потому что различаются ровно одним модификатором.
+///
+/// `None`, если в основной комбинации Shift уже есть: добавлять его второй раз
+/// некуда, и вместо второго хоткея получилась бы копия первого. Тогда режим
+/// «с отправкой» просто не регистрируется — молча ломать основной хоткей ради
+/// дополнительного нельзя.
+pub fn send_hotkey_for(main: &str) -> Option<String> {
+    let has_shift = main
+        .split('+')
+        .any(|t| t.trim().eq_ignore_ascii_case("shift"));
+    if has_shift {
+        return None;
+    }
+    // Shift ставим перед последним элементом: последний — это сама клавиша,
+    // а парсер требует модификаторы до неё.
+    let mut parts: Vec<&str> = main.split('+').map(|t| t.trim()).collect();
+    let key = parts.pop()?;
+    parts.push("Shift");
+    parts.push(key);
+    Some(parts.join("+"))
+}
+
 /// Живое состояние диктовки.
 ///
 /// Синглтон: хоткей один, микрофон один, и заводить их по экземпляру на окно
@@ -191,6 +218,12 @@ struct Runtime {
     settings_dir: PathBuf,
     /// Спрашивали ли уже про разрешение в этом запуске.
     asked_permission: AtomicBool,
+    /// Нажать ли Enter после доставки текущей диктовки. Ставится в момент
+    /// начала записи тем хоткеем, которым её начали, и снимается при любом
+    /// исходе — иначе следующая обычная диктовка унаследовала бы отправку.
+    send_after: AtomicBool,
+    /// Вторая зарегистрированная комбинация, если она есть.
+    registered_send: Mutex<Option<String>>,
     /// Какая комбинация сейчас зарегистрирована. Нужна, чтобы снять её при
     /// смене хоткея: снимать «ту, что в настройках» нельзя — там уже новая.
     registered: Mutex<Option<String>>,
@@ -254,6 +287,8 @@ pub fn apply(
                 models_dir: models_dir.clone(),
                 settings_dir: models_dir.parent().unwrap_or(&models_dir).to_path_buf(),
                 asked_permission: AtomicBool::new(false),
+                send_after: AtomicBool::new(false),
+                registered_send: Mutex::new(None),
                 log,
                 registered: Mutex::new(None),
             })
@@ -277,6 +312,13 @@ pub fn apply(
         }
         trace(&rt, &format!("снята регистрация «{prev}»"));
     }
+    let previous_send = rt.registered_send.lock().ok().and_then(|mut r| r.take());
+    if let Some(prev) = previous_send {
+        if let Ok(sc) = prev.parse::<Shortcut>() {
+            let _ = app.global_shortcut().unregister(sc);
+        }
+        trace(&rt, &format!("снята регистрация «{prev}»"));
+    }
 
     if !enabled {
         trace(&rt, "диктовка выключена в настройках");
@@ -293,9 +335,42 @@ pub fn apply(
                 ShortcutState::Pressed => Event::Pressed,
                 ShortcutState::Released => Event::Released,
             };
-            handle(app, ev);
+            handle(app, ev, false);
         })
         .map_err(|e| format!("комбинация «{wanted}» занята другим приложением: {e}"))?;
+
+    // Второй хоткей — не критичен: если он занят, диктовка обязана продолжить
+    // работать без него. Поэтому отказ здесь только пишется в журнал.
+    if let Some(send) = send_hotkey_for(&wanted) {
+        match send.parse::<Shortcut>() {
+            Ok(sc) => match app
+                .global_shortcut()
+                .on_shortcut(sc, move |app, _sc, event| {
+                    let ev = match event.state {
+                        ShortcutState::Pressed => Event::Pressed,
+                        ShortcutState::Released => Event::Released,
+                    };
+                    handle(app, ev, true);
+                }) {
+                Ok(()) => {
+                    if let Ok(mut r) = rt.registered_send.lock() {
+                        *r = Some(send.clone());
+                    }
+                    trace(&rt, &format!("зарегистрирована «{send}» — с отправкой"));
+                }
+                Err(e) => trace(
+                    &rt,
+                    &format!("«{send}» занята, режим с отправкой выключен: {e}"),
+                ),
+            },
+            Err(e) => trace(&rt, &format!("не разобрать «{send}»: {e}")),
+        }
+    } else {
+        trace(
+            &rt,
+            "в основной комбинации уже есть Shift — второго хоткея не будет",
+        );
+    }
 
     if let Ok(mut r) = rt.registered.lock() {
         *r = Some(wanted.clone());
@@ -310,7 +385,7 @@ pub fn apply(
 }
 
 /// Один шаг машины плюс исполнение того, что она велела.
-fn handle(app: &AppHandle, event: Event) {
+fn handle(app: &AppHandle, event: Event, with_enter: bool) {
     let Some(rt) = RUNTIME.get().cloned() else {
         return;
     };
@@ -331,6 +406,13 @@ fn handle(app: &AppHandle, event: Event) {
         &rt,
         &format!("{event:?}: {before:?} -> {after:?}, действие {action:?}"),
     );
+    // Флаг ставится ровно в момент начала записи и по тому хоткею, который её
+    // начал. Ставить его на каждое событие нельзя: отпускание второго хоткея
+    // и нажатие первого перемешались бы, и обычная диктовка иногда отправляла
+    // бы сообщение сама.
+    if action == Action::StartRecording {
+        rt.send_after.store(with_enter, Ordering::Relaxed);
+    }
     perform(app, &rt, action);
 }
 
@@ -358,6 +440,7 @@ fn perform(app: &AppHandle, rt: &Arc<Runtime>, action: Action) {
             }
         },
         Action::Cancel => {
+            rt.send_after.store(false, Ordering::Relaxed);
             let taken = rt.recorder.lock().ok().and_then(|mut s| s.take());
             // Останавливаем поток, но результат выбрасываем: отмена — это
             // «ничего не доставлять».
@@ -378,7 +461,7 @@ fn perform(app: &AppHandle, rt: &Arc<Runtime>, action: Action) {
                 .name("dictation-transcribe".into())
                 .spawn(move || {
                     transcribe_and_deliver(&app, &rt, rec);
-                    handle(&app, Event::TranscriptionDone);
+                    handle(&app, Event::TranscriptionDone, false);
                 })
                 .ok();
         }
@@ -480,14 +563,20 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
         &CancelToken::new(),
     ) {
         Ok(text) if text.is_empty() => {
-            deliver::notify(app, "Диктовка", "Речи не слышно — буфер обмена не тронут.");
+            no_speech(app, rt);
         }
         Ok(text) => deliver_text(app, rt, &text, &delivery),
         Err(DictateError::NoSpeech) => {
-            deliver::notify(app, "Диктовка", "Речи не слышно — буфер обмена не тронут.");
+            no_speech(app, rt);
         }
-        Err(DictateError::Cancelled) => {}
+        Err(DictateError::Cancelled) => {
+            rt.send_after.store(false, Ordering::Relaxed);
+        }
         Err(DictateError::Failed(e)) => {
+            // Намерение отправить снимаем и здесь: Enter в чужом окне после
+            // упавшей расшифровки — это отправленное пустое сообщение или
+            // выполненная не та команда.
+            rt.send_after.store(false, Ordering::Relaxed);
             trace(rt, &format!("расшифровка не удалась: {}", e.message));
             deliver::notify(
                 app,
@@ -506,10 +595,25 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
 /// громким. Молчащая автовставка неотличима от сломанного приложения.
 fn deliver_text(app: &AppHandle, rt: &Arc<Runtime>, text: &str, delivery: &str) {
     let chars = text.chars().count();
+    // Пустой текст не отправляет ничего и никогда: снимаем намерение сразу,
+    // не доходя до печати.
+    if text.is_empty() {
+        rt.send_after.store(false, Ordering::Relaxed);
+    }
     if delivery == "type" {
         match deliver::type_into_active_window(text) {
             Ok(()) => {
                 trace(rt, &format!("напечатано в активное поле: {chars} знаков"));
+                // Enter — только если текст действительно напечатан и он не
+                // пустой. Пустая диктовка не имеет права отправить сообщение
+                // или выполнить команду в терминале: человек промолчал, а не
+                // попросил нажать Enter.
+                if rt.send_after.swap(false, Ordering::Relaxed) {
+                    match deliver::press_enter() {
+                        Ok(()) => trace(rt, "нажат Enter"),
+                        Err(e) => trace(rt, &format!("Enter не нажался: {e}")),
+                    }
+                }
                 // Буфер намеренно не тронут: в этом весь смысл режима.
                 return;
             }
@@ -581,6 +685,18 @@ fn ask_permission_once(app: &AppHandle, rt: &Arc<Runtime>) {
     }
 }
 
+/// Речи не нашлось: сказать человеку и снять намерение отправить.
+///
+/// Снятие здесь — главное требование ко второму хоткею. Молчание не имеет
+/// права нажать Enter: в мессенджере это отправленное пустое сообщение, в
+/// терминале — выполненная предыдущая команда из истории. Человек промолчал,
+/// а не попросил что-то сделать.
+fn no_speech(app: &AppHandle, rt: &Arc<Runtime>) {
+    rt.send_after.store(false, Ordering::Relaxed);
+    trace(rt, "речи не слышно, Enter не нажимаем");
+    deliver::notify(app, "Диктовка", "Речи не слышно — буфер обмена не тронут.");
+}
+
 /// Переключает способ доставки и сохраняет настройки на диск.
 fn set_delivery(app: &AppHandle, rt: &Arc<Runtime>, mode: &str) {
     if let Ok(mut s) = rt.settings.lock() {
@@ -632,6 +748,46 @@ fn mic_error_text(e: &MicError) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Второй хоткей выводится из первого добавлением Shift — и обязан
+    /// разбираться тем же парсером, иначе режим с отправкой молча не включится.
+    #[test]
+    fn send_hotkey_adds_shift_before_the_key() {
+        assert_eq!(
+            send_hotkey_for("Option+Space").as_deref(),
+            Some("Option+Shift+Space")
+        );
+        assert_eq!(
+            send_hotkey_for("Ctrl+Option+D").as_deref(),
+            Some("Ctrl+Option+Shift+D")
+        );
+        // Модификаторы обязаны идти ДО клавиши: парсер плагина требует именно
+        // такого порядка и на «Space+Shift» ругается.
+        for main in ["Option+Space", "Ctrl+Option+Space", "Ctrl+Option+D"] {
+            let send = send_hotkey_for(main).expect("нет второго хоткея");
+            assert!(
+                send.parse::<Shortcut>().is_ok(),
+                "«{send}» не разобрался парсером"
+            );
+        }
+    }
+
+    /// Если Shift уже есть, второго хоткея не будет: добавить его некуда, а
+    /// копия первого перехватывала бы сама себя.
+    #[test]
+    fn send_hotkey_absent_when_main_already_has_shift() {
+        assert_eq!(send_hotkey_for("Ctrl+Shift+D"), None);
+        assert_eq!(send_hotkey_for("Option+Shift+Space"), None);
+    }
+
+    /// Оба хоткея обязаны быть разными: иначе один перехватил бы другой, и
+    /// обычная диктовка начала бы отправлять сообщения.
+    #[test]
+    fn the_two_hotkeys_never_collide() {
+        for main in ["Option+Space", "Ctrl+Option+Space", "Ctrl+Option+D"] {
+            assert_ne!(send_hotkey_for(main).as_deref(), Some(main));
+        }
+    }
 
     /// Хоткей по умолчанию обязан разбираться.
     ///

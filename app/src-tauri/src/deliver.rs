@@ -113,6 +113,23 @@ pub fn type_into_active_window(text: &str) -> Result<(), String> {
     enigo.text(text).map_err(|e| e.to_string())
 }
 
+/// Нажимает Enter в активном окне.
+///
+/// Отдельно от [`type_into_active_window`] и всегда после него: Enter — это
+/// необратимое действие в чужом приложении. Отправленное сообщение не вернуть,
+/// выполненную в терминале команду тем более, поэтому решение «жать» принимает
+/// вызывающий и только когда текст действительно доставлен.
+pub fn press_enter() -> Result<(), String> {
+    if !can_paste() {
+        return Err("no_accessibility".into());
+    }
+    use enigo::{Direction, Enigo, Key, Keyboard, Settings};
+    let mut enigo = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
+    enigo
+        .key(Key::Return, Direction::Click)
+        .map_err(|e| e.to_string())
+}
+
 /// Что человек выбрал в окне про недостающее разрешение.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PermissionChoice {
