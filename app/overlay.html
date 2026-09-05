@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MediaChef — диктовка</title>
+    <style>
+      /* Фон окна обязан быть прозрачным целиком: панель рисуется внутри, а
+         верхний зазор оставлен под монобровь. Без этого правила вебвью красит
+         белым и на маке появляется белый прямоугольник поверх строки меню. */
+      html,
+      body {
+        margin: 0;
+        background: transparent;
+        overflow: hidden;
+        /* Плашка не интерактивна by design (мышь и так проходит насквозь), но
+           выделение текста в ней выглядело бы приглашением её потрогать. */
+        user-select: none;
+        -webkit-user-select: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="overlay-root"></div>
+    <script type="module" src="/src/overlay.tsx"></script>
+  </body>
+</html>

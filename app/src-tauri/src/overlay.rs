@@ -1,0 +1,188 @@
+//! Плашка со статусом диктовки — та, что висит под монобровью.
+//!
+//! ## Почему окно не крадёт фокус
+//!
+//! Это главное требование ко всему модулю, и оно не про красоту: диктовка
+//! печатает текст в **активное** окно. Если плашка станет активной, «активным
+//! окном» окажется она сама, и текст уедет в никуда.
+//!
+//! Держится это на двух флагах, и оба проверены по исходникам `tao` 0.35.3 из
+//! нашего `Cargo.lock`:
+//!
+//! - `focusable(false)` — Tauri создаёт окна не голым `NSWindow`, а своим
+//!   подклассом `TaoWindow`, который переопределяет `canBecomeKeyWindow` и
+//!   `canBecomeMainWindow`, возвращая из них этот флаг. То есть окно **не может**
+//!   стать активным, а не просто не становится им при показе.
+//! - `set_ignore_cursor_events(true)` — мышь проходит сквозь плашку насквозь.
+//!   Клик по ней достаётся тому, что под ней, и активировать нечего.
+//!
+//! Сторонний `tauri-nspanel`, которого требовала первая редакция спеки, не
+//! понадобился.
+//!
+//! ## Почему окно создаётся и закрывается каждый раз
+//!
+//! Приложение выходит по закрытию последнего окна. Вечно живущая скрытая
+//! плашка была бы вторым окном и тихо сломала бы выход: человек закрыл главное
+//! окно, а процесс остался. Создание стоит десятки миллисекунд и происходит в
+//! момент, когда человек только начал говорить, — на фоне секунды распознавания
+//! это незаметно.
+//!
+//! ## Про монобровь
+//!
+//! Отдельного определения «есть ли монобровь» нет, и оно не нужно. Плашка
+//! всегда стоит по центру сверху, верхние [`NOTCH_GAP`] точек у неё прозрачны.
+//! На маке с монобровью в этот зазор попадает сама монобровь, и панель выглядит
+//! выросшей из неё. На маке без монобровы и на других системах в зазоре пустая
+//! середина строки меню, которую всё равно никто не занимает. Одна раскладка,
+//! оба случая выглядят правильно.
+
+use serde::Serialize;
+use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindow};
+
+/// Ярлык окна. По нему же адресуются события.
+pub const LABEL: &str = "dictation-overlay";
+
+/// Размер плашки в логических точках.
+const WIDTH: f64 = 460.0;
+const HEIGHT: f64 = 132.0;
+
+/// Прозрачный зазор сверху: туда попадает монобровь, если она есть.
+///
+/// 38 точек — высота строки меню на macOS с запасом. Меньше — панель налезет
+/// на монобровь, больше — оторвётся от неё и повиснет в воздухе.
+///
+/// Это же число стоит в `overlay.tsx` как `paddingTop`. Дублирование
+/// осознанное: тащить одну константу через границу процесса ради двух строк
+/// вёрстки дороже, чем держать их рядом в тесте ниже, который упадёт, если
+/// зазор перестанет помещаться в высоту.
+pub const NOTCH_GAP: f64 = 38.0;
+
+/// Что показывает плашка.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Phase {
+    /// Идёт запись.
+    Listening,
+    /// Запись кончилась, идёт расшифровка.
+    Working,
+    /// Готово — короткий показ итога перед тем, как плашка исчезнет.
+    Done,
+}
+
+/// Полезная нагрузка события для вебвью плашки.
+#[derive(Debug, Clone, Serialize)]
+pub struct Status {
+    pub phase: Phase,
+    /// Пиковый уровень 0..1 — полоска, по которой видно, что микрофон слышит.
+    pub level: f32,
+    /// Распознанное на сейчас. Пока пусто — плашка показывает только статус.
+    pub text: String,
+}
+
+/// Показывает плашку, создавая окно при необходимости.
+///
+/// Ошибки проглатываются намеренно: плашка — это удобство, и её отсутствие не
+/// повод не дать человеку надиктовать текст.
+pub fn show(app: &AppHandle) {
+    if app.get_webview_window(LABEL).is_some() {
+        return;
+    }
+    let Some(monitor) = app.primary_monitor().ok().flatten() else {
+        return;
+    };
+    let scale = monitor.scale_factor();
+    let screen = monitor.size().to_logical::<f64>(scale);
+    let x = (screen.width - WIDTH) / 2.0;
+
+    let built = WebviewWindow::builder(app, LABEL, WebviewUrl::App("overlay.html".into()))
+        // Не может стать активным окном — см. шапку модуля.
+        .focusable(false)
+        .always_on_top(true)
+        // Иначе плашка не видна поверх полноэкранного приложения, а диктуют
+        // как раз в полноэкранных редакторах и терминалах.
+        .visible_on_all_workspaces(true)
+        .decorations(false)
+        .transparent(true)
+        .shadow(false)
+        .skip_taskbar(true)
+        .resizable(false)
+        .inner_size(WIDTH, HEIGHT)
+        .position(x, 0.0)
+        .build();
+
+    let Ok(win) = built else { return };
+    // Мышь проходит насквозь: клик по плашке достаётся окну под ней.
+    let _ = win.set_ignore_cursor_events(true);
+    raise_above_menu_bar(&win);
+    let _ = win.set_size(LogicalSize::new(WIDTH, HEIGHT));
+    let _ = win.set_position(LogicalPosition::new(x, 0.0));
+}
+
+/// Обновляет содержимое плашки.
+pub fn update(app: &AppHandle, status: &Status) {
+    let _ = app.emit_to(LABEL, "dictation:status", status);
+}
+
+/// Убирает плашку.
+pub fn hide(app: &AppHandle) {
+    if let Some(win) = app.get_webview_window(LABEL) {
+        let _ = win.close();
+    }
+}
+
+/// Поднимает окно выше строки меню.
+///
+/// Без этого плашка живёт на уровне обычного «поверх всех» (3), а строка меню —
+/// на 24-м, и верхняя часть панели просто не видна: именно та, что должна
+/// сливаться с монобровью. 25 — уровень статусных окон, на один выше строки
+/// меню.
+///
+/// Своя привязка к `objc_msgSend` вместо целого крейта: нужен ровно один вызов
+/// с одним аргументом, и тянуть ради него зависимость не за что.
+#[cfg(target_os = "macos")]
+fn raise_above_menu_bar(win: &WebviewWindow) {
+    use std::ffi::c_void;
+    let Ok(ns) = win.ns_window() else { return };
+    extern "C" {
+        fn sel_registerName(name: *const u8) -> *const c_void;
+        fn objc_msgSend();
+    }
+    // SAFETY: ns_window отдаёт живой NSWindow, селектор существует у всех
+    // NSWindow, а сигнатура `setLevel:` — (id, SEL, NSInteger) без возврата.
+    unsafe {
+        let sel = sel_registerName(c"setLevel:".as_ptr() as *const u8);
+        let set_level: extern "C" fn(*mut c_void, *const c_void, i64) =
+            std::mem::transmute(objc_msgSend as *const ());
+        set_level(ns, sel, 25);
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn raise_above_menu_bar(_win: &WebviewWindow) {}
+
+// Геометрия проверяется на сборке, а не тестом: это константы, и ошибка в них
+// не «иногда воспроизводится», а есть всегда. Компилятор поймает её раньше,
+// чем кто-нибудь запустит тесты.
+const _: () = assert!(
+    NOTCH_GAP < HEIGHT,
+    "зазор под монобровь съел всю плашку — показывать будет нечего"
+);
+const _: () = assert!(
+    HEIGHT - NOTCH_GAP > 60.0,
+    "под статус и три строки текста нужно место"
+);
+const _: () = assert!(
+    WIDTH > 200.0,
+    "панель уже монобровы: тогда весь смысл выезжающей плашки теряется"
+);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn phase_serialises_lowercase() {
+        let s = serde_json::to_string(&Phase::Listening).unwrap();
+        assert_eq!(s, "\"listening\"");
+    }
+}

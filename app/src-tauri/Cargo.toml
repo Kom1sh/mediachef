@@ -19,7 +19,12 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+# `macos-private-api` — ради прозрачного окна плашки диктовки. Без него
+# builder не имеет метода `transparent`, а без прозрачности скруглённая панель
+# под монобровью превращается в чёрный прямоугольник поверх строки меню.
+# Цена флага — закрытая дорога в Mac App Store; мы туда и так не идём:
+# приложение под GPL-3.0 и без подписи Apple.
+tauri = { version = "2", features = ["macos-private-api"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-notification = "2"

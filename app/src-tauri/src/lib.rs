@@ -1,6 +1,7 @@
 pub mod deliver;
 pub mod dictation;
 pub mod mic;
+pub mod overlay;
 pub mod queue;
 pub mod settings;
 

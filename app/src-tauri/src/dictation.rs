@@ -150,19 +150,40 @@ pub fn step(state: State, event: Event, now_ms: u64) -> (State, Action) {
 
 use crate::deliver;
 use crate::mic::{MicError, Recorder, StopReason};
+use crate::overlay;
 use crate::settings::AppSettings;
 use mediachef_core::dictate::{transcribe_wav, DictateError};
 use mediachef_core::process::CancelToken;
 use mediachef_core::{locate, models};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 /// Сколько знаков расшифровки показать в уведомлении.
 const PREVIEW_CHARS: usize = 60;
+
+/// Как часто плашка обновляет полоску уровня.
+///
+/// 80 мс — на глаз непрерывно и стоит ноль: это чтение одного атомика и
+/// отправка события в вебвью.
+const METER_PERIOD: Duration = Duration::from_millis(80);
+
+/// Как часто пересчитывается предварительный текст.
+///
+/// Полторы секунды — компромисс, а не круглое число. Чаще: whisper не успевает
+/// договорить предыдущий проход, и очередь растёт. Реже: человек успевает
+/// сказать фразу целиком и решить, что его не слышат.
+const PREVIEW_PERIOD: Duration = Duration::from_millis(1500);
+
+/// Короче этого куска распознавать бессмысленно: whisper на входе меньше
+/// секунды выдаёт мусор или тишину.
+const PREVIEW_MIN_SECONDS: f32 = 1.0;
+
+/// Сколько плашка висит после доставки, прежде чем исчезнуть.
+const DONE_LINGER: Duration = Duration::from_millis(900);
 
 /// Начало отсчёта. Машина состояний живёт в миллисекундах от него, а не в
 /// `Instant`, чтобы её можно было тестировать произвольным временем.
@@ -224,6 +245,13 @@ struct Runtime {
     send_after: AtomicBool,
     /// Вторая зарегистрированная комбинация, если она есть.
     registered_send: Mutex<Option<String>>,
+    /// Номер текущей диктовки. Фоновые потоки плашки запоминают его при старте
+    /// и выходят, как только он сменился: это надёжнее флага «идёт запись»,
+    /// потому что переживает быстрое «начал-остановил-начал».
+    generation: AtomicU64,
+    /// Последний предварительный текст. Пишет его цикл распознавания, читает
+    /// тикер плашки — так на вебвью идёт один поток событий, а не два.
+    preview: Mutex<String>,
     /// Какая комбинация сейчас зарегистрирована. Нужна, чтобы снять её при
     /// смене хоткея: снимать «ту, что в настройках» нельзя — там уже новая.
     registered: Mutex<Option<String>>,
@@ -289,6 +317,8 @@ pub fn apply(
                 asked_permission: AtomicBool::new(false),
                 send_after: AtomicBool::new(false),
                 registered_send: Mutex::new(None),
+                generation: AtomicU64::new(0),
+                preview: Mutex::new(String::new()),
                 log,
                 registered: Mutex::new(None),
             })
@@ -426,21 +456,35 @@ fn perform(app: &AppHandle, rt: &Arc<Runtime>, action: Action) {
         Action::StartRecording => match Recorder::start() {
             Ok(r) => {
                 trace(rt, "микрофон открыт, пишем");
+                // Новая диктовка — новое поколение: фоновые потоки прошлой
+                // увидят смену и выйдут сами.
+                let gen = rt.generation.fetch_add(1, Ordering::Relaxed) + 1;
+                if let Ok(mut t) = rt.preview.lock() {
+                    t.clear();
+                }
                 if let Ok(mut slot) = rt.recorder.lock() {
                     *slot = Some(r);
                 }
+                overlay::show(app);
+                spawn_meter(app, rt, gen);
+                spawn_preview(rt, gen);
             }
             Err(e) => {
                 // Не смогли открыть микрофон — возвращаемся в покой, иначе
                 // следующее нажатие попыталось бы «остановить» несуществующую
                 // запись.
                 trace(rt, &format!("микрофон не открылся: {e}"));
+                overlay::hide(app);
                 reset(rt);
                 deliver::notify(app, "Диктовка", &mic_error_text(&e));
             }
         },
         Action::Cancel => {
             rt.send_after.store(false, Ordering::Relaxed);
+            // Поколение сдвигаем: фоновые потоки прошлой диктовки выйдут, а
+            // плашка не останется висеть после отмены.
+            rt.generation.fetch_add(1, Ordering::Relaxed);
+            overlay::hide(app);
             let taken = rt.recorder.lock().ok().and_then(|mut s| s.take());
             // Останавливаем поток, но результат выбрасываем: отмена — это
             // «ничего не доставлять».
@@ -461,10 +505,152 @@ fn perform(app: &AppHandle, rt: &Arc<Runtime>, action: Action) {
                 .name("dictation-transcribe".into())
                 .spawn(move || {
                     transcribe_and_deliver(&app, &rt, rec);
+                    // Поколение сдвигаем ПЕРЕД тем, как убрать плашку: иначе
+                    // тикер успел бы нарисовать её заново после закрытия окна.
+                    rt.generation.fetch_add(1, Ordering::Relaxed);
+                    std::thread::sleep(DONE_LINGER);
+                    overlay::hide(&app);
                     handle(&app, Event::TranscriptionDone, false);
                 })
                 .ok();
         }
+    }
+}
+
+/// Тикер полоски уровня: пока идёт эта диктовка, шлёт плашке уровень и
+/// последний предварительный текст.
+///
+/// Отдельно от цикла распознавания, потому что у них разная цена. Уровень —
+/// это чтение атомика, его можно слать десять раз в секунду. Распознавание
+/// занимает сотни миллисекунд, и будь они в одном потоке, полоска замирала бы
+/// на каждом проходе — ровно тогда, когда человек говорит и смотрит на неё.
+fn spawn_meter(app: &AppHandle, rt: &Arc<Runtime>, generation: u64) {
+    let app = app.clone();
+    let rt = rt.clone();
+    std::thread::Builder::new()
+        .name("dictation-meter".into())
+        .spawn(move || {
+            while rt.generation.load(Ordering::Relaxed) == generation {
+                let level = rt
+                    .recorder
+                    .lock()
+                    .ok()
+                    .and_then(|r| r.as_ref().map(|r| r.level()))
+                    .unwrap_or(0.0);
+                // Запись кончилась, но расшифровка ещё идёт: плашка меняет
+                // подпись, а не исчезает — иначе человек решит, что диктовка
+                // пропала вместе с ней.
+                let phase = if level > 0.0 || has_recorder(&rt) {
+                    overlay::Phase::Listening
+                } else {
+                    overlay::Phase::Working
+                };
+                let text = rt.preview.lock().map(|t| t.clone()).unwrap_or_default();
+                overlay::update(&app, &overlay::Status { phase, level, text });
+                std::thread::sleep(METER_PERIOD);
+            }
+        })
+        .ok();
+}
+
+fn has_recorder(rt: &Arc<Runtime>) -> bool {
+    rt.recorder.lock().map(|r| r.is_some()).unwrap_or(false)
+}
+
+/// Цикл предварительного распознавания: каждые [`PREVIEW_PERIOD`] прогоняет
+/// уже записанное и кладёт результат в `preview`.
+///
+/// Гоняется по ВСЕМУ буферу с начала, а не по последнему куску, и это
+/// сознательно. Whisper не потоковый: он не умеет продолжать с середины, а
+/// куски, нарезанные по таймеру, рвут слова и портят контекст. Цена — текст
+/// между проходами переписывается («привет как дела» становится «Привет, как
+/// дела?»), но переписывание видно только в плашке, а в поле ввода уезжает
+/// один чистый финальный результат.
+///
+/// Модель берётся самая лёгкая из установленных, а не выбранная в настройках:
+/// превью нужно быстрое, а не точное — на вопрос «меня слышно и то ли я
+/// говорю» хватает и `tiny`. Точность остаётся за финальным проходом.
+fn spawn_preview(rt: &Arc<Runtime>, generation: u64) {
+    let rt = rt.clone();
+    std::thread::Builder::new()
+        .name("dictation-preview".into())
+        .spawn(move || {
+            let Some(model) = lightest_model(&rt.models_dir) else {
+                trace(&rt, "превью выключено: ни одной модели на диске");
+                return;
+            };
+            let (Some(ffmpeg), Some(whisper)) = (locate::ffmpeg(), locate::whisper()) else {
+                return;
+            };
+            let Ok(dir) = tempfile::tempdir() else { return };
+            let wav = dir.path().join("preview.wav");
+            let language = preview_language(&rt);
+
+            loop {
+                std::thread::sleep(PREVIEW_PERIOD);
+                if rt.generation.load(Ordering::Relaxed) != generation {
+                    return;
+                }
+                let Some((samples, rate)) = snapshot(&rt) else {
+                    // Запись уже остановлена — превью больше не нужно.
+                    return;
+                };
+                if (samples.len() as f32) < rate as f32 * PREVIEW_MIN_SECONDS {
+                    continue;
+                }
+                if crate::mic::write_snapshot(&wav, &samples, rate).is_err() {
+                    continue;
+                }
+                let text = match transcribe_wav(
+                    &ffmpeg,
+                    &whisper,
+                    &wav,
+                    &model,
+                    &language,
+                    "",
+                    &CancelToken::new(),
+                ) {
+                    Ok(t) => t,
+                    // Тишина и короткие куски — обычное дело для превью, это не
+                    // повод ни ругаться, ни останавливать цикл.
+                    Err(_) => continue,
+                };
+                // Пока шёл проход, диктовка могла кончиться: тогда её результат
+                // уже доставлен, и подменять его устаревшим превью нельзя.
+                if rt.generation.load(Ordering::Relaxed) != generation {
+                    return;
+                }
+                if let Ok(mut slot) = rt.preview.lock() {
+                    *slot = text;
+                }
+            }
+        })
+        .ok();
+}
+
+/// Копия записанного на сейчас, если запись ещё идёт.
+fn snapshot(rt: &Arc<Runtime>) -> Option<(Vec<f32>, u32)> {
+    rt.recorder.lock().ok()?.as_ref()?.snapshot()
+}
+
+/// Самая лёгкая из скачанных моделей — для превью.
+fn lightest_model(models_dir: &std::path::Path) -> Option<PathBuf> {
+    ["tiny", "base", "small", "large-v3-turbo"]
+        .iter()
+        .find_map(|id| models::model_path(models_dir, id))
+}
+
+/// Язык для превью: тот же, что у финального прохода.
+fn preview_language(rt: &Arc<Runtime>) -> String {
+    let Ok(s) = rt.settings.lock() else {
+        return "auto".into();
+    };
+    if !s.dictation.language.is_empty() {
+        s.dictation.language.clone()
+    } else if s.language != "system" {
+        s.language.clone()
+    } else {
+        "auto".into()
     }
 }
 

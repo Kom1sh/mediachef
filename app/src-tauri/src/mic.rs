@@ -127,6 +127,11 @@ pub struct Recorder {
     stop: Arc<AtomicBool>,
     level: Arc<Level>,
     done: mpsc::Receiver<Result<Recording, MicError>>,
+    /// Тот же буфер, в который пишет аудиопоток. Нужен живому показу слов:
+    /// он снимает с него копию, пока человек ещё говорит.
+    samples: Arc<Mutex<Vec<f32>>>,
+    /// Частота устройства. Без неё снимок нельзя записать в WAV.
+    sample_rate: Arc<AtomicU32>,
 }
 
 impl Recorder {
@@ -137,6 +142,8 @@ impl Recorder {
     pub fn start() -> Result<Self, MicError> {
         let stop = Arc::new(AtomicBool::new(false));
         let level = Arc::new(Level::new());
+        let samples: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(Vec::new()));
+        let sample_rate = Arc::new(AtomicU32::new(0));
         let (done_tx, done_rx) = mpsc::channel();
         // Открытие потока сообщает об успехе отдельным каналом: конструктор
         // обязан отличить «микрофона нет» от «пишем».
@@ -144,10 +151,12 @@ impl Recorder {
 
         let stop_t = stop.clone();
         let level_t = level.clone();
+        let samples_t = samples.clone();
+        let rate_t = sample_rate.clone();
         std::thread::Builder::new()
             .name("dictation-mic".into())
             .spawn(move || {
-                let result = record(&stop_t, level_t, &ready_tx);
+                let result = record(&stop_t, level_t, samples_t, rate_t, &ready_tx);
                 // Если поток не открылся, про это уже сказано через ready_tx.
                 let _ = done_tx.send(result);
             })
@@ -158,11 +167,29 @@ impl Recorder {
                 stop,
                 level,
                 done: done_rx,
+                samples,
+                sample_rate,
             }),
             Ok(Err(e)) => Err(e),
             // Поток умер, не сказав ни слова.
             Err(_) => Err(MicError::OpenFailed("поток захвата не запустился".into())),
         }
+    }
+
+    /// Копия записанного на сейчас плюс частота дискретизации.
+    ///
+    /// Копия, а не ссылка: аудиопоток продолжает писать в тот же буфер, и
+    /// держать его залоченным на время расшифровки нельзя — это щелчки в
+    /// записи. Копия десяти секунд моно — 1,9 МБ, дешевле любой альтернативы.
+    ///
+    /// `None`, пока частота не известна (первые миллисекунды после открытия).
+    pub fn snapshot(&self) -> Option<(Vec<f32>, u32)> {
+        let rate = self.sample_rate.load(Ordering::Relaxed);
+        if rate == 0 {
+            return None;
+        }
+        let data = self.samples.lock().ok()?.clone();
+        Some((data, rate))
     }
 
     /// Пиковый уровень последнего блока, 0.0..=1.0. Для полоски в оверлее.
@@ -183,6 +210,8 @@ impl Recorder {
 fn record(
     stop: &AtomicBool,
     level: Arc<Level>,
+    samples: Arc<Mutex<Vec<f32>>>,
+    rate_out: Arc<AtomicU32>,
     ready: &mpsc::Sender<Result<(), MicError>>,
 ) -> Result<Recording, MicError> {
     let host = cpal::default_host();
@@ -201,10 +230,11 @@ fn record(
     let channels = config.channels() as usize;
     // В cpal 0.18 `SampleRate` — это просто `u32`, без обёртки-кортежа.
     let sample_rate = config.sample_rate();
+    // Публикуем частоту до открытия потока: живой показ ждёт именно её, чтобы
+    // понять, что снимок уже можно записывать в WAV.
+    rate_out.store(sample_rate, Ordering::Relaxed);
     let format = config.sample_format();
 
-    // Сюда аудиоколбэк складывает уже сведённое в моно.
-    let samples: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(Vec::new()));
     let first_at: Arc<Mutex<Option<Instant>>> = Arc::new(Mutex::new(None));
     // Устройство сменилось — узнаём из колбэка ошибок, а не из воздуха.
     let device_gone = Arc::new(AtomicBool::new(false));
@@ -335,6 +365,14 @@ where
 /// Пик по модулю — для полоски уровня.
 fn peak(samples: &[f32]) -> f32 {
     samples.iter().fold(0.0f32, |m, s| m.max(s.abs())).min(1.0)
+}
+
+/// Пишет снимок в WAV — то же, что и финальная запись, но для живого показа.
+///
+/// Публичная, потому что зовётся из оркестрации диктовки: превью гонит
+/// whisper по растущему буферу, и каждый раз ему нужен файл.
+pub fn write_snapshot(path: &Path, mono: &[f32], sample_rate: u32) -> Result<(), String> {
+    write_wav(path, mono, sample_rate).map_err(|e| e.to_string())
 }
 
 /// Пишет моно-WAV в 16 битах.

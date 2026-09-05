@@ -9,6 +9,18 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [react(), tailwindcss()],
 
+  build: {
+    rollupOptions: {
+      // Две точки входа: главное окно и плашка диктовки. Плашка — отдельная
+      // страница, потому что показывается поверх ЧУЖИХ окон, когда главное
+      // закрыто; внутри главного окна её было бы некому увидеть.
+      input: {
+        main: "index.html",
+        overlay: "overlay.html",
+      },
+    },
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors
