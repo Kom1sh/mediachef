@@ -41,6 +41,16 @@ import compressPl from "./copy/compress/pl";
 import compressIt from "./copy/compress/it";
 import compressAr from "./copy/compress/ar";
 import compressZh from "./copy/compress/zh";
+import trimEn from "./copy/trim/en";
+import trimRu from "./copy/trim/ru";
+import trimEs from "./copy/trim/es";
+import trimPt from "./copy/trim/pt";
+import trimFr from "./copy/trim/fr";
+import trimDe from "./copy/trim/de";
+import trimPl from "./copy/trim/pl";
+import trimIt from "./copy/trim/it";
+import trimAr from "./copy/trim/ar";
+import trimZh from "./copy/trim/zh";
 import { type Locale, type PageId } from "./content";
 
 type Row = readonly string[];
@@ -92,7 +102,7 @@ export interface GuideCopy {
 }
 
 /** Идентификаторы гайдов. Растёт по одному на рецепт. */
-export type GuideId = "gif" | "compress";
+export type GuideId = "gif" | "compress" | "trim";
 
 export const GUIDES: Record<GuideId, Record<Locale, GuideCopy>> = {
   gif: {
@@ -119,6 +129,34 @@ export const GUIDES: Record<GuideId, Record<Locale, GuideCopy>> = {
     ar: compressAr,
     zh: compressZh,
   },
+  trim: {
+    en: trimEn,
+    ru: trimRu,
+    es: trimEs,
+    pt: trimPt,
+    fr: trimFr,
+    de: trimDe,
+    pl: trimPl,
+    it: trimIt,
+    ar: trimAr,
+    zh: trimZh,
+  },
 };
 
 export const GUIDE_IDS = Object.keys(GUIDES) as GuideId[];
+
+/**
+ * В какую группу меню попадает гайд. Нужно, чтобы меню и подвал собирались из
+ * этого файла, а не перечисляли страницы руками: следующий гайд появится в
+ * навигации сам, как только его допишут сюда.
+ */
+export const GUIDE_GROUP: Record<GuideId, "convert" | "transcribe"> = {
+  gif: "convert",
+  compress: "convert",
+  trim: "convert",
+};
+
+/** Гайды одной группы, в порядке объявления. */
+export function guidesIn(group: "convert" | "transcribe"): GuideId[] {
+  return GUIDE_IDS.filter((id) => GUIDE_GROUP[id] === group);
+}

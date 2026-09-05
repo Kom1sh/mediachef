@@ -2,6 +2,7 @@
 // посадочную — дописали строку сюда, и она появилась во всех трёх местах.
 // Сам список страниц для sitemap.xml берётся из ROUTES в content.ts.
 import { CATALOG, FACTS, FEEDBACK_EMAIL, LINKS, T, pathFor, type Locale, type PageId } from "./content";
+import { GUIDES, guidesIn } from "./guides";
 
 /** Прямая ссылка на файл релиза: качается сразу, без похода на страницу GitHub. */
 const REL = `https://github.com/Kom1sh/mediachef/releases/download/v${FACTS.version}`;
@@ -112,11 +113,21 @@ export function navFor(locale: Locale, page: PageId): readonly NavEntry[] {
     {
       label: u.guides,
       groups: [
+        // Подписи гайдов берём из их же текстов (crumb): они уже переведены
+        // и коротки ровно настолько, насколько нужно пункту меню.
         { label: u.gConvert, items: [
           { label: u.pMp3, href: pathFor("mp3", locale) },
+          ...guidesIn("convert").map((id) => ({
+            label: GUIDES[id][locale].crumb,
+            href: pathFor(id, locale),
+          })),
         ] },
         { label: u.gTranscribe, items: [
           { label: u.pTranscribe, href: pathFor("transcribe", locale) },
+          ...guidesIn("transcribe").map((id) => ({
+            label: GUIDES[id][locale].crumb,
+            href: pathFor(id, locale),
+          })),
         ] },
       ],
     },
@@ -154,6 +165,11 @@ export function footerFor(locale: Locale, page: PageId): readonly NavGroup[] {
       { label: CATALOG[locale].h1, href: pathFor("catalog", locale) },
       { label: u.pMp3, href: pathFor("mp3", locale) },
       { label: u.pTranscribe, href: pathFor("transcribe", locale) },
+      // Гайды из реестра — новый появится и здесь, без правки этого файла.
+      ...(Object.keys(GUIDES) as (keyof typeof GUIDES)[]).map((id) => ({
+        label: GUIDES[id][locale].crumb,
+        href: pathFor(id, locale),
+      })),
     ] },
     { label: u.footDownload, items: [
       ...DOWNLOADS.map((d) => ({ label: d.label(u), href: d.href, note: d.size, ext: true })),
