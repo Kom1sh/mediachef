@@ -17,7 +17,7 @@ import zh from "./copy/zh";
 
 export { SITE, LINKS, FACTS, FEEDBACK_EMAIL } from "./facts";
 
-export type PageId = "home" | "mp3" | "transcribe" | "catalog" | "gif" | "compress" | "trim" | "srt";
+export type PageId = "home" | "mp3" | "transcribe" | "catalog" | "gif" | "compress" | "trim" | "srt" | "dictation";
 
 /**
  * Языки с полным переводом. `name` — самоназвание: в переключателе язык
@@ -56,6 +56,7 @@ export const ROUTES: Record<PageId, Record<Locale, string>> = {
   compress: { en: "compress-video", zh: "yasuo-shipin", ar: "dagt-video", it: "comprimere-video", pl: "kompresja-wideo", de: "video-komprimieren", fr: "compresser-une-video", pt: "comprimir-video", ru: "szhat-video", es: "comprimir-video" },
   gif: { en: "video-to-gif", zh: "shipin-zhuan-gif", ar: "tahwil-video-ila-gif", it: "video-in-gif", pl: "wideo-na-gif", de: "video-in-gif-umwandeln", fr: "video-en-gif", pt: "video-para-gif", ru: "video-v-gif", es: "video-a-gif" },
   trim: { en: "trim-video", zh: "jianqie-shipin", ar: "qass-video", it: "tagliare-video", pl: "przyciac-wideo", de: "video-schneiden", fr: "couper-une-video", pt: "cortar-video", ru: "obrezat-video", es: "recortar-video" },
+  dictation: { en: "voice-to-text", zh: "yuyin-shuru", ar: "kitaba-bissawt", it: "dettatura-vocale", pl: "dyktowanie-glosem", de: "spracheingabe", fr: "dictee-vocale", pt: "ditado-por-voz", ru: "golosovoy-vvod", es: "dictado-por-voz" },
   srt: { en: "video-to-srt", zh: "shipin-zhuan-zimu", ar: "tarjama-min-video", it: "creare-sottotitoli", pl: "napisy-do-wideo", de: "untertitel-erstellen", fr: "generer-des-sous-titres", pt: "gerar-legendas", ru: "subtitry-iz-video", es: "generar-subtitulos" },
 };
 
@@ -132,7 +133,7 @@ export const T: Record<Locale, UiCopy> = {
 
 /** Страницы под один поисковый интент — те, что рисует Intent.astro.
  *  У «home», «catalog» и гайдов свой макет: они устроены иначе. */
-export type IntentId = Exclude<PageId, "home" | "catalog" | "gif" | "compress" | "trim" | "srt">;
+export type IntentId = Exclude<PageId, "home" | "catalog" | "gif" | "compress" | "trim" | "srt" | "dictation">;
 
 /** Тексты каталога выведены из английского файла — форма проверяется присваиванием. */
 export type CatalogCopy = typeof en.catalog;
