@@ -1,3 +1,6 @@
+pub mod deliver;
+pub mod dictation;
+pub mod mic;
 pub mod queue;
 pub mod settings;
 
@@ -437,6 +440,9 @@ fn whisper_job(
             .unwrap_or_else(|| "auto".into()),
         translate: r.whisper.as_ref().is_some_and(|w| w.translate),
         format,
+        // Словарь есть только у диктовки: у рецепта нет поля, откуда его взять,
+        // и подсказывать модели чужие термины посреди чужого файла незачем.
+        prompt: String::new(),
     })
 }
 
@@ -782,6 +788,12 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        // Диктовка. Плагины подключаются всегда, а хоткей регистрируется в
+        // `setup` только при включённой настройке: сам по себе плагин ничего не
+        // слушает и ничем не пахнет, а вот регистрация глобальной комбинации —
+        // уже вмешательство в чужие приложения.
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .manage(state)
         .setup(move |app| {
             // ретрансляция событий очереди в webview
@@ -805,6 +817,21 @@ pub fn run() {
             }
             let whisper_q = q.clone();
             std::thread::spawn(move || whisper_worker(whisper_q));
+            // Диктовка — последней: она ничего не блокирует, а её отказ не
+            // должен помешать подняться очередям.
+            //
+            // Отказ здесь громкий, но не смертельный. Занятая другим
+            // приложением комбинация — самая частая причина, и уронить из-за
+            // неё запуск было бы дико; экрана настроек, где показать красную
+            // строку, в этой волне ещё нет, поэтому говорим уведомлением.
+            // `apply` зовётся всегда, а не только при включённой диктовке: он
+            // сам смотрит настройку и при выключенной просто ничего не
+            // регистрирует. Зато создаётся состояние, и журнал получает первую
+            // строку — иначе на вопрос «а она вообще включена?» ответить нечем.
+            let handle = app.handle().clone();
+            if let Err(e) = dictation::apply(&handle, settings.clone(), models_dir(app.handle())) {
+                deliver::notify(&handle, "Диктовка не включилась", &e);
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -952,6 +979,7 @@ mod tests {
                 output_dir: Some(format!("/tmp/{}", "o".repeat(1 + i * 50))),
                 notifications: i % 2 == 0,
                 ffmpeg_workers: 1 + (i % 3) as u8,
+                ..Default::default()
             })
             .collect();
 

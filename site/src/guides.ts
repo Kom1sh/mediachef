@@ -61,6 +61,16 @@ import srtPl from "./copy/srt/pl";
 import srtIt from "./copy/srt/it";
 import srtAr from "./copy/srt/ar";
 import srtZh from "./copy/srt/zh";
+import dictationEn from "./copy/dictation/en";
+import dictationRu from "./copy/dictation/ru";
+import dictationEs from "./copy/dictation/es";
+import dictationPt from "./copy/dictation/pt";
+import dictationFr from "./copy/dictation/fr";
+import dictationDe from "./copy/dictation/de";
+import dictationPl from "./copy/dictation/pl";
+import dictationIt from "./copy/dictation/it";
+import dictationAr from "./copy/dictation/ar";
+import dictationZh from "./copy/dictation/zh";
 import { type Locale, type PageId } from "./content";
 
 type Row = readonly string[];
@@ -112,7 +122,7 @@ export interface GuideCopy {
 }
 
 /** Идентификаторы гайдов. Растёт по одному на рецепт. */
-export type GuideId = "gif" | "compress" | "trim" | "srt";
+export type GuideId = "gif" | "compress" | "trim" | "srt" | "dictation";
 
 export const GUIDES: Record<GuideId, Record<Locale, GuideCopy>> = {
   gif: {
@@ -163,6 +173,18 @@ export const GUIDES: Record<GuideId, Record<Locale, GuideCopy>> = {
     ar: srtAr,
     zh: srtZh,
   },
+  dictation: {
+    en: dictationEn,
+    ru: dictationRu,
+    es: dictationEs,
+    pt: dictationPt,
+    fr: dictationFr,
+    de: dictationDe,
+    pl: dictationPl,
+    it: dictationIt,
+    ar: dictationAr,
+    zh: dictationZh,
+  },
 };
 
 export const GUIDE_IDS = Object.keys(GUIDES) as GuideId[];
@@ -177,6 +199,7 @@ export const GUIDE_GROUP: Record<GuideId, "convert" | "transcribe"> = {
   compress: "convert",
   trim: "convert",
   srt: "transcribe",
+  dictation: "transcribe",
 };
 
 /** Гайды одной группы, в порядке объявления. */

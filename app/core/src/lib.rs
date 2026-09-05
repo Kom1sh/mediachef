@@ -18,6 +18,8 @@
 //!   sentence a human can act on.
 
 pub mod catalog;
+/// Диктовка: короткий WAV в строку тем же движком, что и рецепты.
+pub mod dictate;
 pub mod errors;
 pub mod locate;
 pub mod models;

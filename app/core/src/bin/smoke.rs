@@ -138,6 +138,8 @@ fn whisper_recipe(r: &Recipe, out_dir: &Path, ffmpeg: &Path, env: &WhisperEnv) -
         language: "auto".into(),
         translate: r.whisper.as_ref().is_some_and(|w| w.translate),
         format,
+        // Рецепты словаря не имеют — он есть только у диктовки.
+        prompt: String::new(),
     };
     let res = run_whisper(ffmpeg, &env.bin, &job, &CancelToken::new(), |_| {});
     // Non-empty is the point: whisper exits 0 having heard nothing, and an empty

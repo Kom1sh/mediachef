@@ -44,6 +44,104 @@ pub struct AppSettings {
     /// How many ffmpeg jobs run at once, 1..=MAX_WORKERS. Read once at boot when
     /// the lane workers are spawned, so a change lands after a restart.
     pub ffmpeg_workers: u8,
+    /// Диктовка. Вложенным объектом, а не россыпью полей: настроек у неё скоро
+    /// станет вдвое больше, и плоский список перестанет читаться.
+    pub dictation: Dictation,
+}
+
+/// Настройки режима диктовки.
+///
+/// В волне 5.1 интерфейса у них нет — правятся руками в `settings.json`.
+/// Экран настроек приходит в 5.2 и будет писать в те же поля.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Dictation {
+    /// Выключена по умолчанию: пока человек её не включил, приложение ведёт
+    /// себя ровно как прежде — глобальный хоткей не регистрируется вовсе.
+    pub enabled: bool,
+    /// Комбинация в формате плагина глобальных хоткеев.
+    ///
+    /// Одиночный модификатор (правый Cmd) хоткеем быть не может — тип
+    /// `Shortcut` требует обычную клавишу, — поэтому это всегда комбинация.
+    ///
+    /// По умолчанию `Option+Space`, и выбор тут не вкусовой. Глобальный хоткей
+    /// перехватывается **до** всех приложений, поэтому занимать им `Cmd`+букву
+    /// нельзя: это ровно тот класс комбинаций, которым приложения занимают свои
+    /// меню, и `Cmd+D` глобально сломал бы «дублировать» и «закладку» вообще
+    /// везде. `Ctrl+Shift`+буква ничем не лучше — такие занимают редакторы и
+    /// терминалы (в Claude Code `Ctrl+Shift+D` уже занят).
+    ///
+    /// `Option+Space` не заявлен ни системой, ни типовыми приложениями: `Cmd`
+    /// со Space — это Spotlight, `Ctrl` со Space — переключение раскладки, а
+    /// `Option` со Space свободен. Цена одна и небольшая: в текстовых полях
+    /// macOS эта комбинация вставляет неразрывный пробел, и после регистрации
+    /// хоткея так делать больше нельзя.
+    pub hotkey: String,
+    /// Идентификатор модели whisper, как в `core/models.rs`.
+    ///
+    /// `small`, а не `large-v3-turbo`: это та же модель, что у рецептов
+    /// транскрибации, поэтому у активного пользователя она уже на диске и
+    /// диктовка включается без единой загрузки. Термины чинит словарь, а не
+    /// размер модели — измерено в спеке.
+    pub model: String,
+    /// Код языка речи, `"auto"` для определения по звуку. Пустая строка —
+    /// «как язык интерфейса», и подставляется при чтении.
+    pub language: String,
+    /// Словарь терминов, уезжающий в `--prompt`.
+    ///
+    /// Лимит whisper — `n_text_ctx/2`, то есть токены, а не знаки: 398 знаков
+    /// кириллицы дают 185 токенов при потолке 229. Отсюда порог в знаках
+    /// [`DICTIONARY_MAX_CHARS`] выставлен по кириллице как по худшему случаю;
+    /// для латиницы он втрое с запасом.
+    pub dictionary: String,
+    /// `"clipboard"` или `"type"`.
+    ///
+    /// По умолчанию буфер: он не требует ничего сверх микрофона и работает
+    /// всегда. `"type"` печатает текст прямо в активное поле и **не трогает
+    /// буфер** — при диктовке несколько раз в час это разница между «буфером
+    /// можно пользоваться» и «нельзя». На macOS печать требует
+    /// разрешения «Универсальный доступ», которое проверяется перед каждой
+    /// попыткой. Разрешение проверяется
+    /// перед каждой вставкой, а не при старте: его можно отозвать в любой
+    /// момент, и оно слетает при обновлении неподписанного приложения.
+    /// Отсутствие доступа — не тишина, а уведомление плюс открытый раздел
+    /// системных настроек; текст при этом всё равно оказывается в буфере.
+    pub delivery: String,
+    /// Сколько последних расшифровок хранить. Ноль — не хранить ничего.
+    ///
+    /// По умолчанию ноль. Продукт обещает, что содержимое не покидает машину,
+    /// и на этом фоне странно по умолчанию писать **на** машину всё
+    /// надиктованное открытым текстом: диктуют пароли и куски переписки.
+    pub history_depth: u8,
+}
+
+/// Порог длины словаря в знаках.
+///
+/// Выставлен по кириллице: 0,47 токена на знак при потолке ~224 токена даёт
+/// примерно 470 знаков, округлено вниз с запасом. Для латиницы соотношение
+/// втрое выгоднее, так что порог для неё щедрый.
+///
+/// Проверять приходится нам: whisper обрезает длинный промпт **молча** —
+/// измерено, 1595 знаков превратились в 229 токенов без предупреждения и с
+/// нулевым кодом возврата.
+pub const DICTIONARY_MAX_CHARS: usize = 400;
+
+/// Потолок истории. Кольцо, а не архив: двадцати хватает, чтобы вернуть
+/// потерянное, и мало, чтобы файл разросся.
+const MAX_HISTORY: u8 = 100;
+
+impl Default for Dictation {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            hotkey: "Option+Space".into(),
+            model: "small".into(),
+            language: String::new(),
+            dictionary: String::new(),
+            delivery: "clipboard".into(),
+            history_depth: 0,
+        }
+    }
 }
 
 impl Default for AppSettings {
@@ -55,6 +153,7 @@ impl Default for AppSettings {
             output_dir: None,
             notifications: true,
             ffmpeg_workers: 1,
+            dictation: Dictation::default(),
         }
     }
 }
@@ -170,7 +269,45 @@ pub fn sanitize(mut s: AppSettings) -> AppSettings {
         s.output_mode = "beside".into();
     }
     s.ffmpeg_workers = s.ffmpeg_workers.clamp(1, MAX_WORKERS);
+    s.dictation = sanitize_dictation(s.dictation);
     s
+}
+
+/// Чинит блок диктовки, отредактированный руками.
+///
+/// В волне 5.1 экрана настроек нет, и файл правится в текстовом редакторе —
+/// то есть это единственное место, где мусор перехватывается. Пустой хоткей
+/// при включённой диктовке страшнее прочего: регистрировать нечего, и фича
+/// молча не работала бы.
+fn sanitize_dictation(mut d: Dictation) -> Dictation {
+    if d.hotkey.trim().is_empty() {
+        d.hotkey = Dictation::default().hotkey;
+    }
+    // Неизвестная модель — к значению по умолчанию: список тот же, что в
+    // core/models.rs, и промах здесь означал бы «модель не скачана» на ровном
+    // месте.
+    d.model = one_of(
+        d.model,
+        &["tiny", "base", "small", "large-v3-turbo"],
+        "small",
+    );
+    // «paste» — вставка через синтетический Cmd+V — снят: он ронял приложение,
+    // а печать доставляет текст туда же и не затирает буфер. Старое значение
+    // переводим в «type», а не в «clipboard»: человек просил текст в поле, и
+    // именно это он получит.
+    if d.delivery == "paste" {
+        d.delivery = "type".into();
+    }
+    d.delivery = one_of(d.delivery, &["clipboard", "type"], "clipboard");
+    // Словарь режем по знакам — токенизатора модели здесь нет, а whisper
+    // лишнее отрежет сам и молча. Режем по границе символа, а не байта:
+    // кириллица многобайтовая, и обрезанный посередине символ дал бы битый
+    // UTF-8 в аргументе командной строки.
+    if d.dictionary.chars().count() > DICTIONARY_MAX_CHARS {
+        d.dictionary = d.dictionary.chars().take(DICTIONARY_MAX_CHARS).collect();
+    }
+    d.history_depth = d.history_depth.min(MAX_HISTORY);
+    d
 }
 
 /// The directory finished files go into: `None` means "next to the input", which
@@ -210,6 +347,90 @@ mod tests {
         std::fs::write(dir.join("settings.json"), json).unwrap();
     }
 
+    #[test]
+    fn dictation_is_off_by_default() {
+        let d = AppSettings::default().dictation;
+        assert!(!d.enabled, "диктовка обязана быть выключена по умолчанию");
+        assert_eq!(
+            d.model, "small",
+            "модель по умолчанию — та же, что у рецептов"
+        );
+        assert_eq!(d.delivery, "clipboard");
+        assert_eq!(d.history_depth, 0, "история по умолчанию не пишется");
+    }
+
+    /// Файл настроек прежней версии не содержит блока диктовки вовсе —
+    /// он обязан прочитаться без миграции.
+    #[test]
+    fn settings_file_without_dictation_still_loads() {
+        let dir = tempfile::tempdir().unwrap();
+        write(
+            dir.path(),
+            r#"{"language":"ru","theme":"dark","output_mode":"beside","notifications":true,"ffmpeg_workers":2}"#,
+        );
+        let s = load(dir.path());
+        assert_eq!(s.language, "ru");
+        assert_eq!(s.ffmpeg_workers, 2);
+        assert_eq!(s.dictation, Dictation::default());
+    }
+
+    #[test]
+    fn sanitize_repairs_hand_edited_dictation() {
+        let mut s = AppSettings::default();
+        s.dictation.hotkey = "   ".into();
+        s.dictation.model = "gigantic".into();
+        s.dictation.delivery = "телепатия".into();
+        s.dictation.history_depth = 250;
+        let s = sanitize(s);
+        assert_eq!(s.dictation.hotkey, "Option+Space", "пустой хоткей чинится");
+        assert_eq!(s.dictation.model, "small", "неизвестная модель чинится");
+        assert_eq!(
+            s.dictation.delivery, "clipboard",
+            "неизвестный способ доставки чинится к буферу"
+        );
+        assert_eq!(s.dictation.history_depth, 100);
+    }
+
+    /// Длинный словарь режется по границе символа, а не байта: обрезанная
+    /// посередине кириллица дала бы битый UTF-8 в аргументе whisper.
+    /// Печать — допустимое значение: разрешение проверяется в момент попытки,
+    /// а не отсекается здесь.
+    #[test]
+    fn type_delivery_is_accepted() {
+        let mut s = AppSettings::default();
+        s.dictation.delivery = "type".into();
+        let s = sanitize(s);
+        assert_eq!(s.dictation.delivery, "type");
+    }
+
+    /// Файл с уже снятым «paste» переводится в печать, а не сбрасывается в
+    /// буфер: человек просил текст в поле, и именно это он получит.
+    #[test]
+    fn removed_paste_delivery_becomes_typing() {
+        let mut s = AppSettings::default();
+        s.dictation.delivery = "paste".into();
+        let s = sanitize(s);
+        assert_eq!(s.dictation.delivery, "type");
+    }
+
+    #[test]
+    fn long_dictionary_is_trimmed_on_char_boundary() {
+        let mut s = AppSettings::default();
+        s.dictation.dictionary = "щ".repeat(DICTIONARY_MAX_CHARS + 120);
+        let s = sanitize(s);
+        assert_eq!(s.dictation.dictionary.chars().count(), DICTIONARY_MAX_CHARS);
+        assert!(s.dictation.dictionary.chars().all(|c| c == 'щ'));
+    }
+
+    #[test]
+    fn short_dictionary_is_untouched() {
+        let mut s = AppSettings::default();
+        let dict = "MediaChef, хоткей, whisper, ffmpeg";
+        s.dictation.dictionary = dict.into();
+        let s = sanitize(s);
+        assert_eq!(s.dictation.dictionary, dict);
+    }
+
     /// Every scratch file left in `dir`. The name carries a pid and a clock, so the
     /// tests ask for the pattern rather than for one path.
     fn scratch_files(dir: &Path) -> Vec<String> {
@@ -238,6 +459,7 @@ mod tests {
             output_dir: Some(d.path().display().to_string()),
             notifications: false,
             ffmpeg_workers: 3,
+            ..Default::default()
         };
         save(&dir, &s).unwrap();
         assert_eq!(load(&dir), s, "a restart lost the user's choices");
@@ -271,6 +493,7 @@ mod tests {
                 output_dir: Some(format!("/tmp/{}", "d".repeat(1 + i * 40))),
                 notifications: i % 3 == 0,
                 ffmpeg_workers: 1 + (i % 3) as u8,
+                ..Default::default()
             })
             .collect();
 
@@ -331,6 +554,7 @@ mod tests {
             output_dir: None,
             notifications: true,
             ffmpeg_workers: 9,
+            ..Default::default()
         };
         let s = sanitize(junk);
         assert_eq!(s.language, "system");
@@ -364,6 +588,7 @@ mod tests {
             output_dir: Some("/tmp".into()),
             notifications: false,
             ffmpeg_workers: 2,
+            ..Default::default()
         };
         assert_eq!(sanitize(good.clone()), good);
     }

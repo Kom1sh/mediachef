@@ -6,6 +6,10 @@ fixtures/*.mp4
 fixtures/*.mp3
 fixtures/*.png
 fixtures/*.wav
+# Кроме голосовой: её нельзя пересоздать где угодно. Остальные фикстуры строит
+# ffmpeg из lavfi, то есть одинаково и всегда, а речь требует синтезатора,
+# которого на раннере может не оказаться — см. комментарий в fixtures/make.sh.
+!fixtures/speech.wav
 fixtures/*.aiff
 fixtures/smoke-out/
 .DS_Store

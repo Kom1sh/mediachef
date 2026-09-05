@@ -116,6 +116,91 @@ The file is sanitized on the way in as well as on the way out, so a hand-edited
 `ffmpeg_workers: 99` is read as `3` rather than honoured, and an unparseable file
 or an unknown key falls back to the defaults above instead of stopping the app.
 
+## Dictation (wave 5.1 — internal, macOS only)
+
+Press a global hotkey anywhere, speak, press it again, and the text appears
+where your cursor is. Recognition is the same local whisper.cpp the recipes use,
+so nothing is uploaded and nothing is billed per minute.
+
+**It is off by default.** The switch and the hotkey live on the Settings screen;
+the rest of the block is still edited by hand until the Dictation screen lands
+in wave 5.2. Both halves write the same `dictation` block of the same
+`settings.json`, and a change to the hotkey takes effect immediately — no
+restart:
+
+```json
+{
+  "dictation": {
+    "enabled": true,
+    "hotkey": "Option+Space",
+    "model": "small",
+    "language": "",
+    "dictionary": "MediaChef, ffmpeg, whisper, хоткей, кодек, битрейт",
+    "delivery": "type",
+    "history_depth": 0
+  }
+}
+```
+
+| Key | Values | Notes |
+| --- | --- | --- |
+| `enabled` | `true` \| `false` | off by default; the hotkey is not registered at all until you turn it on |
+| `hotkey` | `Option+Space` by default | see below; always a combination — a lone modifier cannot be a global shortcut |
+| `model` | `tiny` \| `base` \| `small` \| `large-v3-turbo` | `small` by default: the recipes use it too, so it is usually already on disk |
+| `language` | `""` \| `auto` \| a language code | empty means "same as the interface language" |
+| `dictionary` | free text, ≤400 chars | fixes how names and jargon are spelled; see below |
+| `delivery` | `clipboard` \| `type` | `type` puts the text straight into the focused field and leaves the clipboard alone; it needs the Accessibility permission, see below |
+| `history_depth` | `0`–`100` | `0` by default: nothing dictated is written to disk |
+
+Editing the file by hand needs a restart; the two controls on the Settings
+screen do not — the hotkey is re-registered the moment it is saved.
+
+**Why `Option+Space` and not `Cmd`+letter.** A global shortcut is grabbed
+*before* any application sees it, so the combinations that feel simplest are the
+worst possible choice: `Cmd`+letter is exactly what applications use for their
+own menus, and registering `Cmd+D` globally would break "duplicate" and
+"bookmark" everywhere. `Ctrl+Shift`+letter is no better — editors and terminals
+claim those (`Ctrl+Shift+D` is already taken in Claude Code). `Option+Space` is
+claimed by neither macOS nor typical applications: `Cmd` with Space is
+Spotlight, `Ctrl` with Space switches input source, and `Option` with Space is
+free. It costs one thing, stated plainly: in macOS text fields that combination
+inserts a non-breaking space, and once the hotkey is registered you lose that.
+If it does clash on your machine, `Ctrl+Option+D` is the fallback nothing else
+wants.
+
+**The dictionary earns its place.** It is passed to whisper as an initial
+prompt, and on our measurement it turned «медиашиф» and «ходкий» into
+«MediaChef» and «хоткей» at a cost of 0.04 s. The cap is 400 characters because
+whisper's real limit is in *tokens* (`n_text_ctx/2`, about 224): 398 characters
+of Cyrillic already cost 185 tokens, while the same 400 characters of Latin text
+cost roughly a third of that. Whisper truncates an over-long prompt **silently**,
+so the app counts for you.
+
+### The Accessibility permission
+
+`delivery: "type"` puts the text where the cursor is, which on macOS counts as
+synthetic input and needs the **Accessibility** permission. The first attempt
+after a fresh install will not type anything: instead you get a notification and
+the right pane of System Settings opens by itself. Switch MediaChef on there,
+restart the app, and it works — verified on a real machine.
+
+Two things follow from the app being unsigned, and both are stated here rather
+than discovered later:
+
+- **The permission comes back after every update.** macOS ties permissions to
+  the executable's code signature, and an unsigned build's signature changes
+  with each build. The microphone permission is re-requested for the same
+  reason. Neither fails silently: the app checks before every attempt and says
+  so, and the dictated text always lands in the clipboard as a fallback, so
+  nothing is lost.
+- **Nothing is lost when the permission is missing.** `type` writes to the
+  clipboard before giving up, so the worst case is one `Cmd+V`.
+
+There is no third delivery mode. A `paste` option — clipboard plus a synthetic
+`Cmd+V` — existed briefly and crashed the app on its first real use; typing
+delivers the text to the same place without touching the clipboard, so the mode
+was removed rather than repaired.
+
 ## Installing (the channels we publish to)
 
 ```bash

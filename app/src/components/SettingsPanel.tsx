@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Bell, FolderOpen, Gauge, Languages, MessageSquare, Monitor, Palette, RefreshCw } from "lucide-react";
+import { Bell, ClipboardPaste, FolderOpen, Gauge, Keyboard, Languages, MessageSquare, Mic, Monitor, Palette, RefreshCw } from "lucide-react";
 import { useT, LOCALES, LOCALE_FLAGS, LOCALE_NAMES } from "../lib/i18n";
 import { Flag } from "./Flag";
 import { pickFolder } from "../lib/ipc";
 import { openFeedback, FEEDBACK_EMAIL } from "../lib/feedback";
 import { isUnsupportedInstall } from "../lib/updater";
 import type { Updater } from "../lib/useUpdater";
+import { DICTATION_HOTKEYS } from "../lib/types";
 import type { AppSettings } from "../lib/types";
 import type { LucideIcon } from "lucide-react";
 
@@ -286,6 +287,55 @@ export function SettingsPanel({
             onToggle={notifications => onChange({ ...s, notifications })}
           />
         </Row>
+
+        <Row icon={Mic} label={t("setDictation")} hint={t("setDictationHint")}>
+          <Switch
+            label={t("setDictation")} on={s.dictation.enabled}
+            // Хоткей перерегистрируется на стороне Rust сразу после сохранения,
+            // без перезапуска: переключатель, который «подействует потом»,
+            // неотличим от сломанного.
+            onToggle={enabled => onChange({ ...s, dictation: { ...s.dictation, enabled } })}
+          />
+        </Row>
+
+        {/* Выбор комбинации показывается только при включённой диктовке: пока
+            она выключена, хоткей ни на что не влияет, и строка была бы шумом. */}
+        {s.dictation.enabled && (
+          <Row icon={Keyboard} label={t("setDictationKey")} hint={t("setDictationKeyHint")}>
+            <Segmented
+              name="mc-dictation-key" label={t("setDictationKey")}
+              value={s.dictation.hotkey}
+              // Закрытый список, а не поле ввода: глобальный хоткей
+              // перехватывается до всех приложений, и самые естественные
+              // комбинации — как раз самые негодные.
+              choices={DICTATION_HOTKEYS.map(h => ({ value: h.value, label: h.label }))}
+              onPick={hotkey => onChange({ ...s, dictation: { ...s.dictation, hotkey } })}
+            />
+          </Row>
+        )}
+
+        {s.dictation.enabled && (
+          <Row
+            icon={ClipboardPaste} label={t("setDictationDelivery")}
+            // Про разрешение сказано прямо здесь, где выбирают, а не в момент
+            // отказа: человек должен понимать, во что ввязывается, до того как
+            // первая вставка не сработает.
+            hint={t("setDictationDeliveryHint")}
+          >
+            <Segmented
+              name="mc-dictation-delivery" label={t("setDictationDelivery")}
+              value={s.dictation.delivery}
+              // Два способа. Третьим была вставка через Cmd+V — она роняла
+              // приложение, а печать доставляет текст туда же и вдобавок не
+              // затирает буфер обмена.
+              choices={[
+                { value: "clipboard", label: t("optDeliveryClipboard") },
+                { value: "type", label: t("optDeliveryType") },
+              ]}
+              onPick={delivery => onChange({ ...s, dictation: { ...s.dictation, delivery } })}
+            />
+          </Row>
+        )}
 
         <Row
           icon={Gauge} label={t("setWorkers")}
