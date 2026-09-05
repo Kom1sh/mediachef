@@ -267,6 +267,7 @@ impl Queue {
                     language: "auto".into(),
                     translate: false,
                     format: WhisperFormat::Txt,
+                    prompt: String::new(),
                 },
             },
             other => panic!("unknown test job kind {other}"),

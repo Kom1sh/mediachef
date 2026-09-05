@@ -437,6 +437,9 @@ fn whisper_job(
             .unwrap_or_else(|| "auto".into()),
         translate: r.whisper.as_ref().is_some_and(|w| w.translate),
         format,
+        // Словарь есть только у диктовки: у рецепта нет поля, откуда его взять,
+        // и подсказывать модели чужие термины посреди чужого файла незачем.
+        prompt: String::new(),
     })
 }
 
@@ -952,6 +955,7 @@ mod tests {
                 output_dir: Some(format!("/tmp/{}", "o".repeat(1 + i * 50))),
                 notifications: i % 2 == 0,
                 ffmpeg_workers: 1 + (i % 3) as u8,
+                ..Default::default()
             })
             .collect();
 

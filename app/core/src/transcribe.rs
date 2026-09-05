@@ -87,6 +87,50 @@ pub struct WhisperJob {
     pub language: String,
     pub translate: bool,
     pub format: WhisperFormat,
+    /// Словарь терминов, уезжающий в `--prompt`. Пустая строка — флага нет.
+    ///
+    /// Whisper зовёт это initial prompt: текст, который модель считает уже
+    /// сказанным, поэтому дальше пишет имена и термины в том же виде. На
+    /// измерении из спеки диктовки словарь превратил «медиашиф» и «ходкий»
+    /// в «MediaChef» и «хоткей», не стоив ничего по времени.
+    ///
+    /// Обрезать по лимиту здесь НЕ надо и нечем: потолок — `n_text_ctx/2`,
+    /// то есть токены, а не знаки, и whisper режет лишнее молча, без
+    /// предупреждения и с нулевым кодом возврата. Считать бюджет обязан тот,
+    /// кто заполняет поле.
+    pub prompt: String,
+}
+
+/// Аргументы `whisper-cli` для одного прогона.
+///
+/// Вынесено из [`run_whisper`] отдельной чистой функцией ради тестов: собрать
+/// строку флагов можно без микрофона, без модели и без дочернего процесса, а
+/// ошибка здесь стоит целого прогона. Порядок флагов — тот же, что и был.
+///
+/// `--prompt` появляется только при непустом словаре: пустой промпт whisper-у
+/// передавать незачем, а лишний флаг пришлось бы объяснять в предпросмотре
+/// команды, который видит пользователь.
+fn whisper_argv(job: &WhisperJob, wav: &Path, out_prefix: &Path) -> Vec<String> {
+    let mut argv: Vec<String> = vec![
+        "-m".into(),
+        job.model.display().to_string(),
+        "-f".into(),
+        wav.display().to_string(),
+        "-l".into(),
+        job.language.clone(),
+        "--print-progress".into(),
+        job.format.flag().into(),
+        "--output-file".into(),
+        out_prefix.display().to_string(),
+    ];
+    if job.translate {
+        argv.push("--translate".into());
+    }
+    if !job.prompt.is_empty() {
+        argv.push("--prompt".into());
+        argv.push(job.prompt.clone());
+    }
+    argv
 }
 
 /// Pulls the percentage out of whisper's progress log line, which looks like
@@ -326,21 +370,7 @@ pub fn run_whisper(
 
     // Шаг 2: whisper-cli (10..100%)
     let out_prefix = tmp.path().join("result");
-    let mut argv: Vec<String> = vec![
-        "-m".into(),
-        job.model.display().to_string(),
-        "-f".into(),
-        wav.display().to_string(),
-        "-l".into(),
-        job.language.clone(),
-        "--print-progress".into(),
-        job.format.flag().into(),
-        "--output-file".into(),
-        out_prefix.display().to_string(),
-    ];
-    if job.translate {
-        argv.push("--translate".into());
-    }
+    let argv = whisper_argv(job, &wav, &out_prefix);
     let mut tail: Vec<String> = Vec::new();
     let exit = run_streaming(whisper, &argv, cancel, |pipe, line| {
         if let Some(p) = parse_whisper_progress(line) {
@@ -430,6 +460,68 @@ pub fn run_whisper(
 mod tests {
     use super::*;
 
+    /// Задание с заполненными путями, чтобы тесты про argv читались.
+    fn argv_job(prompt: &str, translate: bool) -> WhisperJob {
+        WhisperJob {
+            input: PathBuf::from("/in/clip.mp4"),
+            output: PathBuf::from("/out/clip.txt"),
+            model: PathBuf::from("/models/ggml-small.bin"),
+            language: "ru".into(),
+            translate,
+            format: WhisperFormat::Txt,
+            prompt: prompt.into(),
+        }
+    }
+
+    #[test]
+    fn argv_without_prompt_has_no_prompt_flag() {
+        let argv = whisper_argv(
+            &argv_job("", false),
+            Path::new("/tmp/audio16k.wav"),
+            Path::new("/tmp/result"),
+        );
+        assert!(
+            !argv.iter().any(|a| a == "--prompt"),
+            "пустой словарь не должен давать флаг: {argv:?}"
+        );
+        // Порядок и состав прежних флагов не изменились.
+        assert_eq!(
+            &argv[0..2],
+            &["-m".to_string(), "/models/ggml-small.bin".to_string()]
+        );
+        assert!(argv.iter().any(|a| a == "--print-progress"));
+        assert!(argv.iter().any(|a| a == "--output-txt"));
+    }
+
+    #[test]
+    fn argv_with_prompt_passes_it_verbatim() {
+        let dict = "MediaChef, хоткей, whisper";
+        let argv = whisper_argv(
+            &argv_job(dict, false),
+            Path::new("/tmp/audio16k.wav"),
+            Path::new("/tmp/result"),
+        );
+        let at = argv
+            .iter()
+            .position(|a| a == "--prompt")
+            .expect("нет флага");
+        // Значение идёт следующим аргументом и не склеивается с флагом: у
+        // словаря внутри есть пробелы и запятые, и разбирать его должен
+        // не шелл, а сам whisper.
+        assert_eq!(argv[at + 1], dict);
+    }
+
+    #[test]
+    fn argv_keeps_translate_and_prompt_together() {
+        let argv = whisper_argv(
+            &argv_job("термин", true),
+            Path::new("/tmp/audio16k.wav"),
+            Path::new("/tmp/result"),
+        );
+        assert!(argv.iter().any(|a| a == "--translate"));
+        assert!(argv.iter().any(|a| a == "--prompt"));
+    }
+
     #[test]
     fn format_mapping() {
         assert!(matches!(
@@ -500,6 +592,7 @@ mod tests {
             language: "auto".into(),
             translate: false,
             format: WhisperFormat::Txt,
+            prompt: String::new(),
         };
         let mut last = 0.0f32;
         let r = run_whisper(
@@ -833,6 +926,7 @@ mod tests {
             language: "auto".into(),
             translate: false,
             format: WhisperFormat::Txt,
+            prompt: String::new(),
         };
         let cancel = crate::process::CancelToken::new();
         let c2 = cancel.clone();
@@ -918,6 +1012,7 @@ mod tests {
                     language: "auto".into(),
                     translate: false,
                     format,
+                    prompt: String::new(),
                 };
                 let e = run_whisper(
                     &ffmpeg,
