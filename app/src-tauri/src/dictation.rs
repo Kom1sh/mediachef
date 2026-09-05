@@ -155,6 +155,7 @@ use mediachef_core::dictate::{transcribe_wav, DictateError};
 use mediachef_core::process::CancelToken;
 use mediachef_core::{locate, models};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Instant;
 use tauri::AppHandle;
@@ -185,6 +186,11 @@ struct Runtime {
     models_dir: PathBuf,
     /// Куда писать журнал. Рядом с настройками, чтобы искать в одном месте.
     log: PathBuf,
+    /// Куда сохранять настройки, когда их меняет само приложение (кнопки в
+    /// окне про разрешение).
+    settings_dir: PathBuf,
+    /// Спрашивали ли уже про разрешение в этом запуске.
+    asked_permission: AtomicBool,
     /// Какая комбинация сейчас зарегистрирована. Нужна, чтобы снять её при
     /// смене хоткея: снимать «ту, что в настройках» нельзя — там уже новая.
     registered: Mutex<Option<String>>,
@@ -246,6 +252,8 @@ pub fn apply(
                 recorder: Mutex::new(None),
                 settings: settings.clone(),
                 models_dir: models_dir.clone(),
+                settings_dir: models_dir.parent().unwrap_or(&models_dir).to_path_buf(),
+                asked_permission: AtomicBool::new(false),
                 log,
                 registered: Mutex::new(None),
             })
@@ -510,12 +518,7 @@ fn deliver_text(app: &AppHandle, rt: &Arc<Runtime>, text: &str, delivery: &str) 
                 // Текст всё равно спасаем в буфер: правило «ни один отказ не
                 // теряет надиктованное» сильнее обещания не трогать буфер.
                 let _ = deliver::to_clipboard(app, text);
-                deliver::notify(
-                    app,
-                    "Текст в буфере — вставьте сами",
-                    "Чтобы печатать в активное поле, нужен «Универсальный доступ». Открываю нужный раздел настроек: включите там MediaChef.",
-                );
-                deliver::open_accessibility_settings();
+                ask_permission_once(app, rt);
                 return;
             }
             Err(e) => {
@@ -544,6 +547,69 @@ fn deliver_text(app: &AppHandle, rt: &Arc<Runtime>, text: &str, delivery: &str) 
             deliver::notify(app, "Диктовка", &format!("Не положить в буфер: {e}"));
         }
     }
+}
+
+/// Показывает окно про разрешение — один раз за запуск приложения.
+///
+/// Один раз, а не на каждую диктовку: модальное окно, всплывающее каждый раз,
+/// когда человек говорит, — это не помощь, а наказание. Одного показа хватает:
+/// после перезапуска (которого окно и требует) счётчик обнулится сам, а если
+/// человек перезапускать не стал, он уже видел объяснение.
+fn ask_permission_once(app: &AppHandle, rt: &Arc<Runtime>) {
+    if rt.asked_permission.swap(true, Ordering::Relaxed) {
+        // Уже спрашивали в этом запуске — ограничиваемся уведомлением.
+        deliver::notify(
+            app,
+            "Текст в буфере — вставьте сами",
+            "Разрешение «Универсальный доступ» так и не выдано.",
+        );
+        return;
+    }
+    match deliver::ask_about_permission(app) {
+        deliver::PermissionChoice::OpenSettings => {
+            trace(rt, "выбрано: открыть системные настройки");
+            deliver::open_accessibility_settings();
+        }
+        deliver::PermissionChoice::UseClipboard => {
+            trace(rt, "выбрано: класть в буфер");
+            set_delivery(app, rt, "clipboard");
+        }
+        deliver::PermissionChoice::TurnOff => {
+            trace(rt, "выбрано: выключить диктовку");
+            disable_dictation(app, rt);
+        }
+    }
+}
+
+/// Переключает способ доставки и сохраняет настройки на диск.
+fn set_delivery(app: &AppHandle, rt: &Arc<Runtime>, mode: &str) {
+    if let Ok(mut s) = rt.settings.lock() {
+        s.dictation.delivery = mode.into();
+        let _ = crate::settings::save(&rt.settings_dir, &s);
+    }
+    deliver::notify(
+        app,
+        "Диктовка",
+        "Теперь текст будет попадать в буфер обмена — вставляйте через Cmd+V.",
+    );
+}
+
+/// Выключает диктовку: снимает хоткей и сохраняет настройку.
+///
+/// Именно в этом порядке: сначала на диск, потом снятие регистрации через
+/// `apply`, который прочитает уже новую настройку. Иначе после перезапуска
+/// диктовка вернулась бы включённой, и человек решил бы, что кнопка соврала.
+fn disable_dictation(app: &AppHandle, rt: &Arc<Runtime>) {
+    if let Ok(mut s) = rt.settings.lock() {
+        s.dictation.enabled = false;
+        let _ = crate::settings::save(&rt.settings_dir, &s);
+    }
+    let _ = apply(app, rt.settings.clone(), rt.models_dir.clone());
+    deliver::notify(
+        app,
+        "Диктовка выключена",
+        "Включить обратно можно в настройках MediaChef.",
+    );
 }
 
 /// Человеческий текст отказа микрофона.
