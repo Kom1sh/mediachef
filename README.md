@@ -116,6 +116,57 @@ The file is sanitized on the way in as well as on the way out, so a hand-edited
 `ffmpeg_workers: 99` is read as `3` rather than honoured, and an unparseable file
 or an unknown key falls back to the defaults above instead of stopping the app.
 
+## Dictation (wave 5.1 — internal, macOS only)
+
+Hold a global hotkey anywhere, speak, press it again, and the text lands in your
+clipboard. Recognition is the same local whisper.cpp the recipes use, so nothing
+is uploaded and nothing is billed per minute.
+
+**It is off by default and has no UI yet.** The Dictation screen arrives in wave
+5.2; for now it is configured by hand, in the `dictation` block of the same
+`settings.json`:
+
+```json
+{
+  "dictation": {
+    "enabled": true,
+    "hotkey": "Ctrl+Shift+D",
+    "model": "small",
+    "language": "",
+    "dictionary": "MediaChef, ffmpeg, whisper, хоткей, кодек, битрейт",
+    "delivery": "clipboard",
+    "history_depth": 0
+  }
+}
+```
+
+| Key | Values | Notes |
+| --- | --- | --- |
+| `enabled` | `true` \| `false` | off by default; the hotkey is not registered at all until you turn it on |
+| `hotkey` | e.g. `Ctrl+Shift+D` | always a combination — a lone modifier cannot be a global shortcut |
+| `model` | `tiny` \| `base` \| `small` \| `large-v3-turbo` | `small` by default: the recipes use it too, so it is usually already on disk |
+| `language` | `""` \| `auto` \| a language code | empty means "same as the interface language" |
+| `dictionary` | free text, ≤400 chars | fixes how names and jargon are spelled; see below |
+| `delivery` | `clipboard` | the only value on macOS, permanently — see below |
+| `history_depth` | `0`–`100` | `0` by default: nothing dictated is written to disk |
+
+Restart the app after editing — the hotkey is registered at startup.
+
+**The dictionary earns its place.** It is passed to whisper as an initial
+prompt, and on our measurement it turned «медиашиф» and «ходкий» into
+«MediaChef» and «хоткей» at a cost of 0.04 s. The cap is 400 characters because
+whisper's real limit is in *tokens* (`n_text_ctx/2`, about 224): 398 characters
+of Cyrillic already cost 185 tokens, while the same 400 characters of Latin text
+cost roughly a third of that. Whisper truncates an over-long prompt **silently**,
+so the app counts for you.
+
+**No auto-paste on macOS, and that is permanent.** Typing the text into the
+focused window needs the Accessibility permission, which macOS ties to the
+executable's code signature — and an unsigned build's signature changes with
+every update, so the permission would quietly stop working. Auto-paste ships on
+Windows in wave 5.3. The microphone permission is re-requested after updates for
+the same reason; that one is a single dialog and survivable.
+
 ## Installing (the channels we publish to)
 
 ```bash
