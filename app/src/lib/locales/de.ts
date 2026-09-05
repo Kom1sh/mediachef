@@ -85,6 +85,10 @@ export const dict: Dict = {
   change: "Ändern…",
   setNotifications: "Mitteilungen",
   setNotificationsHint: "Eine Systemmeldung, wenn eine Aufgabe fertig ist.",
+  setDictation: "Diktat",
+  setDictationHint: "Kurzbefehl irgendwo drücken, sprechen, noch einmal drücken — der Text landet in der Zwischenablage.",
+  setDictationKey: "Kurzbefehl fürs Diktat",
+  setDictationKeyHint: "Wird systemweit abgefangen, deshalb würde Cmd mit einem Buchstaben diesen Kurzbefehl in jeder App zerstören.",
   setWorkers: "Parallele Konvertierungen",
   setWorkersHint: "Wie viele ffmpeg-Aufgaben gleichzeitig laufen. Wirkt nach einem Neustart.",
 

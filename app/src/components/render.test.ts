@@ -135,6 +135,24 @@ describe("SettingsPanel", () => {
      The other half — that `onChange` is handed a *whole* `AppSettings` rather than the
      one field that changed — is a type, not a runtime question: the prop's signature
      admits nothing else, and `npm run typecheck` is a gate. */
+/**
+ * Блок диктовки для тестовых настроек.
+ *
+ * Вынесен в константу, чтобы добавление поля в `Dictation` правилось в одном
+ * месте, а не в каждом наборе настроек: тип общий, и разойтись они не должны.
+ * Включён намеренно — выключенная диктовка прячет строку выбора хоткея, и
+ * тест на «каждый контрол привязан к настройкам» её бы не увидел.
+ */
+const dictation = {
+  enabled: true,
+  hotkey: "Option+Space",
+  model: "small",
+  language: "",
+  dictionary: "",
+  delivery: "clipboard",
+  history_depth: 0,
+};
+
   it("binds every control to the settings it was handed", () => {
     const settings: AppSettings = {
       language: "ru",
@@ -143,6 +161,7 @@ describe("SettingsPanel", () => {
       output_dir: "/Users/me/Готовое",
       notifications: false,
       ffmpeg_workers: 3,
+      dictation,
     };
     const markup = render(
       "ru",
@@ -166,6 +185,37 @@ describe("SettingsPanel", () => {
     expect(markup).toContain("/Users/me/Готовое");
   });
 
+  /* Диктовка настраивается только отсюда: файл настроек человек руками не
+     правит, и если эти два контрола пропадут, единственным способом включить
+     фичу снова станет текстовый редактор. */
+  it("offers the dictation switch and hotkey, and hides the hotkey when it is off", () => {
+    const on: AppSettings = {
+      language: "ru", theme: "dark", output_mode: "beside",
+      output_dir: null, notifications: false, ffmpeg_workers: 1, dictation,
+    };
+    const markup = render(
+      "ru",
+      createElement(SettingsPanel, { settings: on, onChange: () => {}, error: "", updater: idleUpdater }),
+    );
+    // Переключатель включён — значит на экране есть switch со значением true.
+    expect(markup).toContain('role="switch" aria-checked="true"');
+    // И выбранная комбинация отмечена, а не просто нарисована.
+    const picked = markup.match(/<input[^>]*name="mc-dictation-key"[^>]*value="Option\+Space"[^>]*>/);
+    expect(picked).not.toBeNull();
+    expect(picked?.[0]).toContain('checked=""');
+    // Запасные варианты тоже предложены: одного «правильного» мало, если он у
+    // кого-то занят.
+    expect(markup).toContain('value="Ctrl+Option+D"');
+
+    // Выключенная диктовка прячет выбор хоткея: он ни на что не влияет.
+    const off: AppSettings = { ...on, dictation: { ...dictation, enabled: false } };
+    const offMarkup = render(
+      "ru",
+      createElement(SettingsPanel, { settings: off, onChange: () => {}, error: "", updater: idleUpdater }),
+    );
+    expect(offMarkup).not.toContain("mc-dictation-key");
+  });
+
   /* Версия работающей сборки и ответ на нажатие «Проверить» — единственное, что
      эта строка обязана сказать. Найденное обновление и ход загрузки живут
      в полосе наверху: если бы они дублировались здесь, два места про одно и то же
@@ -173,7 +223,7 @@ describe("SettingsPanel", () => {
   it("shows the running version and answers a check that found nothing", () => {
     const settings: AppSettings = {
       language: "ru", theme: "dark", output_mode: "beside",
-      output_dir: null, notifications: false, ffmpeg_workers: 1,
+      output_dir: null, notifications: false, ffmpeg_workers: 1, dictation,
     };
     const at = (state: Updater["state"]) =>
       render("ru", createElement(SettingsPanel, {

@@ -824,13 +824,13 @@ pub fn run() {
             // приложением комбинация — самая частая причина, и уронить из-за
             // неё запуск было бы дико; экрана настроек, где показать красную
             // строку, в этой волне ещё нет, поэтому говорим уведомлением.
-            if settings.lock().unwrap().dictation.enabled {
-                let handle = app.handle().clone();
-                if let Err(e) =
-                    dictation::register(&handle, settings.clone(), models_dir(app.handle()))
-                {
-                    deliver::notify(&handle, "Диктовка не включилась", &e);
-                }
+            // `apply` зовётся всегда, а не только при включённой диктовке: он
+            // сам смотрит настройку и при выключенной просто ничего не
+            // регистрирует. Зато создаётся состояние, и журнал получает первую
+            // строку — иначе на вопрос «а она вообще включена?» ответить нечем.
+            let handle = app.handle().clone();
+            if let Err(e) = dictation::apply(&handle, settings.clone(), models_dir(app.handle())) {
+                deliver::notify(&handle, "Диктовка не включилась", &e);
             }
             Ok(())
         })

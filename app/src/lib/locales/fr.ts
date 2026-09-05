@@ -85,6 +85,10 @@ export const dict: Dict = {
   change: "Changer…",
   setNotifications: "Notifications",
   setNotificationsHint: "Une alerte du système quand une tâche se termine.",
+  setDictation: "Dictée",
+  setDictationHint: "Appuyez sur le raccourci n'importe où, parlez, appuyez de nouveau : le texte arrive dans le presse-papiers.",
+  setDictationKey: "Raccourci de dictée",
+  setDictationKeyHint: "Il est capté pour tout le système : Cmd avec une lettre casserait ce raccourci dans toutes les applications.",
   setWorkers: "Conversions en parallèle",
   setWorkersHint: "Combien de tâches ffmpeg tournent en même temps. Effectif après un redémarrage.",
 

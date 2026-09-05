@@ -85,6 +85,10 @@ export const dict: Dict = {
   change: "更改…",
   setNotifications: "通知",
   setNotificationsHint: "任务完成时弹出系统通知。",
+  setDictation: "语音输入",
+  setDictationHint: "在任何地方按下快捷键，说话，再按一次——文字就到了剪贴板里。",
+  setDictationKey: "语音输入快捷键",
+  setDictationKeyHint: "它在整个系统层面被拦截，所以 Cmd 加字母会让那个快捷键在每个应用里都失效。",
   setWorkers: "并行转换数",
   setWorkersHint: "同时运行多少个 ffmpeg 任务。重启后生效。",
 

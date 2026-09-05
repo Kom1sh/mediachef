@@ -86,6 +86,10 @@ export const dict: Dict = {
   change: "تغيير…",
   setNotifications: "الإشعارات",
   setNotificationsHint: "تنبيه من النظام عند انتهاء المهمة.",
+  setDictation: "الإملاء",
+  setDictationHint: "اضغط الاختصار في أي مكان، تكلّم، ثم اضغطه ثانية — ويصير النص في الحافظة.",
+  setDictationKey: "اختصار الإملاء",
+  setDictationKeyHint: "يُلتقط على مستوى النظام كله، ولذلك فإن Cmd مع حرف سيعطّل ذلك الاختصار في كل التطبيقات.",
   setWorkers: "التحويلات المتوازية",
   setWorkersHint: "كم مهمة ffmpeg تعمل في وقت واحد. يسري بعد إعادة التشغيل.",
 

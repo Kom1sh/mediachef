@@ -85,6 +85,10 @@ export const dict: Dict = {
   change: "Zmień…",
   setNotifications: "Powiadomienia",
   setNotificationsHint: "Powiadomienie systemowe po zakończeniu zadania.",
+  setDictation: "Dyktowanie",
+  setDictationHint: "Naciśnij skrót gdziekolwiek, mów, naciśnij ponownie — tekst trafi do schowka.",
+  setDictationKey: "Skrót dyktowania",
+  setDictationKeyHint: "Przechwytywany w całym systemie, więc Cmd z literą zepsułby ten skrót w każdej aplikacji.",
   setWorkers: "Konwersje równolegle",
   setWorkersHint: "Ile zadań ffmpeg działa naraz. Zadziała po ponownym uruchomieniu.",
 

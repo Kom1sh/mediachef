@@ -119,6 +119,10 @@ export const dict = {
   change: "Change…",
   setNotifications: "Notifications",
   setNotificationsHint: "A desktop alert when a job finishes.",
+  setDictation: "Dictation",
+  setDictationHint: "Press the hotkey anywhere, speak, press again — the text lands in your clipboard.",
+  setDictationKey: "Dictation hotkey",
+  setDictationKeyHint: "Grabbed system-wide, so Cmd+letter would break that shortcut in every app.",
   setWorkers: "Parallel conversions",
   setWorkersHint: "How many ffmpeg jobs run at once. Takes effect after a restart.",
 

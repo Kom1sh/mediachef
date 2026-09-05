@@ -183,41 +183,101 @@ struct Runtime {
     recorder: Mutex<Option<Recorder>>,
     settings: Arc<Mutex<AppSettings>>,
     models_dir: PathBuf,
+    /// Куда писать журнал. Рядом с настройками, чтобы искать в одном месте.
+    log: PathBuf,
+    /// Какая комбинация сейчас зарегистрирована. Нужна, чтобы снять её при
+    /// смене хоткея: снимать «ту, что в настройках» нельзя — там уже новая.
+    registered: Mutex<Option<String>>,
 }
 
 static RUNTIME: OnceLock<Arc<Runtime>> = OnceLock::new();
 
-/// Включает диктовку: регистрирует хоткей и готовит состояние.
+/// Потолок журнала. Дальше файл начинается заново.
 ///
-/// Зовётся из `setup` только когда `dictation.enabled` — пока диктовку не
-/// включили руками, приложение не трогает ни микрофон, ни глобальные хоткеи.
-pub fn register(
+/// Журнал нужен, чтобы разобрать «нажал, а ничего не произошло», и для этого
+/// хватает последних событий. Расти без предела ему незачем: диктовка пишет
+/// несколько строк на фразу, и за месяц ежедневного использования это мегабайты
+/// в папке, куда никто не заглядывает.
+const LOG_MAX_BYTES: u64 = 256 * 1024;
+
+/// Пишет строку в журнал диктовки.
+///
+/// Своя запись, а не `println!`: у собранного `.app` нет терминала, куда
+/// смотреть, и единственный способ понять, что произошло на чужой машине, —
+/// файл, который можно попросить прислать. Ошибки записи проглатываются: не
+/// вести журнал неприятно, а уронить из-за него диктовку — недопустимо.
+fn trace(rt: &Runtime, line: &str) {
+    use std::io::Write;
+    let _ = (|| -> std::io::Result<()> {
+        if std::fs::metadata(&rt.log).map(|m| m.len()).unwrap_or(0) > LOG_MAX_BYTES {
+            let _ = std::fs::remove_file(&rt.log);
+        }
+        let mut f = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&rt.log)?;
+        writeln!(f, "[{:>8} мс] {line}", now_ms())
+    })();
+}
+
+/// Приводит регистрацию хоткея в соответствие настройкам.
+///
+/// Зовётся и при старте, и после каждого сохранения настроек — поэтому обязана
+/// быть идемпотентной и уметь всё: включить, выключить, сменить комбинацию.
+///
+/// Применять на лету, а не «после перезапуска», здесь принципиально. Настройка,
+/// которая не действует до перезапуска, неотличима от сломанной: человек щёлкает
+/// переключатель, жмёт хоткей, ничего не происходит — и он идёт писать, что
+/// фича не работает. Ровно этот случай мы уже разбирали вручную.
+pub fn apply(
     app: &AppHandle,
     settings: Arc<Mutex<AppSettings>>,
     models_dir: PathBuf,
 ) -> Result<(), String> {
-    let hotkey = settings
-        .lock()
-        .map_err(|_| "настройки заблокированы".to_string())?
-        .dictation
-        .hotkey
+    let log = models_dir
+        .parent()
+        .unwrap_or(&models_dir)
+        .join("dictation.log");
+
+    let rt = RUNTIME
+        .get_or_init(|| {
+            Arc::new(Runtime {
+                state: Mutex::new(State::default()),
+                recorder: Mutex::new(None),
+                settings: settings.clone(),
+                models_dir: models_dir.clone(),
+                log,
+                registered: Mutex::new(None),
+            })
+        })
         .clone();
 
-    let rt = Arc::new(Runtime {
-        state: Mutex::new(State::default()),
-        recorder: Mutex::new(None),
-        settings,
-        models_dir,
-    });
-    // Второй вызов register — это ошибка сборки, а не ситуация: хоткей уже
-    // зарегистрирован, и молча проигнорировать её нельзя.
-    RUNTIME
-        .set(rt)
-        .map_err(|_| "диктовка уже включена".to_string())?;
+    let (enabled, wanted) = {
+        let s = rt
+            .settings
+            .lock()
+            .map_err(|_| "настройки заблокированы".to_string())?;
+        (s.dictation.enabled, s.dictation.hotkey.clone())
+    };
 
-    let shortcut: Shortcut = hotkey
+    // Снимаем прежнюю регистрацию до всего остального: иначе смена комбинации
+    // оставила бы висеть старую, и обе работали бы одновременно.
+    let previous = rt.registered.lock().ok().and_then(|mut r| r.take());
+    if let Some(prev) = previous {
+        if let Ok(sc) = prev.parse::<Shortcut>() {
+            let _ = app.global_shortcut().unregister(sc);
+        }
+        trace(&rt, &format!("снята регистрация «{prev}»"));
+    }
+
+    if !enabled {
+        trace(&rt, "диктовка выключена в настройках");
+        return Ok(());
+    }
+
+    let shortcut: Shortcut = wanted
         .parse()
-        .map_err(|e| format!("не разобрать комбинацию «{hotkey}»: {e}"))?;
+        .map_err(|e| format!("не разобрать комбинацию «{wanted}»: {e}"))?;
 
     app.global_shortcut()
         .on_shortcut(shortcut, move |app, _sc, event| {
@@ -227,7 +287,18 @@ pub fn register(
             };
             handle(app, ev);
         })
-        .map_err(|e| format!("комбинация «{hotkey}» занята другим приложением: {e}"))
+        .map_err(|e| format!("комбинация «{wanted}» занята другим приложением: {e}"))?;
+
+    if let Ok(mut r) = rt.registered.lock() {
+        *r = Some(wanted.clone());
+    }
+    // Состояние сбрасываем: после смены хоткея машина не должна помнить, что
+    // «клавишу держат» — держали-то другую.
+    if let Ok(mut st) = rt.state.lock() {
+        *st = State::Idle;
+    }
+    trace(&rt, &format!("зарегистрирована «{wanted}»"));
+    Ok(())
 }
 
 /// Один шаг машины плюс исполнение того, что она велела.
@@ -235,14 +306,23 @@ fn handle(app: &AppHandle, event: Event) {
     let Some(rt) = RUNTIME.get().cloned() else {
         return;
     };
-    let action = {
+    let (before, action, after) = {
         let Ok(mut st) = rt.state.lock() else {
             return;
         };
-        let (next, action) = step(*st, event, now_ms());
+        let before = *st;
+        let (next, action) = step(before, event, now_ms());
         *st = next;
-        action
+        (before, action, next)
     };
+    // Каждое событие в журнал: именно этой строки не хватало, когда «включилось,
+    // а текста нет». По ней сразу видно, приходит ли отпускание клавиши, —
+    // а без него машина навсегда остаётся в «удержании», и второе нажатие
+    // выглядит проглоченным автоповтором.
+    trace(
+        &rt,
+        &format!("{event:?}: {before:?} -> {after:?}, действие {action:?}"),
+    );
     perform(app, &rt, action);
 }
 
@@ -255,6 +335,7 @@ fn perform(app: &AppHandle, rt: &Arc<Runtime>, action: Action) {
         Action::Reject => {}
         Action::StartRecording => match Recorder::start() {
             Ok(r) => {
+                trace(rt, "микрофон открыт, пишем");
                 if let Ok(mut slot) = rt.recorder.lock() {
                     *slot = Some(r);
                 }
@@ -263,6 +344,7 @@ fn perform(app: &AppHandle, rt: &Arc<Runtime>, action: Action) {
                 // Не смогли открыть микрофон — возвращаемся в покой, иначе
                 // следующее нажатие попыталось бы «остановить» несуществующую
                 // запись.
+                trace(rt, &format!("микрофон не открылся: {e}"));
                 reset(rt);
                 deliver::notify(app, "Диктовка", &mic_error_text(&e));
             }
@@ -308,7 +390,16 @@ fn reset(rt: &Arc<Runtime>) {
 /// Остановить запись, расшифровать, положить в буфер, сказать человеку.
 fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
     let recording = match rec.stop() {
-        Ok(r) => r,
+        Ok(r) => {
+            trace(
+                rt,
+                &format!(
+                    "запись {:?}, причина {:?}, до первого сэмпла {:?}",
+                    r.duration, r.reason, r.first_sample_delay
+                ),
+            );
+            r
+        }
         Err(e) => {
             deliver::notify(app, "Диктовка", &mic_error_text(&e));
             return;
@@ -383,11 +474,14 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
             deliver::notify(app, "Диктовка", "Речи не слышно — буфер обмена не тронут.");
         }
         Ok(text) => match deliver::to_clipboard(app, &text) {
-            Ok(()) => deliver::notify(
-                app,
-                "Скопировано в буфер",
-                &deliver::preview(&text, PREVIEW_CHARS),
-            ),
+            Ok(()) => {
+                trace(rt, &format!("в буфер: {} знаков", text.chars().count()));
+                deliver::notify(
+                    app,
+                    "Скопировано в буфер",
+                    &deliver::preview(&text, PREVIEW_CHARS),
+                )
+            }
             Err(e) => deliver::notify(app, "Диктовка", &format!("Не положить в буфер: {e}")),
         },
         Err(DictateError::NoSpeech) => {
@@ -395,6 +489,7 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
         }
         Err(DictateError::Cancelled) => {}
         Err(DictateError::Failed(e)) => {
+            trace(rt, &format!("расшифровка не удалась: {}", e.message));
             deliver::notify(
                 app,
                 "Диктовка",

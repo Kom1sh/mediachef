@@ -30,7 +30,46 @@ export interface AppSettings {
   /** 1…3 parallel ffmpeg jobs. Read once when the app boots its workers, so a
    *  change lands after a restart. */
   ffmpeg_workers: number;
+  dictation: Dictation;
 }
+
+/**
+ * The dictation block — mirrors `Dictation` in `settings.rs`.
+ *
+ * Only `enabled` and `hotkey` have a control on the Settings screen; the rest
+ * are edited by hand until the Dictation screen lands in wave 5.2. They are
+ * still typed here because the whole object crosses IPC in both directions, and
+ * dropping a field on the way out would reset it to its default.
+ */
+export interface Dictation {
+  enabled: boolean;
+  /** A combination, always: a lone modifier cannot be a global shortcut. */
+  hotkey: string;
+  model: string;
+  language: string;
+  dictionary: string;
+  delivery: string;
+  history_depth: number;
+}
+
+/**
+ * The hotkeys the Settings screen offers.
+ *
+ * A closed list rather than a text field, and that is the point. A global
+ * shortcut is grabbed before any application sees it, so the combinations that
+ * feel most natural are the worst available: `Cmd`+letter is what applications
+ * use for their own menus, and `Ctrl+Shift`+letter is what editors and
+ * terminals use for theirs. A free-text field would invite exactly those, and
+ * the damage — a shortcut that stops working everywhere — would show up far
+ * from this screen.
+ *
+ * All three below are claimed by neither macOS nor typical applications.
+ */
+export const DICTATION_HOTKEYS = [
+  { value: "Option+Space", label: "⌥ Space" },
+  { value: "Ctrl+Option+Space", label: "⌃⌥ Space" },
+  { value: "Ctrl+Option+D", label: "⌃⌥ D" },
+] as const;
 
 export interface Param {
   key: string;

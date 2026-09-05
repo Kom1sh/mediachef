@@ -85,6 +85,10 @@ export const dict: Dict = {
   change: "Alterar…",
   setNotifications: "Notificações",
   setNotificationsHint: "Um aviso do sistema quando uma tarefa termina.",
+  setDictation: "Ditado",
+  setDictationHint: "Pressione o atalho em qualquer lugar, fale e pressione de novo: o texto vai para a área de transferência.",
+  setDictationKey: "Atalho de ditado",
+  setDictationKeyHint: "É capturado em todo o sistema, então Cmd com uma letra quebraria esse atalho em todos os aplicativos.",
   setWorkers: "Conversões em paralelo",
   setWorkersHint: "Quantas tarefas do ffmpeg rodam ao mesmo tempo. Vale após reiniciar.",
 
