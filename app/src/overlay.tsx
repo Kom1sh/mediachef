@@ -101,6 +101,13 @@ function Overlay() {
           flexDirection: "column",
           gap: 6,
           boxShadow: "0 8px 24px rgba(0,0,0,0.28)",
+          // Панель выезжает из-под монобровы, а не возникает на месте. Смысл
+          // не декоративный: появившийся мгновенно прямоугольник читается как
+          // всплывшее окно, а выехавший — как продолжение самой монобровы.
+          // Начало анимации — вверху и сплюснутое, поэтому первый кадр целиком
+          // прячется за монобровью.
+          transformOrigin: "top center",
+          animation: "mc-drop 260ms cubic-bezier(0.2, 0.9, 0.3, 1) both",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -140,7 +147,18 @@ function Overlay() {
           {status.text || (status.phase === "listening" ? "Говорите…" : "")}
         </div>
       </div>
-      <style>{`@keyframes mc-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.25 } }`}</style>
+      <style>{`
+        @keyframes mc-pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.25 } }
+        @keyframes mc-drop {
+          from { transform: translateY(-100%) scaleY(0.6); opacity: 0 }
+          to   { transform: translateY(0) scaleY(1);       opacity: 1 }
+        }
+        /* Уважаем системную настройку «уменьшить движение»: плашка нужна,
+           чтобы показать статус, а не чтобы двигаться. */
+        @media (prefers-reduced-motion: reduce) {
+          * { animation: none !important }
+        }
+      `}</style>
     </div>
   );
 }
