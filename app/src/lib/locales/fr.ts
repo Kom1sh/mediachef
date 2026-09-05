@@ -89,6 +89,10 @@ export const dict: Dict = {
   setDictationHint: "Appuyez sur le raccourci n'importe où, parlez, appuyez de nouveau : le texte arrive dans le presse-papiers.",
   setDictationKey: "Raccourci de dictée",
   setDictationKeyHint: "Il est capté pour tout le système : Cmd avec une lettre casserait ce raccourci dans toutes les applications.",
+  setDictationDelivery: "Où va le texte",
+  setDictationDeliveryHint: "Le collage exige l'autorisation d'Accessibilité ; sans elle le texte arrive quand même dans le presse-papiers.",
+  optDeliveryClipboard: "Presse-papiers",
+  optDeliveryPaste: "Le coller",
   setWorkers: "Conversions en parallèle",
   setWorkersHint: "Combien de tâches ffmpeg tournent en même temps. Effectif après un redémarrage.",
 

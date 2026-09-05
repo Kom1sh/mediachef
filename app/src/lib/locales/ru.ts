@@ -103,6 +103,10 @@ export const dict: Dict = {
   setDictationHint: "Нажмите хоткей где угодно, говорите, нажмите ещё раз — текст окажется в буфере обмена.",
   setDictationKey: "Хоткей диктовки",
   setDictationKeyHint: "Перехватывается на весь компьютер, поэтому Cmd с буквой сломал бы это сочетание во всех приложениях.",
+  setDictationDelivery: "Куда попадает текст",
+  setDictationDeliveryHint: "Для вставки нужен «Универсальный доступ»; без него текст всё равно окажется в буфере.",
+  optDeliveryClipboard: "В буфер",
+  optDeliveryPaste: "Вставить",
   setWorkers: "Параллельные конвертации",
   // «Сколько задач … выполняется», singular: "сколько" + genitive plural takes a
   // singular predicate. "Выполняется" is also the word st_running uses for a job

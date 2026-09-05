@@ -90,6 +90,10 @@ export const dict: Dict = {
   setDictationHint: "Pulse el atajo en cualquier sitio, hable y púlselo otra vez: el texto queda en el portapapeles.",
   setDictationKey: "Atajo de dictado",
   setDictationKeyHint: "Se captura en todo el sistema, así que Cmd con una letra rompería ese atajo en todas las aplicaciones.",
+  setDictationDelivery: "Adónde va el texto",
+  setDictationDeliveryHint: "Pegar exige el permiso de Accesibilidad; sin él el texto igual queda en el portapapeles.",
+  optDeliveryClipboard: "Al portapapeles",
+  optDeliveryPaste: "Pegarlo",
   setWorkers: "Conversiones en paralelo",
   setWorkersHint: "Cuántas tareas de ffmpeg se ejecutan a la vez. Surte efecto tras reiniciar.",
 

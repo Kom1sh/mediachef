@@ -90,6 +90,10 @@ export const dict: Dict = {
   setDictationHint: "اضغط الاختصار في أي مكان، تكلّم، ثم اضغطه ثانية — ويصير النص في الحافظة.",
   setDictationKey: "اختصار الإملاء",
   setDictationKeyHint: "يُلتقط على مستوى النظام كله، ولذلك فإن Cmd مع حرف سيعطّل ذلك الاختصار في كل التطبيقات.",
+  setDictationDelivery: "إلى أين يذهب النص",
+  setDictationDeliveryHint: "اللصق يحتاج إذن «تسهيلات الاستخدام»؛ وبدونه يبقى النص في الحافظة على أي حال.",
+  optDeliveryClipboard: "إلى الحافظة",
+  optDeliveryPaste: "الصقه",
   setWorkers: "التحويلات المتوازية",
   setWorkersHint: "كم مهمة ffmpeg تعمل في وقت واحد. يسري بعد إعادة التشغيل.",
 

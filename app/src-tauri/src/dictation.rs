@@ -422,7 +422,7 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
         StopReason::Asked => {}
     }
 
-    let (model_id, language, dictionary, ui_language) = {
+    let (model_id, language, dictionary, ui_language, delivery) = {
         let Ok(s) = rt.settings.lock() else {
             return;
         };
@@ -431,6 +431,7 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
             s.dictation.language.clone(),
             s.dictation.dictionary.clone(),
             s.language.clone(),
+            s.dictation.delivery.clone(),
         )
     };
 
@@ -473,17 +474,7 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
         Ok(text) if text.is_empty() => {
             deliver::notify(app, "Диктовка", "Речи не слышно — буфер обмена не тронут.");
         }
-        Ok(text) => match deliver::to_clipboard(app, &text) {
-            Ok(()) => {
-                trace(rt, &format!("в буфер: {} знаков", text.chars().count()));
-                deliver::notify(
-                    app,
-                    "Скопировано в буфер",
-                    &deliver::preview(&text, PREVIEW_CHARS),
-                )
-            }
-            Err(e) => deliver::notify(app, "Диктовка", &format!("Не положить в буфер: {e}")),
-        },
+        Ok(text) => deliver_text(app, rt, &text, &delivery),
         Err(DictateError::NoSpeech) => {
             deliver::notify(app, "Диктовка", "Речи не слышно — буфер обмена не тронут.");
         }
@@ -495,6 +486,62 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
                 "Диктовка",
                 &format!("Не удалось расшифровать: {}", e.message),
             );
+        }
+    }
+}
+
+/// Доставляет расшифровку выбранным способом.
+///
+/// Вынесено из общего потока, потому что здесь три исхода, и у каждого свой
+/// разговор с человеком: вставилось, легло только в буфер, не выдан доступ.
+/// Последний — единственный, ради которого вся эта возня: он обязан быть
+/// громким. Молчащая автовставка неотличима от сломанного приложения.
+fn deliver_text(app: &AppHandle, rt: &Arc<Runtime>, text: &str, delivery: &str) {
+    let chars = text.chars().count();
+    if delivery == "paste" {
+        match deliver::to_active_window(app, text) {
+            Ok(()) => {
+                trace(rt, &format!("вставлено в активное окно: {chars} знаков"));
+                // Уведомления при удачной вставке нет намеренно: текст уже
+                // перед глазами, и системная плашка поверх него — это шум,
+                // который человек увидит несколько раз в час.
+                return;
+            }
+            Err(e) if e == "no_accessibility" => {
+                trace(rt, "нет доступа к универсальному управлению");
+                deliver::notify(
+                    app,
+                    "Текст в буфере — вставьте сами",
+                    "Для автовставки нужен «Универсальный доступ». Открываю нужный раздел настроек: включите там MediaChef.",
+                );
+                deliver::open_accessibility_settings();
+                return;
+            }
+            Err(e) => {
+                // Вставка не удалась по другой причине, но текст уже в буфере:
+                // `to_active_window` кладёт его туда первым делом.
+                trace(rt, &format!("вставка не удалась: {e}"));
+                deliver::notify(
+                    app,
+                    "Текст в буфере — вставьте сами",
+                    &deliver::preview(text, PREVIEW_CHARS),
+                );
+                return;
+            }
+        }
+    }
+    match deliver::to_clipboard(app, text) {
+        Ok(()) => {
+            trace(rt, &format!("в буфер: {chars} знаков"));
+            deliver::notify(
+                app,
+                "Скопировано в буфер",
+                &deliver::preview(text, PREVIEW_CHARS),
+            );
+        }
+        Err(e) => {
+            trace(rt, &format!("не положить в буфер: {e}"));
+            deliver::notify(app, "Диктовка", &format!("Не положить в буфер: {e}"));
         }
     }
 }

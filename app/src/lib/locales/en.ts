@@ -123,6 +123,10 @@ export const dict = {
   setDictationHint: "Press the hotkey anywhere, speak, press again — the text lands in your clipboard.",
   setDictationKey: "Dictation hotkey",
   setDictationKeyHint: "Grabbed system-wide, so Cmd+letter would break that shortcut in every app.",
+  setDictationDelivery: "Where the text goes",
+  setDictationDeliveryHint: "Pasting needs the Accessibility permission; without it the text still lands in the clipboard.",
+  optDeliveryClipboard: "Clipboard",
+  optDeliveryPaste: "Paste it",
   setWorkers: "Parallel conversions",
   setWorkersHint: "How many ffmpeg jobs run at once. Takes effect after a restart.",
 

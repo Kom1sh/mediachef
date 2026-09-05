@@ -89,6 +89,10 @@ export const dict: Dict = {
   setDictationHint: "Naciśnij skrót gdziekolwiek, mów, naciśnij ponownie — tekst trafi do schowka.",
   setDictationKey: "Skrót dyktowania",
   setDictationKeyHint: "Przechwytywany w całym systemie, więc Cmd z literą zepsułby ten skrót w każdej aplikacji.",
+  setDictationDelivery: "Dokąd trafia tekst",
+  setDictationDeliveryHint: "Wklejanie wymaga uprawnienia Dostępność; bez niego tekst i tak trafi do schowka.",
+  optDeliveryClipboard: "Do schowka",
+  optDeliveryPaste: "Wklej",
   setWorkers: "Konwersje równolegle",
   setWorkersHint: "Ile zadań ffmpeg działa naraz. Zadziała po ponownym uruchomieniu.",
 

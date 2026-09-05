@@ -89,6 +89,10 @@ export const dict: Dict = {
   setDictationHint: "Pressione o atalho em qualquer lugar, fale e pressione de novo: o texto vai para a área de transferência.",
   setDictationKey: "Atalho de ditado",
   setDictationKeyHint: "É capturado em todo o sistema, então Cmd com uma letra quebraria esse atalho em todos os aplicativos.",
+  setDictationDelivery: "Para onde vai o texto",
+  setDictationDeliveryHint: "Colar exige a permissão de Acessibilidade; sem ela o texto ainda assim fica na área de transferência.",
+  optDeliveryClipboard: "Área de transferência",
+  optDeliveryPaste: "Colar",
   setWorkers: "Conversões em paralelo",
   setWorkersHint: "Quantas tarefas do ffmpeg rodam ao mesmo tempo. Vale após reiniciar.",
 

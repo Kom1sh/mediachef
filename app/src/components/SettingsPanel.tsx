@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, FolderOpen, Gauge, Keyboard, Languages, MessageSquare, Mic, Monitor, Palette, RefreshCw } from "lucide-react";
+import { Bell, ClipboardPaste, FolderOpen, Gauge, Keyboard, Languages, MessageSquare, Mic, Monitor, Palette, RefreshCw } from "lucide-react";
 import { useT, LOCALES, LOCALE_FLAGS, LOCALE_NAMES } from "../lib/i18n";
 import { Flag } from "./Flag";
 import { pickFolder } from "../lib/ipc";
@@ -310,6 +310,26 @@ export function SettingsPanel({
               // комбинации — как раз самые негодные.
               choices={DICTATION_HOTKEYS.map(h => ({ value: h.value, label: h.label }))}
               onPick={hotkey => onChange({ ...s, dictation: { ...s.dictation, hotkey } })}
+            />
+          </Row>
+        )}
+
+        {s.dictation.enabled && (
+          <Row
+            icon={ClipboardPaste} label={t("setDictationDelivery")}
+            // Про разрешение сказано прямо здесь, где выбирают, а не в момент
+            // отказа: человек должен понимать, во что ввязывается, до того как
+            // первая вставка не сработает.
+            hint={t("setDictationDeliveryHint")}
+          >
+            <Segmented
+              name="mc-dictation-delivery" label={t("setDictationDelivery")}
+              value={s.dictation.delivery}
+              choices={[
+                { value: "clipboard", label: t("optDeliveryClipboard") },
+                { value: "paste", label: t("optDeliveryPaste") },
+              ]}
+              onPick={delivery => onChange({ ...s, dictation: { ...s.dictation, delivery } })}
             />
           </Row>
         )}

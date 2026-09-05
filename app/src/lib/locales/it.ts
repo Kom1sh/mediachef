@@ -89,6 +89,10 @@ export const dict: Dict = {
   setDictationHint: "Premi la scorciatoia ovunque, parla, premila di nuovo: il testo finisce negli appunti.",
   setDictationKey: "Scorciatoia di dettatura",
   setDictationKeyHint: "Viene intercettata a livello di sistema, quindi Cmd con una lettera romperebbe quella scorciatoia in ogni applicazione.",
+  setDictationDelivery: "Dove finisce il testo",
+  setDictationDeliveryHint: "Incollare richiede il permesso Accessibilità; senza, il testo finisce comunque negli appunti.",
+  optDeliveryClipboard: "Negli appunti",
+  optDeliveryPaste: "Incollalo",
   setWorkers: "Conversioni in parallelo",
   setWorkersHint: "Quante attività ffmpeg girano insieme. Ha effetto dopo un riavvio.",
 

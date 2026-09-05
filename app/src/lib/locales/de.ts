@@ -89,6 +89,10 @@ export const dict: Dict = {
   setDictationHint: "Kurzbefehl irgendwo drücken, sprechen, noch einmal drücken — der Text landet in der Zwischenablage.",
   setDictationKey: "Kurzbefehl fürs Diktat",
   setDictationKeyHint: "Wird systemweit abgefangen, deshalb würde Cmd mit einem Buchstaben diesen Kurzbefehl in jeder App zerstören.",
+  setDictationDelivery: "Wohin der Text geht",
+  setDictationDeliveryHint: "Einfügen braucht die Bedienungshilfen-Freigabe; ohne sie landet der Text trotzdem in der Zwischenablage.",
+  optDeliveryClipboard: "Zwischenablage",
+  optDeliveryPaste: "Einfügen",
   setWorkers: "Parallele Konvertierungen",
   setWorkersHint: "Wie viele ffmpeg-Aufgaben gleichzeitig laufen. Wirkt nach einem Neustart.",
 
