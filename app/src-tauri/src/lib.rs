@@ -1,3 +1,6 @@
+pub mod deliver;
+pub mod dictation;
+pub mod mic;
 pub mod queue;
 pub mod settings;
 
@@ -785,6 +788,12 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        // Диктовка. Плагины подключаются всегда, а хоткей регистрируется в
+        // `setup` только при включённой настройке: сам по себе плагин ничего не
+        // слушает и ничем не пахнет, а вот регистрация глобальной комбинации —
+        // уже вмешательство в чужие приложения.
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .manage(state)
         .setup(move |app| {
             // ретрансляция событий очереди в webview
@@ -808,6 +817,21 @@ pub fn run() {
             }
             let whisper_q = q.clone();
             std::thread::spawn(move || whisper_worker(whisper_q));
+            // Диктовка — последней: она ничего не блокирует, а её отказ не
+            // должен помешать подняться очередям.
+            //
+            // Отказ здесь громкий, но не смертельный. Занятая другим
+            // приложением комбинация — самая частая причина, и уронить из-за
+            // неё запуск было бы дико; экрана настроек, где показать красную
+            // строку, в этой волне ещё нет, поэтому говорим уведомлением.
+            if settings.lock().unwrap().dictation.enabled {
+                let handle = app.handle().clone();
+                if let Err(e) =
+                    dictation::register(&handle, settings.clone(), models_dir(app.handle()))
+                {
+                    deliver::notify(&handle, "Диктовка не включилась", &e);
+                }
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
