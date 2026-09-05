@@ -93,7 +93,6 @@ export const dict: Dict = {
   setDictationDeliveryHint: "Wklejanie wymaga uprawnienia Dostępność; bez niego tekst i tak trafi do schowka.",
   optDeliveryClipboard: "Do schowka",
   optDeliveryType: "Wpisz",
-  optDeliveryPaste: "Wklej",
   setWorkers: "Konwersje równolegle",
   setWorkersHint: "Ile zadań ffmpeg działa naraz. Zadziała po ponownym uruchomieniu.",
 

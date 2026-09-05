@@ -530,38 +530,6 @@ fn deliver_text(app: &AppHandle, rt: &Arc<Runtime>, text: &str, delivery: &str) 
             }
         }
     }
-    if delivery == "paste" {
-        match deliver::to_active_window(app, text) {
-            Ok(()) => {
-                trace(rt, &format!("вставлено в активное окно: {chars} знаков"));
-                // Уведомления при удачной вставке нет намеренно: текст уже
-                // перед глазами, и системная плашка поверх него — это шум,
-                // который человек увидит несколько раз в час.
-                return;
-            }
-            Err(e) if e == "no_accessibility" => {
-                trace(rt, "нет доступа к универсальному управлению");
-                deliver::notify(
-                    app,
-                    "Текст в буфере — вставьте сами",
-                    "Для автовставки нужен «Универсальный доступ». Открываю нужный раздел настроек: включите там MediaChef.",
-                );
-                deliver::open_accessibility_settings();
-                return;
-            }
-            Err(e) => {
-                // Вставка не удалась по другой причине, но текст уже в буфере:
-                // `to_active_window` кладёт его туда первым делом.
-                trace(rt, &format!("вставка не удалась: {e}"));
-                deliver::notify(
-                    app,
-                    "Текст в буфере — вставьте сами",
-                    &deliver::preview(text, PREVIEW_CHARS),
-                );
-                return;
-            }
-        }
-    }
     match deliver::to_clipboard(app, text) {
         Ok(()) => {
             trace(rt, &format!("в буфер: {chars} знаков"));

@@ -94,7 +94,6 @@ export const dict: Dict = {
   setDictationDeliveryHint: "اللصق يحتاج إذن «تسهيلات الاستخدام»؛ وبدونه يبقى النص في الحافظة على أي حال.",
   optDeliveryClipboard: "إلى الحافظة",
   optDeliveryType: "اكتبه",
-  optDeliveryPaste: "الصقه",
   setWorkers: "التحويلات المتوازية",
   setWorkersHint: "كم مهمة ffmpeg تعمل في وقت واحد. يسري بعد إعادة التشغيل.",
 

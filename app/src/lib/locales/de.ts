@@ -93,7 +93,6 @@ export const dict: Dict = {
   setDictationDeliveryHint: "Einfügen braucht die Bedienungshilfen-Freigabe; ohne sie landet der Text trotzdem in der Zwischenablage.",
   optDeliveryClipboard: "Zwischenablage",
   optDeliveryType: "Tippen",
-  optDeliveryPaste: "Einfügen",
   setWorkers: "Parallele Konvertierungen",
   setWorkersHint: "Wie viele ffmpeg-Aufgaben gleichzeitig laufen. Wirkt nach einem Neustart.",
 

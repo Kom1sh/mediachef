@@ -93,7 +93,6 @@ export const dict: Dict = {
   setDictationDeliveryHint: "Le collage exige l'autorisation d'Accessibilité ; sans elle le texte arrive quand même dans le presse-papiers.",
   optDeliveryClipboard: "Presse-papiers",
   optDeliveryType: "L'écrire",
-  optDeliveryPaste: "Le coller",
   setWorkers: "Conversions en parallèle",
   setWorkersHint: "Combien de tâches ffmpeg tournent en même temps. Effectif après un redémarrage.",
 

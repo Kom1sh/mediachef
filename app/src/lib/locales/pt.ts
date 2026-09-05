@@ -93,7 +93,6 @@ export const dict: Dict = {
   setDictationDeliveryHint: "Colar exige a permissão de Acessibilidade; sem ela o texto ainda assim fica na área de transferência.",
   optDeliveryClipboard: "Área de transferência",
   optDeliveryType: "Digitar",
-  optDeliveryPaste: "Colar",
   setWorkers: "Conversões em paralelo",
   setWorkersHint: "Quantas tarefas do ffmpeg rodam ao mesmo tempo. Vale após reiniciar.",
 

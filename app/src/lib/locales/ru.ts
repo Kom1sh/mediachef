@@ -107,7 +107,6 @@ export const dict: Dict = {
   setDictationDeliveryHint: "Для вставки нужен «Универсальный доступ»; без него текст всё равно окажется в буфере.",
   optDeliveryClipboard: "В буфер",
   optDeliveryType: "Печатать",
-  optDeliveryPaste: "Вставить",
   setWorkers: "Параллельные конвертации",
   // «Сколько задач … выполняется», singular: "сколько" + genitive plural takes a
   // singular predicate. "Выполняется" is also the word st_running uses for a job

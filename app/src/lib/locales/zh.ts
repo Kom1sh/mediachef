@@ -93,7 +93,6 @@ export const dict: Dict = {
   setDictationDeliveryHint: "粘贴需要「辅助功能」权限；没有它，文字仍然会进剪贴板。",
   optDeliveryClipboard: "剪贴板",
   optDeliveryType: "直接输入",
-  optDeliveryPaste: "直接粘贴",
   setWorkers: "并行转换数",
   setWorkersHint: "同时运行多少个 ffmpeg 任务。重启后生效。",
 

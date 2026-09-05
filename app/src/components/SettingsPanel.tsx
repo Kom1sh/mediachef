@@ -325,14 +325,12 @@ export function SettingsPanel({
             <Segmented
               name="mc-dictation-delivery" label={t("setDictationDelivery")}
               value={s.dictation.delivery}
-              // Три способа, а не два, и «печатать» стоит между ними не для
-              // симметрии: только он не затирает буфер обмена. При диктовке
-              // несколько раз в час это разница между «буфером можно
-              // пользоваться» и «нельзя».
+              // Два способа. Третьим была вставка через Cmd+V — она роняла
+              // приложение, а печать доставляет текст туда же и вдобавок не
+              // затирает буфер обмена.
               choices={[
                 { value: "clipboard", label: t("optDeliveryClipboard") },
                 { value: "type", label: t("optDeliveryType") },
-                { value: "paste", label: t("optDeliveryPaste") },
               ]}
               onPick={delivery => onChange({ ...s, dictation: { ...s.dictation, delivery } })}
             />
