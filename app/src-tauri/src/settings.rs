@@ -63,6 +63,19 @@ pub struct Dictation {
     ///
     /// Одиночный модификатор (правый Cmd) хоткеем быть не может — тип
     /// `Shortcut` требует обычную клавишу, — поэтому это всегда комбинация.
+    ///
+    /// По умолчанию `Option+Space`, и выбор тут не вкусовой. Глобальный хоткей
+    /// перехватывается **до** всех приложений, поэтому занимать им `Cmd`+букву
+    /// нельзя: это ровно тот класс комбинаций, которым приложения занимают свои
+    /// меню, и `Cmd+D` глобально сломал бы «дублировать» и «закладку» вообще
+    /// везде. `Ctrl+Shift`+буква ничем не лучше — такие занимают редакторы и
+    /// терминалы (в Claude Code `Ctrl+Shift+D` уже занят).
+    ///
+    /// `Option+Space` не заявлен ни системой, ни типовыми приложениями: `Cmd`
+    /// со Space — это Spotlight, `Ctrl` со Space — переключение раскладки, а
+    /// `Option` со Space свободен. Цена одна и небольшая: в текстовых полях
+    /// macOS эта комбинация вставляет неразрывный пробел, и после регистрации
+    /// хоткея так делать больше нельзя.
     pub hotkey: String,
     /// Идентификатор модели whisper, как в `core/models.rs`.
     ///
@@ -113,7 +126,7 @@ impl Default for Dictation {
     fn default() -> Self {
         Self {
             enabled: false,
-            hotkey: "Ctrl+Shift+D".into(),
+            hotkey: "Option+Space".into(),
             model: "small".into(),
             language: String::new(),
             dictionary: String::new(),
@@ -356,7 +369,7 @@ mod tests {
         s.dictation.delivery = "paste".into();
         s.dictation.history_depth = 250;
         let s = sanitize(s);
-        assert_eq!(s.dictation.hotkey, "Ctrl+Shift+D", "пустой хоткей чинится");
+        assert_eq!(s.dictation.hotkey, "Option+Space", "пустой хоткей чинится");
         assert_eq!(s.dictation.model, "small", "неизвестная модель чинится");
         assert_eq!(
             s.dictation.delivery, "clipboard",

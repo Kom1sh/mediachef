@@ -425,6 +425,30 @@ fn mic_error_text(e: &MicError) -> String {
 mod tests {
     use super::*;
 
+    /// Хоткей по умолчанию обязан разбираться.
+    ///
+    /// Опечатка в строке — это не ошибка компиляции, а молча не включившаяся
+    /// фича: `register` вернул бы отказ разбора, а человек увидел бы лишь
+    /// уведомление при старте, которое легко пропустить. Тест ловит это на
+    /// сборке.
+    #[test]
+    fn default_hotkey_parses() {
+        let s = crate::settings::Dictation::default().hotkey;
+        let parsed: Result<Shortcut, _> = s.parse();
+        assert!(parsed.is_ok(), "хоткей по умолчанию «{s}» не разобрался");
+    }
+
+    /// Заодно проверяем сам разбор на том, что мы обещаем в README как
+    /// запасные варианты: если плагин однажды перестанет их понимать, узнать об
+    /// этом лучше здесь, а не от человека, которому мы это посоветовали.
+    #[test]
+    fn documented_alternative_hotkeys_parse() {
+        for s in ["Ctrl+Option+D", "Option+Space", "Cmd+Option+Space"] {
+            let parsed: Result<Shortcut, _> = s.parse();
+            assert!(parsed.is_ok(), "комбинация «{s}» не разобралась");
+        }
+    }
+
     /// Прогоняет последовательность «(событие, время)» и отдаёт список действий.
     fn run(events: &[(Event, u64)]) -> (State, Vec<Action>) {
         let mut st = State::default();

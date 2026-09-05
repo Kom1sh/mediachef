@@ -130,7 +130,7 @@ is uploaded and nothing is billed per minute.
 {
   "dictation": {
     "enabled": true,
-    "hotkey": "Ctrl+Shift+D",
+    "hotkey": "Option+Space",
     "model": "small",
     "language": "",
     "dictionary": "MediaChef, ffmpeg, whisper, хоткей, кодек, битрейт",
@@ -143,7 +143,7 @@ is uploaded and nothing is billed per minute.
 | Key | Values | Notes |
 | --- | --- | --- |
 | `enabled` | `true` \| `false` | off by default; the hotkey is not registered at all until you turn it on |
-| `hotkey` | e.g. `Ctrl+Shift+D` | always a combination — a lone modifier cannot be a global shortcut |
+| `hotkey` | `Option+Space` by default | see below; always a combination — a lone modifier cannot be a global shortcut |
 | `model` | `tiny` \| `base` \| `small` \| `large-v3-turbo` | `small` by default: the recipes use it too, so it is usually already on disk |
 | `language` | `""` \| `auto` \| a language code | empty means "same as the interface language" |
 | `dictionary` | free text, ≤400 chars | fixes how names and jargon are spelled; see below |
@@ -151,6 +151,19 @@ is uploaded and nothing is billed per minute.
 | `history_depth` | `0`–`100` | `0` by default: nothing dictated is written to disk |
 
 Restart the app after editing — the hotkey is registered at startup.
+
+**Why `Option+Space` and not `Cmd`+letter.** A global shortcut is grabbed
+*before* any application sees it, so the combinations that feel simplest are the
+worst possible choice: `Cmd`+letter is exactly what applications use for their
+own menus, and registering `Cmd+D` globally would break "duplicate" and
+"bookmark" everywhere. `Ctrl+Shift`+letter is no better — editors and terminals
+claim those (`Ctrl+Shift+D` is already taken in Claude Code). `Option+Space` is
+claimed by neither macOS nor typical applications: `Cmd` with Space is
+Spotlight, `Ctrl` with Space switches input source, and `Option` with Space is
+free. It costs one thing, stated plainly: in macOS text fields that combination
+inserts a non-breaking space, and once the hotkey is registered you lose that.
+If it does clash on your machine, `Ctrl+Option+D` is the fallback nothing else
+wants.
 
 **The dictionary earns its place.** It is passed to whisper as an initial
 prompt, and on our measurement it turned «медиашиф» and «ходкий» into
