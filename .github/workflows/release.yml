@@ -161,8 +161,11 @@ jobs:
       - name: system deps (tauri v2)
         run: |
           sudo apt-get update
+          # libasound2-dev — для cpal (захват микрофона диктовки): на Linux он
+          # линкуется с ALSA, и без заголовков сборка падает на alsa-sys.
+          # libxdo-dev — для enigo (печать текста в активное поле).
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
-            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libfuse2 patchelf
+            libxdo-dev libasound2-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libfuse2 patchelf
       - run: cd app && npm ci
       # After the apt step on purpose: the whisper build needs the g++ that
       # build-essential brings.
