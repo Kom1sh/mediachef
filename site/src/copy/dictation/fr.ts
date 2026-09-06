@@ -10,10 +10,10 @@ export default {
   crumb: "Dictée vocale",
 
   answer:
-    "Appuyez sur la touche ⌥ droite n'importe où sur le Mac, dites une phrase, appuyez encore : le texte s'écrit directement dans le champ où se trouve le curseur — un terminal, une conversation, un formulaire de navigateur. C'est le même Whisper que MediaChef transporte déjà qui reconnaît, donc l'audio ne quitte pas votre disque et personne ne compte les minutes. Dans notre mesure, une phrase de cinq secondes est revenue en 780 millisecondes. C'est la seule fonction de ce site qui n'est pas encore publiée : elle est terminée et utilisée chaque jour en interne, et elle arrive dans la prochaine version.",
+    "Appuyez sur la touche ⌥ droite n'importe où sur le Mac, dites une phrase, appuyez encore : le texte s'écrit directement dans le champ où se trouve le curseur — un terminal, une conversation, un formulaire de navigateur. C'est le même Whisper que MediaChef transporte déjà qui reconnaît, donc l'audio ne quitte pas votre disque et personne ne compte les minutes. Dans notre mesure, une phrase de cinq secondes est revenue en 780 millisecondes.",
 
   facts: [
-    { k: "État", v: "Pas encore publiée — arrive dans la prochaine version" },
+    { k: "État", v: "Publiée depuis la version 0.8.0, macOS seulement pour l'instant" },
     { k: "Où ça tourne", v: "Entièrement sur votre machine, sans compte ni envoi" },
     { k: "Vitesse", v: "780 ms de la touche au texte sur une phrase de cinq secondes (mesuré)" },
     { k: "Combien ça coûte", v: "Rien. Ni abonnement ni facturation à la minute" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "L'activer une fois",
-      p: "Les réglages proposent un interrupteur et trois raccourcis au choix. Tant que vous ne l'avez pas activée, MediaChef n'enregistre aucun raccourci global : une application qui s'approprie discrètement une combinaison système est une application qui casse les autres.",
+      p: "L'onglet Dictée propose un interrupteur et un déclencheur au choix : la touche ⌥ droite, la touche ⌘ droite ou l'une de deux combinaisons. Tant que vous ne l'avez pas activée, MediaChef n'enregistre aucun raccourci global : une application qui s'approprie discrètement une combinaison système est une application qui casse les autres.",
     },
     {
       h: "Appuyer sur le raccourci n'importe où",
@@ -53,7 +53,7 @@ export default {
   ],
   shotAlt:
     "MediaChef prêt à convertir : le plan de travail attend un fichier vidéo, la file des tâches est à droite.",
-  shotCaption: "MediaChef aujourd'hui. La dictée ajoutera un quatrième mode aux trois déjà là.",
+  shotCaption: "L'onglet Dictée de MediaChef : déclencheur, modèles, langue, dictionnaire et état de l'autorisation, tout au même endroit.",
 
   tables: [
     {
@@ -145,16 +145,12 @@ export default {
     "Dit franchement, parce que l'apprendre plus tard est pire que de le lire maintenant.",
   notFor: [
     {
-      h: "Vous le voulez tout de suite.",
-      p: "C'est la seule page de ce site qui décrit quelque chose qu'on ne peut pas encore télécharger. La dictée est terminée et utilisée chaque jour en interne, et elle sort dans la prochaine version — mais celle publiée aujourd'hui ne l'a pas.",
-    },
-    {
       h: "Vous n'êtes pas sur Mac.",
       p: "macOS passe en premier parce que c'est là que tout a été construit et éprouvé. Windows et Linux suivent : le moteur de reconnaissance est déjà multiplateforme, ce qui demande du travail par plateforme, c'est le raccourci et l'écriture du texte.",
     },
     {
       h: "Il vous faut une écriture au fil de la parole.",
-      p: "Le texte arrive quand vous avez fini, pas mot à mot pendant que vous parlez. C'est un arbitrage assumé : reconnaître la phrase entière est plus juste, et à ces vitesses le mode continu n'apporterait rien.",
+      p: "Le texte arrive dans le champ quand vous avez fini, pas mot à mot pendant que vous parlez : c'est ainsi qu'une phrase est reconnue entière et plus précisément. Pendant que vous parlez, un brouillon de la reconnaissance est visible dans le panneau sous l'encoche — mais ce qui est tapé est un seul résultat propre, pas une suite de corrections.",
     },
     {
       h: "Il vous faut distinguer les locuteurs.",
@@ -182,7 +178,7 @@ export default {
     },
     {
       q: "Pourquoi a-t-elle besoin de l'autorisation d'Accessibilité ?",
-      a: "Uniquement pour écrire le texte dans la fenêtre d'une autre application, ce que macOS compte comme une saisie synthétique. Si vous préférez ne pas l'accorder, basculez la livraison sur le presse-papiers : cela ne demande rien de plus que le micro, et vous collez vous-même avec ⌘V.",
+      a: "Pour deux choses. Entendre la touche de déclenchement : un modificateur seul ne peut pas être enregistré comme raccourci ordinaire, MediaChef écoute donc le clavier lui-même, et macOS ne l'autorise qu'avec l'Accessibilité. Et taper du texte dans la fenêtre d'une autre application, ce que le système considère comme une saisie synthétique. Une seule autorisation couvre les deux et s'accorde une fois ; redémarrez ensuite l'application.",
     },
     {
       q: "Et si je ne l'accorde pas ?",
@@ -210,12 +206,12 @@ export default {
     },
     {
       q: "C'est vraiment gratuit ?",
-      a: `Oui. MediaChef est open source sous GPL-3.0, sans version payante ni abonnement — dictée comprise. La version publiée est la ${FACTS.version} ; la dictée arrive dans la suivante.`,
+      a: `Oui. MediaChef est open source sous GPL-3.0, sans version payante ni abonnement — dictée comprise. La version publiée est la ${FACTS.version}, dictée comprise.`,
     },
   ],
 
   ctaTitle: "MediaChef aujourd'hui",
-  ctaSub: `Version ${FACTS.version} — gratuit, open source, macOS · Windows · Linux. La dictée arrive dans la prochaine version.`,
+  ctaSub: `Version ${FACTS.version} — gratuit, open source, macOS · Windows · Linux. La dictée est incluse.`,
   also: [
     { page: "transcribe", label: "Audio en texte — le même moteur, pour des fichiers" },
     { page: "srt", label: "Vidéo en sous-titres SRT — mesuré et hors ligne" },

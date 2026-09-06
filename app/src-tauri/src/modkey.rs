@@ -81,6 +81,9 @@ impl Trigger {
         }
     }
 
+    /// Обратно из атомика — нужен только перехватчику, а он есть лишь на macOS;
+    /// без `cfg` сборка под Linux и Windows ругалась бы на мёртвый код.
+    #[cfg(target_os = "macos")]
     fn from_u8(v: u8) -> Self {
         if v == Self::RightCommand as u8 {
             Self::RightCommand

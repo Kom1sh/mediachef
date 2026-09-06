@@ -10,10 +10,10 @@ export default {
   crumb: "Dyktowanie głosem",
 
   answer:
-    "Naciśnij prawy ⌥ gdziekolwiek na Macu, powiedz zdanie, naciśnij ponownie — a tekst wpisze się prosto w to pole, w którym stoi kursor: w terminalu, w czacie, w formularzu przeglądarki. Rozpoznaje ten sam Whisper, który MediaChef już ze sobą nosi, więc dźwięk nie opuszcza twojego dysku i nikt nie liczy minut. W naszym pomiarze pięciosekundowe zdanie wróciło w 780 milisekund. To jedyna funkcja na tej stronie, której jeszcze nie ma w wydaniu: jest dokończona i codziennie używana wewnętrznie, a wyjdzie w następnej wersji.",
+    "Naciśnij prawy ⌥ gdziekolwiek na Macu, powiedz zdanie, naciśnij ponownie — a tekst wpisze się prosto w to pole, w którym stoi kursor: w terminalu, w czacie, w formularzu przeglądarki. Rozpoznaje ten sam Whisper, który MediaChef już ze sobą nosi, więc dźwięk nie opuszcza twojego dysku i nikt nie liczy minut. W naszym pomiarze pięciosekundowe zdanie wróciło w 780 milisekund.",
 
   facts: [
-    { k: "Stan", v: "Jeszcze nie wydana — wyjdzie w następnej wersji" },
+    { k: "Stan", v: "W wydaniu od wersji 0.8.0, na razie tylko macOS" },
     { k: "Gdzie działa", v: "Całkowicie na twoim komputerze, bez konta i bez wysyłki" },
     { k: "Szybkość", v: "780 ms od klawisza do tekstu na pięciosekundowym zdaniu (pomiar)" },
     { k: "Ile kosztuje", v: "Nic. Ani subskrypcji, ani opłat za minutę" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Włączyć raz",
-      p: "W Ustawieniach jest przełącznik i trzy skróty do wyboru. Dopóki nie włączysz, MediaChef nie rejestruje żadnego skrótu globalnego: program, który po cichu zabiera systemowe skróty, to program, który psuje inne programy.",
+      p: "Na karcie Dyktowanie jest przełącznik i wyzwalacz do wyboru: prawy ⌥, prawy ⌘ albo jedna z dwu kombinacji. Dopóki nie włączysz, MediaChef nie rejestruje żadnego skrótu globalnego: program, który po cichu zabiera systemowe skróty, to program, który psuje inne programy.",
     },
     {
       h: "Nacisnąć skrót gdziekolwiek",
@@ -53,7 +53,7 @@ export default {
   ],
   shotAlt:
     "MediaChef gotowy do konwersji: blat czeka na plik wideo, po prawej kolejka zadań.",
-  shotCaption: "MediaChef dzisiaj. Dyktowanie doda czwarty tryb do trzech, które już są.",
+  shotCaption: "Karta Dyktowanie w MediaChef: wyzwalacz, modele, język, słownik i stan uprawnienia — wszystko w jednym miejscu.",
 
   tables: [
     {
@@ -145,16 +145,12 @@ export default {
     "Mówimy wprost, bo dowiedzieć się później jest gorzej niż przeczytać teraz.",
   notFor: [
     {
-      h: "Chcesz teraz.",
-      p: "To jedyna strona w tym serwisie opisująca coś, czego nie da się jeszcze pobrać. Dyktowanie jest dokończone i codziennie używane wewnętrznie, wyjdzie w następnej wersji — ale dzisiejsze wydanie tego nie ma.",
-    },
-    {
       h: "Nie masz Maca.",
       p: "macOS jest pierwszy, bo tam wszystko powstało i było sprawdzane. Windows i Linux idą dalej: silnik rozpoznawania jest już wieloplatformowy, roboty na platformę wymagają skrót i samo wpisywanie tekstu.",
     },
     {
       h: "Potrzebujesz pisania na bieżąco.",
-      p: "Tekst przychodzi, kiedy skończysz, a nie słowo po słowie w trakcie mówienia. To świadomy wybór: rozpoznanie całego zdania jest dokładniejsze, a przy tych szybkościach tryb ciągły nic by nie dał.",
+      p: "Tekst trafia do pola, gdy skończysz, a nie słowo po słowie w trakcie mówienia: tak fraza jest rozpoznawana w całości i dokładniej. Gdy mówisz, szkic rozpoznania widać w panelu pod notchem — ale wpisywany jest jeden czysty wynik, nie ciąg poprawek.",
     },
     {
       h: "Potrzebujesz rozdzielenia mówiących.",
@@ -182,7 +178,7 @@ export default {
     },
     {
       q: "Po co mu uprawnienie Dostępność?",
-      a: "Tylko po to, żeby wpisać tekst w okno innego programu, co macOS liczy jako wejście syntetyczne. Jeśli wolisz go nie dawać, przełącz dostarczanie na schowek: temu nie trzeba niczego poza mikrofonem, a wklejasz sam przez ⌘V.",
+      a: "Do dwóch rzeczy. Żeby słyszeć klawisz wyzwalający: samego modyfikatora nie da się zarejestrować jako zwykłego skrótu, więc MediaChef sam nasłuchuje klawiatury, a macOS pozwala na to tylko z uprawnieniem Dostępność. I żeby wpisywać tekst do okna innej aplikacji, co system traktuje jako syntetyczne wejście. Jedno uprawnienie obejmuje oba, nadaje się raz; potem uruchom aplikację ponownie.",
     },
     {
       q: "A jeśli nie dam?",
@@ -210,12 +206,12 @@ export default {
     },
     {
       q: "Naprawdę darmowe?",
-      a: `Tak. MediaChef jest otwartoźródłowy na licencji GPL-3.0, bez wersji płatnej i bez subskrypcji — dyktowanie także. Wydana wersja to ${FACTS.version}; dyktowanie wychodzi w następnej.`,
+      a: `Tak. MediaChef jest otwartoźródłowy na licencji GPL-3.0, bez wersji płatnej i bez subskrypcji — dyktowanie także. Wydana wersja to ${FACTS.version}, dyktowanie w niej jest.`,
     },
   ],
 
   ctaTitle: "MediaChef dzisiaj",
-  ctaSub: `Wersja ${FACTS.version} — za darmo, otwarty kod, macOS · Windows · Linux. Dyktowanie wychodzi w następnej wersji.`,
+  ctaSub: `Wersja ${FACTS.version} — za darmo, otwarty kod, macOS · Windows · Linux. Dyktowanie już w środku.`,
   also: [
     { page: "transcribe", label: "Audio na tekst — ten sam silnik, do plików" },
     { page: "srt", label: "Wideo na napisy SRT — zmierzone i offline" },

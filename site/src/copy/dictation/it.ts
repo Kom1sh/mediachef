@@ -10,10 +10,10 @@ export default {
   crumb: "Dettatura vocale",
 
   answer:
-    "Premi il tasto ⌥ destro in qualsiasi punto del Mac, di' una frase, premi di nuovo: il testo viene scritto direttamente nel campo dove sta il cursore — un terminale, una chat, un modulo del browser. Riconosce lo stesso Whisper che MediaChef porta già con sé, quindi l'audio non esce dal tuo disco e nessuno conta i minuti. Nella nostra misura una frase di cinque secondi è tornata in 780 millisecondi. È l'unica funzione di questo sito non ancora pubblicata: è finita e in uso quotidiano all'interno, e arriva con la prossima versione.",
+    "Premi il tasto ⌥ destro in qualsiasi punto del Mac, di' una frase, premi di nuovo: il testo viene scritto direttamente nel campo dove sta il cursore — un terminale, una chat, un modulo del browser. Riconosce lo stesso Whisper che MediaChef porta già con sé, quindi l'audio non esce dal tuo disco e nessuno conta i minuti. Nella nostra misura una frase di cinque secondi è tornata in 780 millisecondi.",
 
   facts: [
-    { k: "Stato", v: "Non ancora pubblicata — arriva con la prossima versione" },
+    { k: "Stato", v: "Pubblicata dalla versione 0.8.0, per ora solo macOS" },
     { k: "Dove gira", v: "Interamente sulla tua macchina, senza account e senza caricamenti" },
     { k: "Velocità", v: "780 ms dal tasto al testo su una frase di cinque secondi (misurato)" },
     { k: "Quanto costa", v: "Niente. Né abbonamento né addebito al minuto" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Accenderla una volta",
-      p: "Nelle Impostazioni c'è un interruttore e tre scorciatoie a scelta. Finché non l'accendi, MediaChef non registra nessuna scorciatoia globale: un'applicazione che si prende in silenzio una combinazione di sistema è un'applicazione che rompe le altre.",
+      p: "Nella scheda Dettatura c'è un interruttore e un attivatore a scelta: il tasto ⌥ destro, il tasto ⌘ destro o una di due combinazioni. Finché non l'accendi, MediaChef non registra nessuna scorciatoia globale: un'applicazione che si prende in silenzio una combinazione di sistema è un'applicazione che rompe le altre.",
     },
     {
       h: "Premere la scorciatoia dove vuoi",
@@ -53,7 +53,7 @@ export default {
   ],
   shotAlt:
     "MediaChef pronto a convertire: il piano di lavoro aspetta un file video, la coda dei lavori è a destra.",
-  shotCaption: "MediaChef oggi. La dettatura aggiungerà un quarto modo ai tre già presenti.",
+  shotCaption: "La scheda Dettatura di MediaChef: attivatore, modelli, lingua, dizionario e stato del permesso, tutto in un posto.",
 
   tables: [
     {
@@ -145,16 +145,12 @@ export default {
     "Detto chiaro, perché scoprirlo dopo è peggio che leggerlo adesso.",
   notFor: [
     {
-      h: "La vuoi adesso.",
-      p: "È l'unica pagina di questo sito che descrive qualcosa che non si può ancora scaricare. La dettatura è finita e in uso quotidiano all'interno, ed esce con la prossima versione — ma quella pubblicata oggi non l'ha.",
-    },
-    {
       h: "Non sei su un Mac.",
       p: "macOS viene per primo perché è lì che è stata costruita e provata. Windows e Linux seguono: il motore di riconoscimento è già multipiattaforma, il lavoro per piattaforma serve alla scorciatoia e alla scrittura del testo.",
     },
     {
       h: "Ti serve che scriva mentre parli.",
-      p: "Il testo arriva quando hai finito, non parola per parola durante il discorso. È uno scambio voluto: riconoscere la frase intera è più preciso e, a queste velocità, il modo continuo non porterebbe nulla.",
+      p: "Il testo arriva nel campo quando hai finito, non parola per parola mentre parli: così la frase viene riconosciuta intera e con più precisione. Mentre parli, una bozza del riconoscimento è visibile nel pannello sotto il notch — ma ciò che viene scritto è un unico risultato pulito, non una serie di correzioni.",
     },
     {
       h: "Ti serve distinguere chi parla.",
@@ -182,7 +178,7 @@ export default {
     },
     {
       q: "Perché serve il permesso Accessibilità?",
-      a: "Solo per scrivere il testo nella finestra di un'altra applicazione, cosa che macOS conta come input sintetico. Se preferisci non concederlo, sposta la consegna sugli appunti: quella non richiede nulla oltre al microfono, e incolli tu con ⌘V.",
+      a: "Per due cose. Sentire il tasto di attivazione: un modificatore da solo non si può registrare come scorciatoia normale, quindi MediaChef ascolta la tastiera da sé, e macOS lo consente solo con Accessibilità. E scrivere testo nella finestra di un'altra applicazione, che il sistema considera input sintetico. Un solo permesso copre entrambe e si concede una volta; poi riavvia l'app.",
     },
     {
       q: "E se non lo concedo?",
@@ -210,12 +206,12 @@ export default {
     },
     {
       q: "È davvero gratis?",
-      a: `Sì. MediaChef è open source con licenza GPL-3.0, senza versione a pagamento e senza abbonamento — dettatura compresa. La versione pubblicata è la ${FACTS.version}; la dettatura arriva con la prossima.`,
+      a: `Sì. MediaChef è open source con licenza GPL-3.0, senza versione a pagamento e senza abbonamento — dettatura compresa. La versione pubblicata è la ${FACTS.version}, dettatura compresa.`,
     },
   ],
 
   ctaTitle: "MediaChef oggi",
-  ctaSub: `Versione ${FACTS.version} — gratis, open source, macOS · Windows · Linux. La dettatura arriva con la prossima versione.`,
+  ctaSub: `Versione ${FACTS.version} — gratis, open source, macOS · Windows · Linux. La dettatura è inclusa.`,
   also: [
     { page: "transcribe", label: "Audio in testo — lo stesso motore, per i file" },
     { page: "srt", label: "Video in sottotitoli SRT — misurato e offline" },

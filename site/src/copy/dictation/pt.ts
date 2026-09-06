@@ -10,10 +10,10 @@ export default {
   crumb: "Ditado por voz",
 
   answer:
-    "Aperte a tecla ⌥ direita em qualquer lugar do Mac, fale uma frase e aperte de novo: o texto é digitado direto no campo onde está o cursor, seja um terminal, um chat ou um formulário do navegador. Quem reconhece é o mesmo Whisper que o MediaChef já carrega, então o áudio não sai do seu disco e ninguém conta os minutos. Na nossa medição uma frase de cinco segundos voltou em 780 milissegundos. É o único recurso deste site que ainda não foi publicado: está pronto e em uso diário internamente, e chega na próxima versão.",
+    "Aperte a tecla ⌥ direita em qualquer lugar do Mac, fale uma frase e aperte de novo: o texto é digitado direto no campo onde está o cursor, seja um terminal, um chat ou um formulário do navegador. Quem reconhece é o mesmo Whisper que o MediaChef já carrega, então o áudio não sai do seu disco e ninguém conta os minutos. Na nossa medição uma frase de cinco segundos voltou em 780 milissegundos.",
 
   facts: [
-    { k: "Situação", v: "Ainda não publicado — chega na próxima versão" },
+    { k: "Situação", v: "Publicado desde a versão 0.8.0, por enquanto só macOS" },
     { k: "Onde roda", v: "Inteiramente na sua máquina, sem conta e sem upload" },
     { k: "Velocidade", v: "780 ms da tecla ao texto numa frase de cinco segundos (medido)" },
     { k: "Quanto custa", v: "Nada. Nem assinatura nem cobrança por minuto" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Ligar uma vez",
-      p: "Nas Configurações há um interruptor e três atalhos para escolher. Até você ligar, o MediaChef não registra atalho global nenhum: um aplicativo que toma uma combinação do sistema em silêncio é um aplicativo que quebra os outros.",
+      p: "Na aba Ditado há um interruptor e um acionador para escolher: a ⌥ direita, a ⌘ direita ou uma de duas combinações. Até você ligar, o MediaChef não registra atalho global nenhum: um aplicativo que toma uma combinação do sistema em silêncio é um aplicativo que quebra os outros.",
     },
     {
       h: "Apertar o atalho em qualquer lugar",
@@ -53,7 +53,7 @@ export default {
   ],
   shotAlt:
     "MediaChef pronto para converter: a bancada espera um arquivo de vídeo, a fila de tarefas fica à direita.",
-  shotCaption: "O MediaChef hoje. O ditado vai acrescentar um quarto modo aos três que já existem.",
+  shotCaption: "A aba Ditado do MediaChef: acionador, modelos, idioma, dicionário e estado da permissão, tudo num só lugar.",
 
   tables: [
     {
@@ -145,16 +145,12 @@ export default {
     "Dito na lata, porque descobrir depois é pior do que ler agora.",
   notFor: [
     {
-      h: "Você quer agora.",
-      p: "É a única página deste site descrevendo algo que ainda não se pode baixar. O ditado está pronto e em uso diário interno, e sai na próxima versão — mas a publicada hoje não tem.",
-    },
-    {
       h: "Você não usa Mac.",
       p: "macOS vem primeiro porque foi ali que se construiu e testou. Windows e Linux vêm depois: o motor de reconhecimento já é multiplataforma, quem precisa de trabalho por plataforma é o atalho e a digitação do texto.",
     },
     {
       h: "Você precisa que digite enquanto fala.",
-      p: "O texto chega quando você termina, não palavra por palavra durante a fala. É uma troca deliberada: reconhecer a frase inteira é mais preciso e, nessas velocidades, o modo contínuo não traria nada.",
+      p: "O texto chega ao campo quando você termina, não palavra por palavra enquanto fala: assim a frase é reconhecida inteira e com mais precisão. Enquanto você fala, um rascunho do reconhecimento aparece no painel sob o notch, mas o que é digitado é um único resultado limpo, não uma sequência de correções.",
     },
     {
       h: "Você precisa separar quem fala.",
@@ -182,7 +178,7 @@ export default {
     },
     {
       q: "Por que precisa da permissão de Acessibilidade?",
-      a: "Só para digitar o texto na janela de outro aplicativo, o que o macOS conta como entrada sintética. Se preferir não conceder, mude a entrega para a área de transferência: isso não precisa de nada além do microfone, e você cola com ⌘V.",
+      a: "Para duas coisas. Ouvir a tecla de acionamento: um modificador sozinho não pode ser registrado como atalho comum, então o MediaChef escuta o teclado por conta própria, e o macOS só permite isso com Acessibilidade. E digitar texto na janela de outro aplicativo, que o sistema trata como entrada sintética. Uma permissão cobre as duas e é concedida uma vez; depois reinicie o aplicativo.",
     },
     {
       q: "E se eu não conceder?",
@@ -210,12 +206,12 @@ export default {
     },
     {
       q: "É mesmo grátis?",
-      a: `Sim. O MediaChef é de código aberto sob GPL-3.0, sem versão paga e sem assinatura — o ditado incluído. A versão publicada é a ${FACTS.version}; o ditado chega na próxima.`,
+      a: `Sim. O MediaChef é de código aberto sob GPL-3.0, sem versão paga e sem assinatura — o ditado incluído. A versão publicada é a ${FACTS.version}, com o ditado incluído.`,
     },
   ],
 
   ctaTitle: "O MediaChef hoje",
-  ctaSub: `Versão ${FACTS.version} — grátis, código aberto, macOS · Windows · Linux. O ditado chega na próxima versão.`,
+  ctaSub: `Versão ${FACTS.version} — grátis, código aberto, macOS · Windows · Linux. O ditado já está incluído.`,
   also: [
     { page: "transcribe", label: "Áudio para texto — o mesmo motor, para arquivos" },
     { page: "srt", label: "Vídeo para legendas SRT — medido e offline" },

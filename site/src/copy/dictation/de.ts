@@ -10,10 +10,10 @@ export default {
   crumb: "Spracheingabe",
 
   answer:
-    "Drücken Sie die rechte ⌥-Taste irgendwo auf dem Mac, sagen Sie einen Satz, drücken Sie noch einmal — und der Text wird direkt in das Feld getippt, in dem der Cursor steht: ein Terminal, ein Chat, ein Browserformular. Erkannt wird von demselben Whisper, den MediaChef schon mitbringt, also verlässt der Ton Ihre Festplatte nicht und niemand zählt Minuten. In unserer Messung kam ein Satz von fünf Sekunden nach 780 Millisekunden zurück. Es ist die einzige Funktion auf dieser Seite, die noch nicht veröffentlicht ist: sie ist fertig und intern im täglichen Gebrauch, und sie kommt mit der nächsten Version.",
+    "Drücken Sie die rechte ⌥-Taste irgendwo auf dem Mac, sagen Sie einen Satz, drücken Sie noch einmal — und der Text wird direkt in das Feld getippt, in dem der Cursor steht: ein Terminal, ein Chat, ein Browserformular. Erkannt wird von demselben Whisper, den MediaChef schon mitbringt, also verlässt der Ton Ihre Festplatte nicht und niemand zählt Minuten. In unserer Messung kam ein Satz von fünf Sekunden nach 780 Millisekunden zurück.",
 
   facts: [
-    { k: "Stand", v: "Noch nicht veröffentlicht — kommt mit der nächsten Version" },
+    { k: "Stand", v: "Seit Version 0.8.0 veröffentlicht, vorerst nur macOS" },
     { k: "Wo es läuft", v: "Vollständig auf Ihrem Rechner, ohne Konto und ohne Upload" },
     { k: "Tempo", v: "780 ms von der Taste zum Text bei einem Fünf-Sekunden-Satz (gemessen)" },
     { k: "Was es kostet", v: "Nichts. Kein Abo, keine Minutenabrechnung" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Einmal einschalten",
-      p: "In den Einstellungen gibt es einen Schalter und drei Kurzbefehle zur Wahl. Bis Sie einschalten, registriert MediaChef überhaupt keinen systemweiten Kurzbefehl: eine Anwendung, die sich still eine Systemkombination nimmt, ist eine Anwendung, die andere kaputt macht.",
+      p: "Im Diktat-Tab gibt es einen Schalter und einen Auslöser zur Wahl: die rechte ⌥-Taste, die rechte ⌘-Taste oder eine von zwei Kombinationen. Bis Sie einschalten, registriert MediaChef überhaupt keinen systemweiten Kurzbefehl: eine Anwendung, die sich still eine Systemkombination nimmt, ist eine Anwendung, die andere kaputt macht.",
     },
     {
       h: "Kurzbefehl irgendwo drücken",
@@ -53,7 +53,7 @@ export default {
   ],
   shotAlt:
     "MediaChef bereit zum Konvertieren: die Arbeitsfläche wartet auf eine Videodatei, rechts die Warteschlange.",
-  shotCaption: "MediaChef heute. Das Diktat fügt den drei vorhandenen Modi einen vierten hinzu.",
+  shotCaption: "Der Diktat-Tab in MediaChef: Auslöser, Modelle, Sprache, Wörterbuch und Stand der Berechtigung — alles an einem Ort.",
 
   tables: [
     {
@@ -145,16 +145,12 @@ export default {
     "Offen gesagt, denn es später zu erfahren ist schlimmer, als es jetzt zu lesen.",
   notFor: [
     {
-      h: "Sie wollen es sofort.",
-      p: "Das ist die einzige Seite dieser Website, die etwas beschreibt, das man noch nicht herunterladen kann. Das Diktat ist fertig und intern im täglichen Gebrauch, und es kommt mit der nächsten Version — die heute veröffentlichte hat es nicht.",
-    },
-    {
       h: "Sie sind nicht auf einem Mac.",
       p: "macOS kommt zuerst, weil dort gebaut und geprüft wurde. Windows und Linux folgen: die Erkennung ist schon plattformübergreifend, Arbeit je Plattform brauchen der Kurzbefehl und das Tippen des Textes.",
     },
     {
       h: "Sie brauchen Schreiben im Sprechen.",
-      p: "Der Text kommt, wenn Sie fertig sind, nicht Wort für Wort während des Sprechens. Das ist ein bewusster Tausch: einen ganzen Satz zu erkennen ist genauer, und bei diesen Geschwindigkeiten brächte der laufende Modus nichts.",
+      p: "Der Text landet im Feld, wenn Sie fertig sind, nicht Wort für Wort beim Sprechen: so wird ein Satz als Ganzes und genauer erkannt. Während Sie sprechen, ist ein Entwurf der Erkennung im Panel unter der Notch sichtbar — getippt wird aber ein einziges sauberes Ergebnis, kein Strom von Korrekturen.",
     },
     {
       h: "Sie brauchen Sprecher-Unterscheidung.",
@@ -182,7 +178,7 @@ export default {
     },
     {
       q: "Warum braucht es die Bedienungshilfen-Freigabe?",
-      a: "Nur um den Text in das Fenster einer anderen Anwendung zu tippen, was macOS als synthetische Eingabe zählt. Wenn Sie sie nicht erteilen möchten, stellen Sie die Auslieferung auf die Zwischenablage: die braucht nichts außer dem Mikrofon, und Sie fügen mit ⌘V selbst ein.",
+      a: "Für zwei Dinge. Die Auslösetaste zu hören: ein einzelner Modifier lässt sich nicht als gewöhnlicher Kurzbefehl registrieren, MediaChef hört die Tastatur also selbst ab, und das erlaubt macOS nur mit Bedienungshilfen. Und Text in das Fenster einer anderen Anwendung zu tippen, was das System als synthetische Eingabe behandelt. Eine Berechtigung deckt beides ab und wird einmal erteilt; danach die App neu starten.",
     },
     {
       q: "Und wenn ich sie nicht erteile?",
@@ -210,12 +206,12 @@ export default {
     },
     {
       q: "Wirklich kostenlos?",
-      a: `Ja. MediaChef ist quelloffen unter GPL-3.0, ohne Bezahlversion und ohne Abo — das Diktat eingeschlossen. Veröffentlicht ist Version ${FACTS.version}; das Diktat kommt mit der nächsten.`,
+      a: `Ja. MediaChef ist quelloffen unter GPL-3.0, ohne Bezahlversion und ohne Abo — das Diktat eingeschlossen. Veröffentlicht ist Version ${FACTS.version}, das Diktat ist enthalten.`,
     },
   ],
 
   ctaTitle: "MediaChef heute",
-  ctaSub: `Version ${FACTS.version} — kostenlos, quelloffen, macOS · Windows · Linux. Das Diktat kommt mit der nächsten Version.`,
+  ctaSub: `Version ${FACTS.version} — kostenlos, quelloffen, macOS · Windows · Linux. Das Diktat ist drin.`,
   also: [
     { page: "transcribe", label: "Audio in Text — dieselbe Maschine, für Dateien" },
     { page: "srt", label: "Video in SRT-Untertitel — gemessen und offline" },

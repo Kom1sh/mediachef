@@ -1,7 +1,7 @@
 // Гайд «голосовой ввод», английский. Реальные запросы: «voice to text mac»,
 // «dictation app», «offline speech to text».
 //
-// Фича ещё не в релизе — это сказано прямо в ответе и в фактах. Все цифры
+// Фича в релизе с 0.8.0; статус и цифры на странице — из живой сборки.
 // измерены на живой сборке 2026-09-05, синтетики нет.
 import { FACTS } from "../../facts";
 
@@ -13,10 +13,10 @@ export default {
   crumb: "Voice to text",
 
   answer:
-    "Press the right ⌥ key anywhere on your Mac, say a sentence, press it again — and the text is typed straight into whatever field your cursor sits in: a terminal, a chat, a browser form. Recognition happens on your own machine with the same Whisper engine MediaChef already carries, so the audio never leaves your disk and there is no per-minute charge. In our measurement a five-second phrase came back in 780 milliseconds. This is the one feature on this site that has not shipped yet: it is finished and in daily use internally, and it arrives in the next version.",
+    "Press the right ⌥ key anywhere on your Mac, say a sentence, press it again — and the text is typed straight into whatever field your cursor sits in: a terminal, a chat, a browser form. Recognition happens on your own machine with the same Whisper engine MediaChef already carries, so the audio never leaves your disk and there is no per-minute charge. In our measurement a five-second phrase came back in 780 milliseconds.",
 
   facts: [
-    { k: "Status", v: "Not in a release yet — ships in the next version" },
+    { k: "Status", v: "In the release since version 0.8.0, macOS only for now" },
     { k: "Where it runs", v: "Entirely on your machine, no account, no upload" },
     { k: "Speed", v: "780 ms from key to text on a five-second phrase (measured)" },
     { k: "Cost", v: "None. No subscription, no per-minute billing" },
@@ -39,7 +39,7 @@ export default {
   steps: [
     {
       h: "Turn it on once",
-      p: "Settings has a switch and a choice of three hotkeys. It is off until you turn it on, and until then MediaChef registers no global shortcut at all — an app that quietly claims a system-wide key combination is an app that breaks other apps.",
+      p: "The Dictation tab has a switch and a choice of trigger: the right ⌥, the right ⌘, or one of two combinations. It is off until you turn it on, and until then MediaChef registers no global shortcut at all — an app that quietly claims a system-wide key combination is an app that breaks other apps.",
     },
     {
       h: "Press the hotkey anywhere",
@@ -56,7 +56,7 @@ export default {
   ],
   shotAlt:
     "MediaChef ready to convert: the board waits for a video file, the job queue is on the right.",
-  shotCaption: "MediaChef today. Dictation adds a fourth mode to the three already here.",
+  shotCaption: "The Dictation tab in MediaChef: trigger, models, language, dictionary and the permission state — all in one place.",
 
   tables: [
     {
@@ -148,16 +148,12 @@ export default {
     "Said plainly, because finding out later is worse than reading it now.",
   notFor: [
     {
-      h: "You want it right now.",
-      p: "This is the only page on this site describing something you cannot yet download. Dictation is finished and in daily internal use, and it ships in the next version — but today's release does not have it.",
-    },
-    {
       h: "You are not on a Mac.",
       p: "macOS comes first because that is where it was built and tested. Windows and Linux follow; the recognition engine is already cross-platform, it is the hotkey and the typing that need per-platform work.",
     },
     {
       h: "You need it to type as you speak.",
-      p: "The text arrives when you finish, not word by word while you talk. That is a deliberate trade: recognising a whole phrase at once is both more accurate and, at these speeds, fast enough that streaming would buy nothing.",
+      p: "The text lands in the field when you finish, not word by word while you talk: that is how a phrase gets recognised whole and more accurately. While you speak, a draft of the recognition is visible in the panel under the notch — but what gets typed is one clean result, not a stream of corrections.",
     },
     {
       h: "You need speaker labels.",
@@ -185,7 +181,7 @@ export default {
     },
     {
       q: "Why does it need the Accessibility permission?",
-      a: "Only for typing the text into another application's window, which macOS counts as synthetic input. If you would rather not grant it, switch delivery to the clipboard: that needs nothing beyond the microphone, and you paste with ⌘V yourself.",
+      a: "For two things. Hearing the trigger key: a lone modifier cannot be registered as an ordinary hotkey, so MediaChef listens to the keyboard itself, and macOS allows that only with Accessibility. And typing text into another application's window, which the system treats as synthetic input. One permission covers both and is granted once; restart the app afterwards.",
     },
     {
       q: "What if I do not grant it?",
@@ -213,12 +209,12 @@ export default {
     },
     {
       q: "Is it really free?",
-      a: `Yes. MediaChef is open source under GPL-3.0 with no paid tier and no subscription — dictation included. The current release is ${FACTS.version}; dictation arrives in the next one.`,
+      a: `Yes. MediaChef is open source under GPL-3.0 with no paid tier and no subscription — dictation included. The current release is ${FACTS.version}, dictation included.`,
     },
   ],
 
   ctaTitle: "MediaChef today",
-  ctaSub: `Version ${FACTS.version} — free, open source, macOS · Windows · Linux. Dictation ships in the next version.`,
+  ctaSub: `Version ${FACTS.version} — free, open source, macOS · Windows · Linux. Dictation is in.`,
   also: [
     { page: "transcribe", label: "Audio to text — the same engine, for files" },
     { page: "srt", label: "Video to SRT subtitles — measured, offline" },

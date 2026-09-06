@@ -10,10 +10,10 @@ export default {
   crumb: "Dictado por voz",
 
   answer:
-    "Pulse la tecla ⌥ derecha en cualquier parte del Mac, diga una frase y púlselo otra vez: el texto se escribe directamente en el campo donde está el cursor, sea un terminal, un chat o un formulario del navegador. Reconoce el mismo Whisper que MediaChef ya lleva dentro, así que el audio no sale de su disco y nadie cuenta los minutos. En nuestra medición una frase de cinco segundos volvió en 780 milisegundos. Es la única función de este sitio que aún no está publicada: está terminada y en uso diario internamente, y llega en la próxima versión.",
+    "Pulse la tecla ⌥ derecha en cualquier parte del Mac, diga una frase y púlselo otra vez: el texto se escribe directamente en el campo donde está el cursor, sea un terminal, un chat o un formulario del navegador. Reconoce el mismo Whisper que MediaChef ya lleva dentro, así que el audio no sale de su disco y nadie cuenta los minutos. En nuestra medición una frase de cinco segundos volvió en 780 milisegundos.",
 
   facts: [
-    { k: "Estado", v: "Aún no publicada — llega en la próxima versión" },
+    { k: "Estado", v: "Publicada desde la versión 0.8.0, por ahora solo macOS" },
     { k: "Dónde se calcula", v: "Enteramente en su máquina, sin cuenta y sin subidas" },
     { k: "Velocidad", v: "780 ms de la tecla al texto en una frase de cinco segundos (medido)" },
     { k: "Cuánto cuesta", v: "Nada. Ni suscripción ni cobro por minuto" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Encenderlo una vez",
-      p: "En Ajustes hay un interruptor y tres atajos a elegir. Hasta que lo encienda, MediaChef no registra ningún atajo global: una aplicación que se queda con una combinación del sistema en silencio es una aplicación que rompe las demás.",
+      p: "En la pestaña Dictado hay un interruptor y un disparador a elegir: la ⌥ derecha, la ⌘ derecha o una de dos combinaciones. Hasta que lo encienda, MediaChef no registra ningún atajo global: una aplicación que se queda con una combinación del sistema en silencio es una aplicación que rompe las demás.",
     },
     {
       h: "Pulsar el atajo en cualquier sitio",
@@ -53,7 +53,7 @@ export default {
   ],
   shotAlt:
     "MediaChef listo para convertir: la mesa de trabajo espera un archivo de vídeo, la cola de tareas está a la derecha.",
-  shotCaption: "MediaChef hoy. El dictado añadirá un cuarto modo a los tres que ya hay.",
+  shotCaption: "La pestaña Dictado de MediaChef: disparador, modelos, idioma, diccionario y estado del permiso, todo en un sitio.",
 
   tables: [
     {
@@ -145,16 +145,12 @@ export default {
     "Dicho claramente, porque enterarse después es peor que leerlo ahora.",
   notFor: [
     {
-      h: "Lo quiere ahora mismo.",
-      p: "Es la única página de este sitio que describe algo que todavía no se puede descargar. El dictado está terminado y en uso diario interno, y sale en la próxima versión — pero la publicada hoy no lo tiene.",
-    },
-    {
       h: "No usa un Mac.",
       p: "macOS va primero porque ahí se construyó y se probó. Windows y Linux siguen: el motor de reconocimiento ya es multiplataforma, lo que necesita trabajo por plataforma es el atajo y la escritura del texto.",
     },
     {
       h: "Necesita que escriba mientras habla.",
-      p: "El texto llega cuando termina, no palabra por palabra mientras habla. Es un intercambio deliberado: reconocer la frase entera es más preciso y, a estas velocidades, el modo continuo no aportaría nada.",
+      p: "El texto llega al campo cuando terminas, no palabra a palabra mientras hablas: así la frase se reconoce entera y con más precisión. Mientras hablas, un borrador del reconocimiento se ve en el panel bajo el notch, pero lo que se escribe es un único resultado limpio, no una cadena de correcciones.",
     },
     {
       h: "Necesita distinguir hablantes.",
@@ -182,7 +178,7 @@ export default {
     },
     {
       q: "¿Por qué necesita el permiso de Accesibilidad?",
-      a: "Solo para escribir el texto en la ventana de otra aplicación, algo que macOS cuenta como entrada sintética. Si prefiere no concederlo, cambie la entrega al portapapeles: eso no necesita nada más que el micrófono, y pega usted con ⌘V.",
+      a: "Para dos cosas. Oír la tecla de activación: un modificador solo no puede registrarse como atajo normal, así que MediaChef escucha el teclado por su cuenta, y macOS solo lo permite con Accesibilidad. Y escribir texto en la ventana de otra aplicación, que el sistema considera entrada sintética. Un solo permiso cubre ambas y se concede una vez; después reinicia la aplicación.",
     },
     {
       q: "¿Y si no lo concedo?",
@@ -210,12 +206,12 @@ export default {
     },
     {
       q: "¿De verdad es gratis?",
-      a: `Sí. MediaChef es de código abierto bajo GPL-3.0, sin versión de pago ni suscripción — el dictado incluido. La versión publicada es la ${FACTS.version}; el dictado llega en la siguiente.`,
+      a: `Sí. MediaChef es de código abierto bajo GPL-3.0, sin versión de pago ni suscripción — el dictado incluido. La versión publicada es la ${FACTS.version}, con el dictado incluido.`,
     },
   ],
 
   ctaTitle: "MediaChef hoy",
-  ctaSub: `Versión ${FACTS.version} — gratis, código abierto, macOS · Windows · Linux. El dictado llega en la próxima versión.`,
+  ctaSub: `Versión ${FACTS.version} — gratis, código abierto, macOS · Windows · Linux. El dictado ya está dentro.`,
   also: [
     { page: "transcribe", label: "Audio a texto — el mismo motor, para archivos" },
     { page: "srt", label: "Vídeo a subtítulos SRT — medido y sin conexión" },
