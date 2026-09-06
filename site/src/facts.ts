@@ -18,7 +18,7 @@ const FEEDBACK = `mailto:${FEEDBACK_EMAIL}`;
 export const LINKS = { releases: RELEASES, github: GITHUB, notice: NOTICE, feedback: FEEDBACK };
 
 export const FACTS = {
-  version: "0.8.0",
+  version: "0.8.1",
   // Дата последней правки текстов — уезжает в <lastmod> sitemap.xml.
   // Меняется вручную вместе с содержимым, а не при каждой пересборке:
   // «сегодня» в lastmod у неизменившейся страницы Google просто перестаёт верить.
