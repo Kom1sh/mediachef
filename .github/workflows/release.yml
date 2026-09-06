@@ -41,6 +41,20 @@ jobs:
             exit 1
           fi
           echo "ключ на месте"
+      # Сертификат подписи приложения. Не Developer ID — самоподписанный, но
+      # ОДИН на все версии: macOS привязывает «Универсальный доступ» к подписи,
+      # и у ad-hoc-сборок она у каждой версии своя — разрешение слетало после
+      # каждого обновления. Без секретов сборка вышла бы ad-hoc и вернула бы
+      # эту поломку всем, поэтому падаем здесь, а не молчим.
+      - name: сертификат подписи приложения на месте
+        run: |
+          if [ -z "${{ secrets.APPLE_CERTIFICATE }}" ] || [ -z "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" ]; then
+            echo "::error::нет секретов APPLE_CERTIFICATE и/или APPLE_CERTIFICATE_PASSWORD."
+            echo "::error::Без них macOS-сборка выйдет с ad-hoc-подписью, и «Универсальный доступ» слетит у всех после обновления."
+            echo "::error::Положить: APPLE_CERTIFICATE = base64 -i ~/.tauri/mediachef-codesign.p12 | tr -d '\n'; APPLE_CERTIFICATE_PASSWORD = содержимое ~/.tauri/mediachef-codesign.password"
+            exit 1
+          fi
+          echo "сертификат на месте"
 
   macos:
     needs: preflight
@@ -67,12 +81,44 @@ jobs:
         with:
           path: app/src-tauri/binaries
           key: sidecars-aarch64-apple-darwin-${{ hashFiles('scripts/fetch-sidecars.sh') }}
+      # Самоподписанным сертификатом codesign не подписывает, пока система ему
+      # не доверяет: «unable to build chain to self-signed root». Доверие — в
+      # системный домен раннера, sudo там без пароля. Сам импорт p12 в связку
+      # делает сборщик Tauri по APPLE_CERTIFICATE; здесь только доверие.
+      - name: доверить сертификату подписи
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/codesign.p12"
+          openssl pkcs12 -in "$RUNNER_TEMP/codesign.p12" -passin env:APPLE_CERTIFICATE_PASSWORD \
+            -clcerts -nokeys -out "$RUNNER_TEMP/codesign.pem"
+          sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "$RUNNER_TEMP/codesign.pem"
+          rm -f "$RUNNER_TEMP/codesign.p12"
       # Ключ подписи обновлений: с ним рядом с .app появляется MediaChef.app.tar.gz
       # и его .sig — то, что скачает и проверит апдейтер у уже установленных копий.
+      # APPLE_*: сборщик сам заводит временную связку, импортирует p12 и
+      # подписывает .app и сайдкары внутри указанной identity.
       - run: cd app && npm run tauri build -- --bundles app
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: MediaChef Dev Signing
+      # Подпись — не «есть», а именно та: требование должно ссылаться на
+      # сертификат, а не на cdhash. Иначе фикс тихо откатится, и узнаем от
+      # людей, у которых снова слетело разрешение.
+      - name: подпись стабильная (по сертификату, не по cdhash)
+        run: |
+          app=target/release/bundle/macos/MediaChef.app
+          codesign -dv --verbose=2 "$app" 2>&1 | grep -E "^(Identifier|Authority|Signature)=" || true
+          req=$(codesign -d -r- "$app" 2>&1)
+          echo "$req"
+          # У самоподписанного сертификата корень и есть лист — в требовании это
+          # «certificate root»; у выданного центром было бы «certificate leaf».
+          echo "$req" | grep -Eq 'certificate (root|leaf)' || { echo "::error::designated requirement без сертификата — сборка подписана ad-hoc"; exit 1; }
+          codesign --verify --deep --strict "$app"
       - name: sidecar self-check (inside MediaChef.app)
         run: |
           # `${out%%$'\n'*}` keeps the first line without a pipe: the default

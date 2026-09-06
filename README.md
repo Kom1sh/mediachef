@@ -193,17 +193,24 @@ after a fresh install will not type anything: instead you get a notification and
 the right pane of System Settings opens by itself. Switch MediaChef on there,
 restart the app, and it works — verified on a real machine.
 
-Two things follow from the app being unsigned, and both are stated here rather
-than discovered later:
+Two things about that permission, both stated here rather than discovered later:
 
-- **The permission comes back after every update.** macOS ties permissions to
-  the executable's code signature, and an unsigned build's signature changes
-  with each build. The microphone permission is re-requested for the same
-  reason. Neither fails silently: the app checks before every attempt and says
-  so, and the dictated text always lands in the clipboard as a fallback, so
-  nothing is lost.
+- **It survives updates only because every build is signed with the same
+  certificate.** macOS ties the permission to the app's code signature: an
+  ad-hoc-signed build gets a new signature every time, and 0.8.0 shipped that
+  way — the toggle in System Settings stayed on while the permission was gone,
+  and the fix was to switch it off and on again. Since then releases are signed
+  with a self-signed certificate, `MediaChef Dev Signing` (not a Developer ID —
+  Gatekeeper behaves as before; only the designated requirement becomes stable:
+  `identifier "com.mediachef.dev" and certificate root = H"…"`). CI takes it
+  from the `APPLE_CERTIFICATE` (base64 `.p12`) and `APPLE_CERTIFICATE_PASSWORD`
+  secrets and refuses to release without them. A local build must sign the same
+  way or it will knock the permission out again:
+  `APPLE_SIGNING_IDENTITY="MediaChef Dev Signing" npm run tauri build`.
 - **Nothing is lost when the permission is missing.** `type` writes to the
-  clipboard before giving up, so the worst case is one `Cmd+V`.
+  clipboard before giving up, so the worst case is one `Cmd+V`; the app says so
+  instead of failing silently, and if the toggle is already on it tells you to
+  flip it off and on.
 
 There is no third delivery mode. A `paste` option — clipboard plus a synthetic
 `Cmd+V` — existed briefly and crashed the app on its first real use; typing
