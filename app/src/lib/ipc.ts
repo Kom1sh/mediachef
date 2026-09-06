@@ -44,3 +44,8 @@ export const pickFolder = () => invoke<string | null>("pick_folder");
 export const systemLocale = () => invoke<string>("system_locale");
 /** Система и разрядность запущенной сборки — для отчёта об ошибке. */
 export const platformInfo = () => invoke<string>("platform_info");
+
+// ── Диктовка ───────────────────────────────────────────────────────────────
+import type { DictationStatus } from "./types";
+export const getDictationStatus = () => invoke<DictationStatus>("dictation_status");
+export const openAccessibilitySettings = () => invoke<void>("dictation_open_accessibility");

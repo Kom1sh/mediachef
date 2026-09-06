@@ -108,10 +108,11 @@ export const MEDIA_ICON: Record<MediaType, LucideIcon> = {
 
 /** The shell's screens. Owned here so the icon map and `Sidebar`'s `Tab` cannot
  *  drift apart, and so importing the map never pulls a component in. */
-export type NavKey = "main" | "models" | "settings";
+export type NavKey = "main" | "dictation" | "models" | "settings";
 
 export const NAV: Record<NavKey, LucideIcon> = {
   main: CookingPot,
+  dictation: Mic,
   models: BrainCircuit,
   settings: Settings2,
 };

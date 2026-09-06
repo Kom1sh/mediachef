@@ -2,12 +2,19 @@ import { APP_ICON, NAV, type NavKey } from "../lib/icons";
 import { useT, type TKey } from "../lib/i18n";
 
 /** Which screen the shell is showing. Aliased from the icon map's key type so
- *  the nav and its icons are the same three names by construction. */
+ *  the nav and its icons are the same four names by construction. */
 export type Tab = NavKey;
 
-const ORDER: readonly Tab[] = ["main", "models", "settings"];
+// Диктовка — сразу за конвертацией: это второй способ пользоваться
+// приложением, а не настройка первого.
+const ORDER: readonly Tab[] = ["main", "dictation", "models", "settings"];
 /** Dictionary key per screen — the words themselves live in i18n.tsx. */
-const LABEL: Record<Tab, TKey> = { main: "navConvert", models: "navModels", settings: "navSettings" };
+const LABEL: Record<Tab, TKey> = {
+  main: "navConvert",
+  dictation: "navDictation",
+  models: "navModels",
+  settings: "navSettings",
+};
 
 /**
  * The rail: 88px with its labels, 56px without (App owns the grid column, this owns

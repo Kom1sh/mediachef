@@ -134,6 +134,7 @@ restart:
     "enabled": true,
     "hotkey": "RightOption",
     "model": "small",
+    "preview_model": "tiny",
     "language": "",
     "dictionary": "MediaChef, ffmpeg, whisper, хоткей, кодек, битрейт",
     "delivery": "type",
@@ -147,13 +148,14 @@ restart:
 | `enabled` | `true` \| `false` | off by default; the hotkey is not registered at all until you turn it on |
 | `hotkey` | `RightOption` by default; also `RightCommand`, `Ctrl+Option+Space`, `Ctrl+Option+D` | see below; the two lone modifiers are macOS-only and need the Accessibility permission |
 | `model` | `tiny` \| `base` \| `small` \| `large-v3-turbo` | `small` by default: the recipes use it too, so it is usually already on disk |
+| `preview_model` | same list | `tiny` by default: the live preview in the overlay re-transcribes the whole buffer every 1.5 s and has to keep up with speech; it does not affect the result |
 | `language` | `""` \| `auto` \| a language code | empty means "same as the interface language" |
 | `dictionary` | free text, ≤400 chars | fixes how names and jargon are spelled; see below |
 | `delivery` | `clipboard` \| `type` | `type` puts the text straight into the focused field and leaves the clipboard alone; it needs the Accessibility permission, see below |
 | `history_depth` | `0`–`100` | `0` by default: nothing dictated is written to disk |
 
-Editing the file by hand needs a restart; the two controls on the Settings
-screen do not — the hotkey is re-registered the moment it is saved.
+All of it is on the Dictation tab in the app, and saving there re-applies the
+trigger immediately. Editing the file by hand needs a restart.
 
 **Why a lone right `Option` and not a combination.** The dictation key is held
 while you speak, and any combination with a printable key fails at exactly that:

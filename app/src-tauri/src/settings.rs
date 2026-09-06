@@ -51,8 +51,9 @@ pub struct AppSettings {
 
 /// Настройки режима диктовки.
 ///
-/// В волне 5.1 интерфейса у них нет — правятся руками в `settings.json`.
-/// Экран настроек приходит в 5.2 и будет писать в те же поля.
+/// Правятся на вкладке «Диктовка» в приложении; `settings.json` — то же самое
+/// руками. Вкладка пишет в те же поля и принимает обратно то, что здесь
+/// починил `sanitize`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Dictation {
@@ -84,6 +85,15 @@ pub struct Dictation {
     /// диктовка включается без единой загрузки. Термины чинит словарь, а не
     /// размер модели — измерено в спеке.
     pub model: String,
+    /// Модель живого показа в плашке — та, что крутится каждые полторы
+    /// секунды, пока человек говорит.
+    ///
+    /// Отдельно от основной, и по умолчанию `tiny`: живой показ отвечает на
+    /// вопрос «меня слышно и то ли я говорю», и делать это должен в такт речи,
+    /// а `large-v3-turbo` за полторы секунды не укладывается. На итог, который
+    /// печатается в поле, эта модель не влияет — его делает `model`. Кому
+    /// разница между показом и итогом режет глаз, ставит сюда `small`.
+    pub preview_model: String,
     /// Код языка речи, `"auto"` для определения по звуку. Пустая строка —
     /// «как язык интерфейса», и подставляется при чтении.
     pub language: String,
@@ -151,6 +161,7 @@ impl Default for Dictation {
             enabled: false,
             hotkey: Self::DEFAULT_HOTKEY.into(),
             model: "small".into(),
+            preview_model: "tiny".into(),
             language: String::new(),
             dictionary: String::new(),
             delivery: "clipboard".into(),
@@ -312,6 +323,11 @@ fn sanitize_dictation(mut d: Dictation) -> Dictation {
         &["tiny", "base", "small", "large-v3-turbo"],
         "small",
     );
+    d.preview_model = one_of(
+        d.preview_model,
+        &["tiny", "base", "small", "large-v3-turbo"],
+        "tiny",
+    );
     // «paste» — вставка через синтетический Cmd+V — снят: он ронял приложение,
     // а печать доставляет текст туда же и не затирает буфер. Старое значение
     // переводим в «type», а не в «clipboard»: человек просил текст в поле, и
@@ -400,6 +416,7 @@ mod tests {
         let mut s = AppSettings::default();
         s.dictation.hotkey = "   ".into();
         s.dictation.model = "gigantic".into();
+        s.dictation.preview_model = "huge".into();
         s.dictation.delivery = "телепатия".into();
         s.dictation.history_depth = 250;
         let s = sanitize(s);
@@ -409,6 +426,10 @@ mod tests {
             "пустой хоткей чинится"
         );
         assert_eq!(s.dictation.model, "small", "неизвестная модель чинится");
+        assert_eq!(
+            s.dictation.preview_model, "tiny",
+            "неизвестная модель живого показа чинится"
+        );
         assert_eq!(
             s.dictation.delivery, "clipboard",
             "неизвестный способ доставки чинится к буферу"

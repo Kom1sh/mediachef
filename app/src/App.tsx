@@ -7,6 +7,7 @@ import { RecipeForm } from "./components/RecipeForm";
 import { RecipeList } from "./components/RecipeList";
 import { QueuePanel } from "./components/QueuePanel";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { DictationPanel } from "./components/DictationPanel";
 import { Sidebar, type Tab } from "./components/Sidebar";
 import { UpdateBar } from "./components/UpdateBar";
 import { useUpdater } from "./lib/useUpdater";
@@ -268,7 +269,11 @@ export default function App() {
       <UpdateBar updater={updater} />
       <main className="grid min-h-0 flex-1 grid-cols-[88px_minmax(0,1fr)_360px] max-[800px]:grid-cols-[56px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)]">
         <Sidebar tab={tab} onTab={setTab} />
-        {tab === "models" ? <ModelsPanel /> : tab === "settings" ? (
+        {tab === "models" ? <ModelsPanel /> : tab === "dictation" ? (
+          settings
+            ? <DictationPanel settings={settings} onChange={changeSettings} error={settingsError} onOpenModels={() => setTab("models")} />
+            : <section className="p-4 text-sm text-ink-2">{settingsError || t("loadingSettings")}</section>
+        ) : tab === "settings" ? (
           settings
             ? <SettingsPanel settings={settings} onChange={changeSettings} error={settingsError} updater={updater} />
             // Either the round trip is still in flight (milliseconds) or it failed,

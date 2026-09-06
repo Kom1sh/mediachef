@@ -335,7 +335,30 @@ fn settings_set(
     state: State<AppState>,
     s: AppSettings,
 ) -> Result<AppSettings, String> {
-    store_settings(&settings_dir(&app), &state.settings, s)
+    let saved = store_settings(&settings_dir(&app), &state.settings, s)?;
+    // Диктовка живёт по этим же настройкам, и триггер обязан переприменяться
+    // сразу: экран обещает «без перезапуска», а до этой строки `apply` звался
+    // только при старте — переключатель менял файл и ничего больше. Отказ
+    // здесь не отказ сохранения (оно уже прошло), поэтому уведомление, а не
+    // ошибка команды.
+    if let Err(e) = dictation::apply(&app, state.settings.clone(), models_dir(&app)) {
+        deliver::notify(&app, "Диктовка не включилась", &e);
+    }
+    Ok(saved)
+}
+
+/// Состояние диктовки для её вкладки: выдан ли «Универсальный доступ» и где
+/// лежит журнал.
+#[tauri::command]
+fn dictation_status() -> dictation::Status {
+    dictation::status()
+}
+
+/// Открывает раздел «Универсальный доступ» системных настроек — кнопка на
+/// вкладке диктовки для тех, кто закрыл окно с инструкцией.
+#[tauri::command]
+fn dictation_open_accessibility() {
+    deliver::open_accessibility_settings();
 }
 
 /// The folder picker behind "Choose folder" in Settings. `None` means the user
@@ -851,7 +874,9 @@ pub fn run() {
             settings_set,
             pick_folder,
             system_locale,
-            platform_info
+            platform_info,
+            dictation_status,
+            dictation_open_accessibility
         ])
         // `build` + `run(callback)` rather than plain `run(context)`, which is the
         // same thing with an empty callback — the callback is the only place a

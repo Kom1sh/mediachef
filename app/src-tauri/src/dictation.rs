@@ -749,18 +749,44 @@ fn has_recorder(rt: &Arc<Runtime>) -> bool {
 /// дела?»), но переписывание видно только в плашке, а в поле ввода уезжает
 /// один чистый финальный результат.
 ///
-/// Модель берётся самая лёгкая из установленных, а не выбранная в настройках:
-/// превью нужно быстрое, а не точное — на вопрос «меня слышно и то ли я
-/// говорю» хватает и `tiny`. Точность остаётся за финальным проходом.
+/// Модель — своя, `preview_model` из настроек, по умолчанию `tiny`: превью
+/// нужно быстрое, а не точное, и оно обязано укладываться в такт речи. Кому
+/// разница между показом и итогом режет глаз, ставит `small`. Если выбранной
+/// модели нет на диске, берётся самая лёгкая из установленных: показ без
+/// точности лучше, чем без показа. Словарь передаётся и сюда — тот же
+/// `--prompt`, что у финального прохода, чтобы термины в плашке и в поле
+/// писались одинаково.
 fn spawn_preview(rt: &Arc<Runtime>, generation: u64) {
     let rt = rt.clone();
     std::thread::Builder::new()
         .name("dictation-preview".into())
         .spawn(move || {
-            let Some(model) = lightest_model(&rt.models_dir) else {
+            let (wanted, dictionary) = rt
+                .settings
+                .lock()
+                .map(|s| {
+                    (
+                        s.dictation.preview_model.clone(),
+                        s.dictation.dictionary.clone(),
+                    )
+                })
+                .unwrap_or_default();
+            let Some(model) = models::model_path(&rt.models_dir, &wanted)
+                .or_else(|| lightest_model(&rt.models_dir))
+            else {
                 trace(&rt, "превью выключено: ни одной модели на диске");
                 return;
             };
+            trace(
+                &rt,
+                &format!(
+                    "живой показ: модель {}",
+                    model
+                        .file_name()
+                        .map(|f| f.to_string_lossy().into_owned())
+                        .unwrap_or_default()
+                ),
+            );
             let (Some(ffmpeg), Some(whisper)) = (locate::ffmpeg(), locate::whisper()) else {
                 return;
             };
@@ -789,7 +815,7 @@ fn spawn_preview(rt: &Arc<Runtime>, generation: u64) {
                     &wav,
                     &model,
                     &language,
-                    "",
+                    &dictionary,
                     &CancelToken::new(),
                 ) {
                     Ok(t) => t,
@@ -816,6 +842,27 @@ fn snapshot(rt: &Arc<Runtime>) -> Option<(Vec<f32>, u32)> {
 }
 
 /// Самая лёгкая из скачанных моделей — для превью.
+/// Состояние диктовки для её вкладки в приложении.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct Status {
+    /// Выдан ли «Универсальный доступ» — без него не работает ни триггер, ни
+    /// печать в поле. Спрашивается у системы в момент запроса, не кэшируется.
+    pub accessibility: bool,
+    /// Путь к журналу — чтобы вкладка могла его показать.
+    pub log_path: String,
+}
+
+/// Снимок состояния для вкладки. Пустой путь — рантайм ещё не создан.
+pub fn status() -> Status {
+    Status {
+        accessibility: deliver::can_paste(),
+        log_path: RUNTIME
+            .get()
+            .map(|r| r.log.display().to_string())
+            .unwrap_or_default(),
+    }
+}
+
 fn lightest_model(models_dir: &std::path::Path) -> Option<PathBuf> {
     ["tiny", "base", "small", "large-v3-turbo"]
         .iter()

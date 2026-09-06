@@ -16,6 +16,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { FileCard } from "./FileCard";
 import { JobCard } from "./QueuePanel";
 import { SettingsPanel } from "./SettingsPanel";
+import { DictationPanel } from "./DictationPanel";
 import { DICTS, LocaleProvider, type Locale } from "../lib/i18n";
 import { UpdateBar } from "./UpdateBar";
 import type { Updater } from "../lib/useUpdater";
@@ -128,13 +129,6 @@ const idleUpdater: Updater = {
   dismissed: false,
 };
 
-describe("SettingsPanel", () => {
-  /* Every control shows what is actually stored. The screen owns no state of its own,
-     so a control bound to the wrong field (or to nothing) would show a choice the user
-     never made and then save it on the next click.
-     The other half — that `onChange` is handed a *whole* `AppSettings` rather than the
-     one field that changed — is a type, not a runtime question: the prop's signature
-     admits nothing else, and `npm run typecheck` is a gate. */
 /**
  * Блок диктовки для тестовых настроек.
  *
@@ -147,11 +141,20 @@ const dictation = {
   enabled: true,
   hotkey: "RightOption",
   model: "small",
+  preview_model: "tiny",
   language: "",
   dictionary: "",
   delivery: "clipboard",
   history_depth: 0,
 };
+
+describe("SettingsPanel", () => {
+  /* Every control shows what is actually stored. The screen owns no state of its own,
+     so a control bound to the wrong field (or to nothing) would show a choice the user
+     never made and then save it on the next click.
+     The other half — that `onChange` is handed a *whole* `AppSettings` rather than the
+     one field that changed — is a type, not a runtime question: the prop's signature
+     admits nothing else, and `npm run typecheck` is a gate. */
 
   it("binds every control to the settings it was handed", () => {
     const settings: AppSettings = {
@@ -188,32 +191,19 @@ const dictation = {
   /* Диктовка настраивается только отсюда: файл настроек человек руками не
      правит, и если эти два контрола пропадут, единственным способом включить
      фичу снова станет текстовый редактор. */
-  it("offers the dictation switch and hotkey, and hides the hotkey when it is off", () => {
-    const on: AppSettings = {
+  /* Диктовка живёт на своей вкладке, а не среди общих настроек: экран настроек
+     не должен ни рисовать её контролы, ни знать её ключи. */
+  it("keeps dictation off the general settings screen", () => {
+    const settings: AppSettings = {
       language: "ru", theme: "dark", output_mode: "beside",
       output_dir: null, notifications: false, ffmpeg_workers: 1, dictation,
     };
     const markup = render(
       "ru",
-      createElement(SettingsPanel, { settings: on, onChange: () => {}, error: "", updater: idleUpdater }),
+      createElement(SettingsPanel, { settings, onChange: () => {}, error: "", updater: idleUpdater }),
     );
-    // Переключатель включён — значит на экране есть switch со значением true.
-    expect(markup).toContain('role="switch" aria-checked="true"');
-    // И выбранная комбинация отмечена, а не просто нарисована.
-    const picked = markup.match(/<input[^>]*name="mc-dictation-key"[^>]*value="RightOption"[^>]*>/);
-    expect(picked).not.toBeNull();
-    expect(picked?.[0]).toContain('checked=""');
-    // Запасные варианты тоже предложены: одного «правильного» мало, если он у
-    // кого-то занят.
-    expect(markup).toContain('value="Ctrl+Option+D"');
-
-    // Выключенная диктовка прячет выбор хоткея: он ни на что не влияет.
-    const off: AppSettings = { ...on, dictation: { ...dictation, enabled: false } };
-    const offMarkup = render(
-      "ru",
-      createElement(SettingsPanel, { settings: off, onChange: () => {}, error: "", updater: idleUpdater }),
-    );
-    expect(offMarkup).not.toContain("mc-dictation-key");
+    expect(markup).not.toContain("mc-dictation-key");
+    expect(markup).not.toContain('role="switch" aria-checked="true"');
   });
 
   /* Версия работающей сборки и ответ на нажатие «Проверить» — единственное, что
@@ -238,6 +228,57 @@ const dictation = {
     expect(deb).toContain("пакетный менеджер");
     expect(deb).not.toContain("Не удалось проверить");
     expect(at({ kind: "failed", reason: "dns error" })).toContain("Не удалось проверить: dns error");
+  });
+});
+
+describe("DictationPanel", () => {
+  const settings: AppSettings = {
+    language: "ru", theme: "dark", output_mode: "beside",
+    output_dir: null, notifications: false, ffmpeg_workers: 1, dictation,
+  };
+  const panel = (over: Partial<AppSettings["dictation"]> = {}) =>
+    render("ru", createElement(DictationPanel, {
+      settings: { ...settings, dictation: { ...dictation, ...over } },
+      onChange: () => {}, error: "", onOpenModels: () => {},
+    }));
+
+  /* Каждый контрол показывает то, что записано: включённость, триггер, обе
+     модели. Статический рендер эффектов не гонит, поэтому списка моделей с той
+     стороны нет — и контрол обязан всё равно показать записанное значение, а
+     не пустую группу. */
+  it("binds the switch, the trigger and both models to the settings", () => {
+    const markup = panel();
+    expect(markup).toContain('role="switch" aria-checked="true"');
+    for (const [name, value] of [
+      ["mc-dictation-key", "RightOption"],
+      ["mc-dictation-model", "small"],
+      ["mc-dictation-preview-model", "tiny"],
+      ["mc-dictation-delivery", "clipboard"],
+    ]) {
+      const radio = markup.match(new RegExp(`<input[^>]*name="${name}"[^>]*value="${value}"[^>]*>`));
+      expect(radio, name).not.toBeNull();
+      expect(radio?.[0], name).toContain('checked=""');
+    }
+    // Запасные комбинации тоже предложены: одного «правильного» триггера мало,
+    // если он у кого-то занят.
+    expect(markup).toContain('value="Ctrl+Option+D"');
+  });
+
+  /* Пока ответа о разрешении нет, экран так и говорит — а не рисует «не выдан»
+     человеку, у которого всё выдано. Счётчик словаря считает по записанному. */
+  it("is honest about what it does not know yet", () => {
+    const markup = panel({ dictionary: "MediaChef, ffmpeg" });
+    expect(markup).toContain(DICTS.ru.permUnknown);
+    expect(markup).toContain("17 из 400 знаков");
+  });
+
+  /* Выключенная диктовка не прячет настройки: на своей вкладке им прятаться
+     незачем, а человек, который её выключил, должен видеть, что именно включит. */
+  it("shows every setting even when dictation is off", () => {
+    const markup = panel({ enabled: false });
+    expect(markup).toContain('role="switch" aria-checked="false"');
+    expect(markup).toContain("mc-dictation-key");
+    expect(markup).toContain("mc-dictation-model");
   });
 });
 

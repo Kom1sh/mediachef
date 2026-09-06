@@ -43,14 +43,25 @@ export interface AppSettings {
  */
 export interface Dictation {
   enabled: boolean;
-  /** A combination, always: a lone modifier cannot be a global shortcut. */
+  /** «RightOption»/«RightCommand» — одиночный модификатор, иначе комбинация плагина. */
   hotkey: string;
   model: string;
+  /** Модель живого показа в плашке; на итог не влияет. */
+  preview_model: string;
   language: string;
   dictionary: string;
   /** "clipboard" | "type" | "paste" — см. `Dictation` в settings.rs. */
   delivery: string;
   history_depth: number;
+}
+
+/** Потолок словаря в знаках — тот же, что `DICTIONARY_MAX_CHARS` в settings.rs. */
+export const DICTIONARY_MAX_CHARS = 400;
+
+/** Ответ `dictation_status`: что вкладке диктовки нужно знать помимо настроек. */
+export interface DictationStatus {
+  accessibility: boolean;
+  log_path: string;
 }
 
 /**
