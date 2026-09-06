@@ -857,13 +857,15 @@ fn ask_permission_once(app: &AppHandle, rt: &Arc<Runtime>) {
     }
     match deliver::ask_about_permission(app) {
         deliver::PermissionChoice::OpenSettings => {
-            trace(rt, "выбрано: открыть системные настройки");
-            deliver::open_accessibility_settings();
+            // Настройки уже открыты — их открывает сама модалка, до показа.
+            trace(rt, "выбрано: пойти выдавать разрешение");
         }
         deliver::PermissionChoice::UseClipboard => {
             trace(rt, "выбрано: класть в буфер");
             set_delivery(app, rt, "clipboard");
         }
+        // Кнопки «выключить» в окне больше нет: выключение живёт в настройках
+        // приложения. Ветка остаётся ради полноты разбора.
         deliver::PermissionChoice::TurnOff => {
             trace(rt, "выбрано: выключить диктовку");
             disable_dictation(app, rt);

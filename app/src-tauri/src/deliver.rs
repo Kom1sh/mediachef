@@ -81,9 +81,19 @@ pub fn can_paste() -> bool {
 /// путь туда достаточно длинный, чтобы человек по дороге передумал.
 #[cfg(target_os = "macos")]
 pub fn open_accessibility_settings() {
-    let _ = std::process::Command::new("open")
-        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
-        .spawn();
+    // Два адреса, а не один, и оба пробуются по очереди. Идентификатор раздела
+    // менялся: `com.apple.preference.security` — язык старой «Системных
+    // настроек», `com.apple.settings.PrivacySecurity.extension` — нынешней.
+    // Какой сработает, зависит от версии macOS, а `open` про неудачу молчит:
+    // он возвращает ноль, даже когда раздел не раскрылся. Поэтому не выбираем,
+    // а зовём оба — лишний вызов ничего не портит, а промах оставил бы человека
+    // перед окном с инструкцией и без настроек.
+    for url in [
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility",
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+    ] {
+        let _ = std::process::Command::new("open").arg(url).spawn();
+    }
 }
 
 #[cfg(not(target_os = "macos"))]
@@ -158,31 +168,39 @@ pub enum PermissionChoice {
 /// повесил бы приложение.
 pub fn ask_about_permission(app: &AppHandle) -> PermissionChoice {
     use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+    // Настройки открываем СРАЗУ, не дожидаясь кнопки. Прошлая редакция вешала
+    // это на кнопку «Открыть настройки», и человек остался и без настроек, и
+    // без понимания, почему: то ли кнопка не та, то ли не сработала. Раздел уже
+    // открыт за окном — и тогда любая нажатая кнопка ведёт к понятному итогу.
+    open_accessibility_settings();
+
     let answer = app
         .dialog()
         .message(
-            "Чтобы текст печатался прямо в активное поле, macOS требует разрешение «Универсальный доступ».\n\n\
-             1. Нажмите «Открыть настройки» — нужный раздел откроется сам.\n\
-             2. Включите там переключатель напротив MediaChef.\n\
-             3. Перезапустите MediaChef — без перезапуска разрешение не подействует.\n\n\
-             Не нужна автоматическая вставка? Выберите «Класть в буфер» — текст будет копироваться, \
-             и вы вставите его сами через Cmd+V. Или выключите диктовку совсем.",
+            "Системные настройки уже открыты за этим окном.\n\n\
+             1. Найдите там MediaChef и включите переключатель.\n\
+             2. Перезапустите MediaChef — без перезапуска разрешение не подействует.\n\n\
+             Не нужна печать прямо в поле? Нажмите «Класть в буфер»: текст будет копироваться, \
+             и вы вставите его сами через Cmd+V.",
         )
-        .title("Диктовка: нужен «Универсальный доступ»")
+        .title("Диктовка: включите «Универсальный доступ»")
         .kind(MessageDialogKind::Warning)
-        .buttons(MessageDialogButtons::YesNoCancelCustom(
-            "Открыть настройки".into(),
+        // Две кнопки, а не три. С тремя непонятно, какая из них какая: macOS
+        // раскладывает их справа налево, и «первая» на экране оказывается не
+        // первой в коде. Выключение диктовки переехало в настройки приложения,
+        // где ему и место.
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "Понятно".into(),
             "Класть в буфер".into(),
-            "Выключить диктовку".into(),
         ))
         .blocking_show_with_result();
 
     match answer {
-        tauri_plugin_dialog::MessageDialogResult::Yes => PermissionChoice::OpenSettings,
-        tauri_plugin_dialog::MessageDialogResult::No => PermissionChoice::UseClipboard,
-        // Закрытие окна крестиком приравниваем к «в буфер», а не к выключению:
-        // молча отключать фичу, которую человек включил, — это последнее, чего
-        // он ждёт от окна, которое сам не открывал.
+        // «Понятно»: человек пошёл выдавать разрешение, ничего не меняем.
+        tauri_plugin_dialog::MessageDialogResult::Ok => PermissionChoice::OpenSettings,
+        // Всё остальное, включая закрытие крестиком, — буфер обмена. Он
+        // работает всегда и ничего не ломает, поэтому это безопасный итог для
+        // любого непонятного ответа.
         _ => PermissionChoice::UseClipboard,
     }
 }
