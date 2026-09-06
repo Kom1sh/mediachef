@@ -133,6 +133,12 @@
 }
 
 body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); }
+/* Документ не листается никогда: это окно приложения, а не страница, и
+   прокручиваются в нём панели, каждая своя. Без этого любой элемент, вылезший
+   за высоту окна — хоть спрятанный input, хоть чей-то абсолютный блок, —
+   давал бы вторую полосу прокрутки и уезжающий рельс. `overscroll-behavior`
+   гасит и резиновое подпрыгивание трекпада на краю. */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* The one animation in the app: the ring that says a job is being worked on right

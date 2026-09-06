@@ -69,7 +69,15 @@ export function Segmented<T extends string>({
             // theme — under the 4.5 this 12px semibold text has to clear. What
             // says "picked" is the basil chip, not a difference in text weight of
             // the words beside it.
-            className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
+            //
+            // `relative` — не для раскладки, а для спрятанного input внутри.
+            // `sr-only` — это `position: absolute`, и без позиционированного
+            // предка его контейнером становится корень документа: панель со
+            // своей прокруткой такой элемент не обрезает, и радиокнопки, стоящие
+            // глубоко в содержимом, растягивали САМ ДОКУМЕНТ — окно получало
+            // вторую полосу прокрутки, а рельс с иконками уезжал вверх. С
+            // `relative` контейнер — сама подпись, внутри панели.
+            className={`relative cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
               on ? "bg-basil text-basil-ink" : "text-ink hover:bg-card"
             }`}
           >
