@@ -325,6 +325,8 @@ pub fn apply(
         })
         .clone();
 
+    maybe_selftest(app, &rt);
+
     let (enabled, wanted) = {
         let s = rt
             .settings
@@ -446,6 +448,83 @@ fn handle(app: &AppHandle, event: Event, with_enter: bool) {
     perform(app, &rt, action);
 }
 
+/// Самопроверка плашки без микрофона: `MEDIACHEF_SELFTEST=overlay`.
+///
+/// Показывает плашку, гонит по ней уровень, скрывает — и выходит. Нужна,
+/// чтобы прогонять этот путь под отладчиком, не нажимая хоткей и не говоря в
+/// микрофон. Появилась после падения, которое воспроизводилось только в живом
+/// приложении и только на закрытии плашки: ни тесты, ни отдельная проба тех
+/// же вызовов AppKit его не ловили.
+///
+/// Потоки — те же, что у настоящей диктовки, иначе проверка проверяла бы не
+/// то: показ идёт с главного (там живёт обработчик хоткея), скрытие — с
+/// фонового (там живёт расшифровка).
+fn maybe_selftest(app: &AppHandle, rt: &Arc<Runtime>) {
+    if std::env::var("MEDIACHEF_SELFTEST").as_deref() != Ok("overlay") {
+        return;
+    }
+    // `apply` зовут при каждой смене настроек; проверка нужна одна.
+    static STARTED: AtomicBool = AtomicBool::new(false);
+    if STARTED.swap(true, Ordering::Relaxed) {
+        return;
+    }
+    // Причину исключения Objective-C — в журнал, пока процесс ещё жив.
+    #[cfg(target_os = "macos")]
+    overlay::install_exception_logger({
+        let rt = rt.clone();
+        move |m| trace(&rt, m)
+    });
+    let app = app.clone();
+    let rt = rt.clone();
+    std::thread::Builder::new()
+        .name("dictation-selftest".into())
+        .spawn(move || {
+            // Шесть секунд — чтобы снаружи успели вывести вперёд другое
+            // приложение: иначе замер активности ничего не измеряет, MediaChef
+            // при запуске активируется сам.
+            std::thread::sleep(Duration::from_secs(6));
+            trace(
+                &rt,
+                &format!(
+                    "самопроверка: до показа приложение активно = {}",
+                    overlay::app_is_active()
+                ),
+            );
+            trace(&rt, "самопроверка: показываем плашку");
+            let a = app.clone();
+            let r = rt.clone();
+            let _ = app.run_on_main_thread(move || {
+                let r2 = r.clone();
+                overlay::show(&a, move |m| trace(&r2, m));
+            });
+            std::thread::sleep(Duration::from_millis(600));
+            trace(
+                &rt,
+                &format!(
+                    "самопроверка: после показа приложение активно = {}",
+                    overlay::app_is_active()
+                ),
+            );
+            for i in 0..10u32 {
+                std::thread::sleep(Duration::from_millis(200));
+                overlay::update(
+                    &app,
+                    &overlay::Status {
+                        phase: overlay::Phase::Listening,
+                        level: i as f32 / 10.0,
+                        text: "самопроверка плашки".into(),
+                    },
+                );
+            }
+            trace(&rt, "самопроверка: скрываем плашку");
+            overlay::hide(&app);
+            std::thread::sleep(Duration::from_secs(2));
+            trace(&rt, "самопроверка: закрытие пережили, выходим");
+            app.exit(0);
+        })
+        .ok();
+}
+
 fn perform(app: &AppHandle, rt: &Arc<Runtime>, action: Action) {
     match action {
         Action::Nothing => {}
@@ -465,7 +544,10 @@ fn perform(app: &AppHandle, rt: &Arc<Runtime>, action: Action) {
                 if let Ok(mut slot) = rt.recorder.lock() {
                     *slot = Some(r);
                 }
-                overlay::show(app);
+                overlay::show(app, {
+                    let rt = rt.clone();
+                    move |m| trace(&rt, m)
+                });
                 spawn_meter(app, rt, gen);
                 spawn_preview(rt, gen);
             }

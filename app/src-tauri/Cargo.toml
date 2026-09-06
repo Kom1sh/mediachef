@@ -68,5 +68,13 @@ enigo = "0.6.1"
 tempfile = "3"
 mediachef-core = { path = "../core" }
 
+[target.'cfg(target_os = "macos")'.dependencies]
+# Ловля исключений Objective-C вокруг сырых вызовов AppKit в overlay.rs. Rust
+# через чужое исключение раскрутиться не умеет и глушит процесс целиком —
+# ровно так плашка однажды уронила приложение, не оставив в отчёте даже текста
+# исключения. Версия та же, что уже тянет tao; флаг `exception` в дереве тоже
+# уже есть, так что новых зависимостей это не добавляет.
+objc2 = { version = "0.6", features = ["exception"] }
+
 [dev-dependencies]
 

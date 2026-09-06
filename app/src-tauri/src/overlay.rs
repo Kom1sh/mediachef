@@ -6,8 +6,7 @@
 //! печатает текст в **активное** окно. Если плашка станет активной, «активным
 //! окном» окажется она сама, и текст уедет в никуда.
 //!
-//! Держится это на трёх вещах, и третья появилась не сразу — за неё заплачено
-//! живым багом.
+//! Держится это на трёх вещах:
 //!
 //! - `focusable(false)` — Tauri создаёт окна не голым `NSWindow`, а своим
 //!   подклассом `TaoWindow`, который переопределяет `canBecomeKeyWindow` и
@@ -15,17 +14,26 @@
 //!   стать активным, а не просто не становится им при показе.
 //! - `set_ignore_cursor_events(true)` — мышь проходит сквозь плашку насквозь.
 //!   Клик по ней достаётся тому, что под ней, и активировать нечего.
-//! - подмена класса на `NSPanel` со стилем `NonactivatingPanel` — см.
-//!   [`make_non_activating_panel`].
+//! - окно строится **невидимым** и показывается своими руками через
+//!   `orderFront:` — см. [`show_above_menu_bar`]. Показ силами Tauri
+//!   (`show()`/`set_visible`) идёт через `makeKeyAndOrderFront`, и полагаться
+//!   на него мы не стали.
 //!
-//! Первые два флага закрывают активацию окна, но не активацию **приложения**.
-//! Разница стоила бага: плашка появлялась, MediaChef выходил вперёд, активным
-//! становилось его главное окно — и надиктованное уезжало туда вместо поля, в
-//! которое диктовали. Курсор, говоря словами отчёта, «слетал с телеграма».
-//! Поэтому вывод из первой разведки — «`tauri-nspanel` не понадобился» —
-//! оказался неверным: он проверял клик по готовому окну, а не его появление.
-//! Стороннего крейта мы всё же избежали, но ценой двадцати строк FFI, а не
-//! двух флагов.
+//! ## Про `NSPanel`, которого здесь нет
+//!
+//! Одна редакция этого модуля подменяла класс окна на `NSPanel` со стилем
+//! `NonactivatingPanel` — по учебнику это единственный «настоящий» запрет на
+//! активацию приложения. Она и уронила программу: KVO в Objective-C устроен
+//! подменой isa, WebKit подписывается на окно через KVO, и наш
+//! `object_setClass` затирал его обёртку. При закрытии плашки WebKit
+//! отписывался, runtime не находил подписки и бросал исключение, а Rust через
+//! чужое исключение не раскручивается — процесс глох с голым «abort() called».
+//!
+//! Проверили, нужна ли подмена вообще: самопроверка (`MEDIACHEF_SELFTEST=
+//! overlay`, см. `dictation.rs`) выводит вперёд другое приложение, показывает
+//! плашку и спрашивает у `NSApp`, активны ли мы. Ответ — нет, что с подменой,
+//! что без неё. Подмену убрали; самопроверка осталась как измеритель.
+//! Стороннего `tauri-nspanel` не понадобилось, и теперь понятно, почему.
 //!
 //! ## Почему окно создаётся и закрывается каждый раз
 //!
@@ -96,9 +104,12 @@ pub struct Status {
 
 /// Показывает плашку, создавая окно при необходимости.
 ///
-/// Ошибки проглатываются намеренно: плашка — это удобство, и её отсутствие не
-/// повод не дать человеку надиктовать текст.
-pub fn show(app: &AppHandle) {
+/// Ошибки не роняют диктовку: плашка — это удобство, и её отсутствие не
+/// повод не дать человеку надиктовать текст. Но и молча они не глотаются:
+/// `report` получает строку о каждом сбое, и вызывающий пишет её в журнал.
+/// Появилось после падения, которое отчёт о сбое описал одной строкой
+/// «abort() called» — без единого слова о том, что именно пошло не так.
+pub fn show(app: &AppHandle, report: impl Fn(&str) + Send + 'static) {
     if app.get_webview_window(LABEL).is_some() {
         return;
     }
@@ -131,9 +142,9 @@ pub fn show(app: &AppHandle) {
         .resizable(false)
         .inner_size(WIDTH, HEIGHT)
         .position(x, 0.0)
-        // Невидимым: показывать будем сами. Любой показ силами Tauri — и при
-        // создании, и через `show()` — идёт через `makeKeyAndOrderFront`, то
-        // есть активирует приложение.
+        // Невидимым: показывать будем сами, когда поднимем уровень окна выше
+        // строки меню. Обычное окно macOS на строку меню не пускает и
+        // прижимает вниз, а к невидимому это не применяется.
         .visible(false)
         .build();
 
@@ -144,26 +155,27 @@ pub fn show(app: &AppHandle) {
 
     // Дальше — главный поток, и это не перестраховка.
     //
-    // Сюда приходят с потока, на котором сработал глобальный хоткей, а не с
-    // главного. Своим операциям над окном Tauri переезд на главный поток
-    // устраивает сам, но сырые вызовы AppKit ниже никто не переносит, а AppKit
-    // с чужого потока — неопределённое поведение: то сработает, то нет. Похоже,
-    // ровно на это и напоролась прошлая редакция, где уровень окна выставлялся
-    // отсюда же напрямую: плашка появлялась, но оставалась ПОД строкой меню,
-    // будто уровень ей никто и не менял.
+    // Своим операциям над окном Tauri переезд на главный поток устраивает
+    // сам, но сырые вызовы AppKit ниже никто не переносит, а AppKit с чужого
+    // потока — неопределённое поведение: то сработает, то нет. Обработчик
+    // хоткея сегодня живёт на главном потоке (Carbon), но правильность не
+    // должна зависеть от того, откуда позвали: самопроверка, например, зовёт
+    // отсюда же с фонового.
     let app = app.clone();
     let _ = app.clone().run_on_main_thread(move || {
         // Плашку могли успеть закрыть, пока задача ждала очереди: диктовку
         // отменяют и в первые же миллисекунды. Тогда окна уже нет, и трогать
         // его нельзя.
         let Some(win) = app.get_webview_window(LABEL) else {
+            report("плашка: окно закрыли раньше, чем оно показалось");
             return;
         };
-        // Превращение в неактивирующую панель и показ — одной операцией.
-        make_non_activating_panel(&win);
-        // Позиция — после показа. Обычное окно macOS не пускает на строку
-        // меню и прижимает вниз; панель уровня 25 туда уже можно, но только
-        // когда она панель, — то есть после превращения, а не до.
+        match show_above_menu_bar(&win) {
+            Ok(()) => report("плашка: показана поверх строки меню"),
+            Err(e) => report(&format!("плашка: не удалось показать: {e}")),
+        }
+        // Позиция — после показа и после подъёма уровня: окну уровня 25 на
+        // строку меню уже можно, обычному — нет, его прижмут вниз.
         let _ = win.set_position(LogicalPosition::new(x, 0.0));
     });
 }
@@ -180,54 +192,74 @@ pub fn hide(app: &AppHandle) {
     }
 }
 
-/// Превращает окно в неактивирующую панель и показывает его.
+/// Активно ли приложение сейчас — для самопроверки: так измеряется, крадёт ли
+/// плашка фокус.
+#[cfg(target_os = "macos")]
+pub fn app_is_active() -> bool {
+    use std::ffi::c_void;
+    extern "C" {
+        fn objc_getClass(name: *const u8) -> *mut c_void;
+        fn sel_registerName(name: *const u8) -> *const c_void;
+        fn objc_msgSend();
+    }
+    // SAFETY: `sharedApplication` и `isActive` — методы NSApplication с
+    // объявленными ниже сигнатурами.
+    unsafe {
+        let send_id: extern "C" fn(*mut c_void, *const c_void) -> *mut c_void =
+            std::mem::transmute(objc_msgSend as *const ());
+        let send_bool: extern "C" fn(*mut c_void, *const c_void) -> i8 =
+            std::mem::transmute(objc_msgSend as *const ());
+        let cls = objc_getClass(c"NSApplication".as_ptr() as *const u8);
+        let app = send_id(
+            cls,
+            sel_registerName(c"sharedApplication".as_ptr() as *const u8),
+        );
+        send_bool(app, sel_registerName(c"isActive".as_ptr() as *const u8)) != 0
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn app_is_active() -> bool {
+    false
+}
+
+/// Поднимает окно выше строки меню и показывает его, никого не активируя.
 ///
-/// Здесь собрано всё, чего не дают флаги Tauri, и каждая строка оплачена
+/// Здесь собрано то, чего не дают флаги Tauri, и каждая строка оплачена
 /// сломанным сценарием.
-///
-/// **Почему `NSPanel`, хотя разведка обещала, что он не нужен.** Разведка
-/// проверяла клик: `focusable(false)` действительно не даёт окну стать
-/// активным, потому что `TaoWindow` переопределяет `canBecomeKeyWindow`. Но
-/// активация приложения при ПОЯВЛЕНИИ окна — другая история, и её этот флаг не
-/// закрывает: система выводит вперёд приложение, а не окно, и активным
-/// становится главное окно MediaChef. Текст при этом уезжает в него вместо
-/// поля, куда диктовали. Единственное, что запрещает активацию по-настоящему,
-/// — стиль `NSWindowStyleMaskNonactivatingPanel`, а он действует только на
-/// `NSPanel`. Отсюда подмена класса: `NSPanel` — наследник `NSWindow` с той же
-/// раскладкой полей, и смена isa безопасна; ровно так же поступает
-/// `tauri-nspanel`, которого мы избежали ценой двадцати строк.
-///
-/// **Почему показываем сами, а не через Tauri.** `show()` в tao зовёт
-/// `make_key_and_order_front_sync`, то есть активирует. Поэтому окно строится
-/// невидимым, здесь переделывается в панель — и только потом показывается
-/// напрямую через `orderFront:`, который никого не активирует.
 ///
 /// **Почему уровень 25.** Строка меню живёт на 24-м. Ниже — и верх панели,
 /// та самая часть, что сливается с монобровью, просто не видна, а окно ещё и
-/// прижимается системой под строку меню.
+/// прижимается системой под строку меню. `always_on_top` у Tauri — это
+/// уровень 3, до строки меню ему далеко.
+///
+/// **Почему показываем сами, а не через Tauri.** `show()` в tao идёт через
+/// `makeKeyAndOrderFront`. Тот, кто может стать ключевым, от этого становится
+/// им; наше окно не может, но проверять на живых людях, активирует ли это
+/// приложение, мы не стали: `orderFront:` показывает окно и заведомо никого
+/// не трогает — самопроверка это подтверждает цифрой.
 #[cfg(target_os = "macos")]
-fn make_non_activating_panel(win: &WebviewWindow) {
+fn show_above_menu_bar(win: &WebviewWindow) -> Result<(), String> {
     use std::ffi::c_void;
-    let Ok(ns) = win.ns_window() else { return };
+    let ns = win.ns_window().map_err(|e| e.to_string())?;
 
     extern "C" {
         fn sel_registerName(name: *const u8) -> *const c_void;
-        fn objc_getClass(name: *const u8) -> *mut c_void;
-        fn object_setClass(obj: *mut c_void, cls: *mut c_void) -> *mut c_void;
         fn objc_msgSend();
     }
 
-    /// `NSWindowStyleMaskNonactivatingPanel` — 1 << 7. Единственный стиль,
-    /// который действительно запрещает активацию приложения, и работает он
-    /// только у `NSPanel`.
-    const NONACTIVATING_PANEL: u64 = 1 << 7;
     /// Выше строки меню (24).
     const STATUS_LEVEL: i64 = 25;
 
-    // SAFETY: `ns_window` отдаёт живой NSWindow; NSPanel — его наследник с той
-    // же раскладкой полей; все четыре селектора есть у NSWindow/NSPanel, и
-    // сигнатуры совпадают с объявленными ниже.
-    unsafe {
+    // Всё, что ниже, — под ловушкой исключений Objective-C, и это не
+    // осторожность ради осторожности. Rust не умеет раскручиваться через чужое
+    // исключение: встретив его, он глушит процесс целиком, и отчёт о сбое
+    // получает голое «abort() called» без причины. Так плашка однажды и
+    // уронила приложение. Ловушка превращает это в строку журнала.
+    //
+    // SAFETY: `ns_window` отдаёт живой NSWindow; все селекторы есть у
+    // NSWindow, и сигнатуры совпадают с объявленными ниже.
+    let outcome = objc2::exception::catch(|| unsafe {
         let send_u64: extern "C" fn(*mut c_void, *const c_void, u64) =
             std::mem::transmute(objc_msgSend as *const ());
         let send_i64: extern "C" fn(*mut c_void, *const c_void, i64) =
@@ -237,15 +269,6 @@ fn make_non_activating_panel(win: &WebviewWindow) {
         let send_void: extern "C" fn(*mut c_void, *const c_void, *const c_void) =
             std::mem::transmute(objc_msgSend as *const ());
 
-        let panel_class = objc_getClass(c"NSPanel".as_ptr() as *const u8);
-        if !panel_class.is_null() {
-            object_setClass(ns, panel_class);
-        }
-        send_u64(
-            ns,
-            sel_registerName(c"setStyleMask:".as_ptr() as *const u8),
-            NONACTIVATING_PANEL,
-        );
         send_i64(
             ns,
             sel_registerName(c"setLevel:".as_ptr() as *const u8),
@@ -277,14 +300,80 @@ fn make_non_activating_panel(win: &WebviewWindow) {
             sel_registerName(c"orderFront:".as_ptr() as *const u8),
             std::ptr::null(),
         );
+    });
+    match outcome {
+        Ok(()) => Ok(()),
+        Err(Some(exc)) => Err(format!("{exc}")),
+        Err(None) => Err("исключение без объекта".into()),
     }
 }
 
-/// На других системах окно просто показывается: неактивирующих панелей там
-/// нет, а «поверх всех» задаётся флагом при создании.
+/// Перехватчик исключений Objective-C на уровне runtime — для самопроверки.
+///
+/// Rust, встретив чужое исключение, глушит процесс, и отчёт о сбое остаётся
+/// без причины. Отладчик здесь не помощник: без включённого режима
+/// разработчика lldb упирается в системный запрос пароля. Зато у runtime есть
+/// `objc_setExceptionPreprocessor` — функция, которую зовут перед выбросом
+/// КАЖДОГО исключения, ещё до раскрутки стека. Отсюда и пишем: описание
+/// исключения и стек вызовов в момент броска — то есть ровно то, чего нет в
+/// отчёте о сбое.
+///
+/// Ставится один раз; повторные вызовы ничего не делают.
+#[cfg(target_os = "macos")]
+pub fn install_exception_logger(report: impl Fn(&str) + Send + Sync + 'static) {
+    use std::ffi::{c_char, c_void, CStr};
+    use std::sync::OnceLock;
+
+    type Report = Box<dyn Fn(&str) + Send + Sync>;
+    static REPORT: OnceLock<Report> = OnceLock::new();
+    if REPORT.set(Box::new(report)).is_err() {
+        return;
+    }
+
+    type Preprocessor = extern "C" fn(*mut c_void) -> *mut c_void;
+    extern "C" {
+        fn objc_setExceptionPreprocessor(f: Preprocessor) -> Option<Preprocessor>;
+        fn sel_registerName(name: *const u8) -> *const c_void;
+        fn objc_msgSend();
+    }
+
+    extern "C" fn log_exception(exc: *mut c_void) -> *mut c_void {
+        // SAFETY: `exc` — живой NSException; `description` и `UTF8String`
+        // есть у любого NSObject/NSString, сигнатуры совпадают.
+        let text = unsafe {
+            let send_id: extern "C" fn(*mut c_void, *const c_void) -> *mut c_void =
+                std::mem::transmute(objc_msgSend as *const ());
+            let send_cstr: extern "C" fn(*mut c_void, *const c_void) -> *const c_char =
+                std::mem::transmute(objc_msgSend as *const ());
+            let desc = send_id(exc, sel_registerName(c"description".as_ptr() as *const u8));
+            let p = if desc.is_null() {
+                std::ptr::null()
+            } else {
+                send_cstr(desc, sel_registerName(c"UTF8String".as_ptr() as *const u8))
+            };
+            if p.is_null() {
+                "(без описания)".to_string()
+            } else {
+                CStr::from_ptr(p).to_string_lossy().into_owned()
+            }
+        };
+        let bt = std::backtrace::Backtrace::force_capture();
+        if let Some(r) = REPORT.get() {
+            r(&format!("исключение Objective-C: {text}\n{bt}"));
+        }
+        exc
+    }
+
+    unsafe {
+        objc_setExceptionPreprocessor(log_exception);
+    }
+}
+
+/// На других системах окно просто показывается: строки меню сверху там нет, а
+/// «поверх всех» задаётся флагом при создании.
 #[cfg(not(target_os = "macos"))]
-fn make_non_activating_panel(win: &WebviewWindow) {
-    let _ = win.show();
+fn show_above_menu_bar(win: &WebviewWindow) -> Result<(), String> {
+    win.show().map_err(|e| e.to_string())
 }
 
 // Геометрия проверяется на сборке, а не тестом: это константы, и ошибка в них

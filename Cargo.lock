@@ -2384,6 +2384,7 @@ dependencies = [
  "fs2",
  "hound",
  "mediachef-core",
+ "objc2",
  "serde",
  "serde_json",
  "sys-locale",
