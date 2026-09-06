@@ -154,7 +154,7 @@ export const dict = {
   showLog: "Show file",
   modelNotInstalled: "not downloaded",
   setDictationMic: "Microphone",
-  setDictationMicHint: "Without the permission macOS delivers silence instead of audio, and Whisper invents subtitle credits out of silence. After an update the toggle may be on but dead — switch it off and on.",
+  setDictationMicHint: "“System default” means the last connected headset: AirPods sitting in their case stay the default input and deliver silence. Dictating at the laptop — pick its microphone explicitly. Without the permission macOS also delivers silence, not an error.",
   micGranted: "Granted",
   micMissing: "Not granted",
   micUndetermined: "Not asked yet",

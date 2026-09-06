@@ -120,7 +120,7 @@ export const dict: Dict = {
   showLog: "Mostrar arquivo",
   modelNotInstalled: "não baixado",
   setDictationMic: "Microfone",
-  setDictationMicHint: "Sem a permissão o macOS entrega silêncio em vez de áudio, e o Whisper inventa créditos de legendas a partir do silêncio. Após uma atualização o interruptor pode estar ligado mas morto — desligue e ligue de novo.",
+  setDictationMicHint: "«Como o sistema» é o último fone conectado: AirPods na caixa continuam sendo a entrada padrão e entregam silêncio. Se dita no notebook, escolha o microfone dele explicitamente. Sem a permissão o macOS também entrega silêncio, não um erro.",
   micGranted: "Concedida",
   micMissing: "Não concedida",
   micUndetermined: "Ainda não pedida",

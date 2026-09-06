@@ -368,6 +368,12 @@ fn dictation_open_microphone() {
     deliver::open_microphone_settings();
 }
 
+/// Имена устройств ввода — для выбора микрофона на вкладке диктовки.
+#[tauri::command(async)]
+fn dictation_input_devices() -> Vec<String> {
+    mic::input_devices()
+}
+
 /// The folder picker behind "Choose folder" in Settings. `None` means the user
 /// cancelled the dialog, which is not an error and must not clear the setting.
 ///
@@ -884,7 +890,8 @@ pub fn run() {
             platform_info,
             dictation_status,
             dictation_open_accessibility,
-            dictation_open_microphone
+            dictation_open_microphone,
+            dictation_input_devices
         ])
         // `build` + `run(callback)` rather than plain `run(context)`, which is the
         // same thing with an empty callback — the callback is the only place a

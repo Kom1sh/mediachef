@@ -120,7 +120,7 @@ export const dict: Dict = {
   showLog: "显示文件",
   modelNotInstalled: "未下载",
   setDictationMic: "麦克风",
-  setDictationMicHint: "没有该权限时 macOS 会返回静音而不是声音，而 Whisper 会从静音中编造字幕署名。更新后开关可能亮着却失效——请关掉再打开。",
+  setDictationMicHint: "「与系统一致」即最近连接的耳机：放在盒子里的 AirPods 仍是默认输入，且只会返回静音。在笔记本上听写时请明确选择它的麦克风。没有权限时 macOS 同样返回静音而不是错误。",
   micGranted: "已授予",
   micMissing: "未授予",
   micUndetermined: "尚未询问",

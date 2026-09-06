@@ -50,3 +50,4 @@ import type { DictationStatus } from "./types";
 export const getDictationStatus = () => invoke<DictationStatus>("dictation_status");
 export const openAccessibilitySettings = () => invoke<void>("dictation_open_accessibility");
 export const openMicrophoneSettings = () => invoke<void>("dictation_open_microphone");
+export const getInputDevices = () => invoke<string[]>("dictation_input_devices");

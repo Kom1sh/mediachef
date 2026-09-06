@@ -120,7 +120,7 @@ export const dict: Dict = {
   showLog: "Datei zeigen",
   modelNotInstalled: "nicht geladen",
   setDictationMic: "Mikrofon",
-  setDictationMicHint: "Ohne die Berechtigung liefert macOS Stille statt Ton, und Whisper erfindet aus Stille Untertitel-Credits. Nach einem Update kann der Schalter an, aber tot sein — aus- und wieder einschalten.",
+  setDictationMicHint: "„Wie das System“ ist das zuletzt verbundene Headset: AirPods im Case bleiben Standardeingang und liefern Stille. Wer am Laptop diktiert, wählt dessen Mikrofon ausdrücklich. Ohne die Berechtigung liefert macOS ebenfalls Stille statt eines Fehlers.",
   micGranted: "Erteilt",
   micMissing: "Nicht erteilt",
   micUndetermined: "Noch nicht gefragt",

@@ -48,6 +48,8 @@ export interface Dictation {
   model: string;
   /** Модель живого показа в плашке; на итог не влияет. */
   preview_model: string;
+  /** Имя устройства ввода; «» — вход по умолчанию системы. */
+  input_device: string;
   language: string;
   dictionary: string;
   /** "clipboard" | "type" | "paste" — см. `Dictation` в settings.rs. */

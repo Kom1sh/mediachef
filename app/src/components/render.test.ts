@@ -142,6 +142,7 @@ const dictation = {
   hotkey: "RightOption",
   model: "small",
   preview_model: "tiny",
+  input_device: "",
   language: "",
   dictionary: "",
   delivery: "clipboard",

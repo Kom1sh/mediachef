@@ -102,6 +102,10 @@ pub struct Recording {
     /// входа: без разрешения на микрофон macOS отдаёт нули, а не ошибку, и
     /// такая запись не должна доезжать до Whisper — см. [`SILENT_PEAK`].
     pub peak: f32,
+    /// Откуда писали: имя устройства, частота и формат сэмплов. В журнал —
+    /// чтобы тишину можно было отнести к устройству (Bluetooth-гарнитура,
+    /// виртуальный вход), а не гадать.
+    pub source: String,
     /// Временная папка: удаляется вместе со структурой, унося WAV. На диск
     /// пользователя не попадает ничего.
     _dir: tempfile::TempDir,
@@ -153,7 +157,11 @@ impl Recorder {
     ///
     /// Возвращается сразу, как только поток открыт: ждать первого сэмпла здесь
     /// нельзя, иначе на это время подвиснет обработчик хоткея.
-    pub fn start() -> Result<Self, MicError> {
+    /// `preferred` — имя устройства из настроек; пустая строка — вход по
+    /// умолчанию системы. Если названного устройства нет, пишем с умолчания и
+    /// говорим об этом в `source`.
+    pub fn start(preferred: &str) -> Result<Self, MicError> {
+        let preferred = preferred.to_string();
         let stop = Arc::new(AtomicBool::new(false));
         let level = Arc::new(Level::new());
         let peak_max = Arc::new(Level::new());
@@ -172,7 +180,9 @@ impl Recorder {
         std::thread::Builder::new()
             .name("dictation-mic".into())
             .spawn(move || {
-                let result = record(&stop_t, level_t, peak_t, samples_t, rate_t, &ready_tx);
+                let result = record(
+                    &preferred, &stop_t, level_t, peak_t, samples_t, rate_t, &ready_tx,
+                );
                 // Если поток не открылся, про это уже сказано через ready_tx.
                 let _ = done_tx.send(result);
             })
@@ -222,6 +232,25 @@ impl Recorder {
     }
 }
 
+/// Устройство ввода по имени; `None` — пусто или такого нет.
+fn pick_device(host: &cpal::Host, name: &str) -> Option<cpal::Device> {
+    if name.is_empty() {
+        return None;
+    }
+    host.input_devices().ok()?.find(|d| d.to_string() == name)
+}
+
+/// Имена доступных устройств ввода — для выбора микрофона на вкладке.
+///
+/// Только имена: этого хватает и для списка, и для настройки. Порядок —
+/// как отдаёт система.
+pub fn input_devices() -> Vec<String> {
+    cpal::default_host()
+        .input_devices()
+        .map(|it| it.map(|d| d.to_string()).collect())
+        .unwrap_or_default()
+}
+
 /// Прогрев CoreAudio без открытия микрофона.
 ///
 /// Первое обращение к устройству ввода за жизнь процесса стоит от полутора
@@ -239,6 +268,7 @@ pub fn warm_up() -> Option<Duration> {
 
 /// Тело потока захвата: открыть, писать, закрыть, сложить WAV.
 fn record(
+    preferred: &str,
     stop: &AtomicBool,
     level: Arc<Level>,
     peak_max: Arc<Level>,
@@ -247,9 +277,21 @@ fn record(
     ready: &mpsc::Sender<Result<(), MicError>>,
 ) -> Result<Recording, MicError> {
     let host = cpal::default_host();
-    let Some(device) = host.default_input_device() else {
-        let _ = ready.send(Err(MicError::NoDevice));
-        return Err(MicError::NoDevice);
+    // Названное устройство — по имени, иначе вход по умолчанию. Вход по
+    // умолчанию у macOS — это последняя подключённая гарнитура, и AirPods в
+    // кейсе остаются «подключёнными»: система отдаёт с них чистые нули, хотя
+    // микрофон ноутбука рядом и слышит. Человек, выбравший микрофон явно, от
+    // этого застрахован.
+    let (device, fallback_note) = match pick_device(&host, preferred) {
+        Some(d) => (d, ""),
+        None => match host.default_input_device() {
+            Some(d) if preferred.is_empty() => (d, ""),
+            Some(d) => (d, " (выбранного нет, взят вход по умолчанию)"),
+            None => {
+                let _ = ready.send(Err(MicError::NoDevice));
+                return Err(MicError::NoDevice);
+            }
+        },
     };
     let config = match device.default_input_config() {
         Ok(c) => c,
@@ -259,6 +301,14 @@ fn record(
         }
     };
 
+    let source = format!(
+        "{}{} @ {} Гц, {} кан., {:?}",
+        device,
+        fallback_note,
+        config.sample_rate(),
+        config.channels(),
+        config.sample_format()
+    );
     let channels = config.channels() as usize;
     // В cpal 0.18 `SampleRate` — это просто `u32`, без обёртки-кортежа.
     let sample_rate = config.sample_rate();
@@ -375,6 +425,7 @@ fn record(
         path,
         reason,
         peak: peak_max.get(),
+        source,
         duration,
         first_sample_delay,
         _dir: dir,
@@ -494,7 +545,7 @@ mod tests {
     #[test]
     #[ignore]
     fn records_a_second_from_the_real_microphone() {
-        let rec = Recorder::start().expect("микрофон не открылся");
+        let rec = Recorder::start("").expect("микрофон не открылся");
         std::thread::sleep(Duration::from_secs(1));
         let out = rec.stop().expect("запись не сложилась");
         println!(

@@ -29,7 +29,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { LOCALES, LOCALE_FLAGS, LOCALE_NAMES, useT } from "../lib/i18n";
-import { getDictationStatus, getModels, openAccessibilitySettings, openMicrophoneSettings, revealFile } from "../lib/ipc";
+import { getDictationStatus, getInputDevices, getModels, openAccessibilitySettings, openMicrophoneSettings, revealFile } from "../lib/ipc";
 import { DICTATION_HOTKEYS, DICTIONARY_MAX_CHARS } from "../lib/types";
 import type { AppSettings, Dictation, DictationStatus, ModelView } from "../lib/types";
 import { Row, Segmented, SoftButton, Switch, type Choice } from "./controls";
@@ -56,10 +56,21 @@ export function DictationPanel({
   // обязан выглядеть честно и без них: «проверяю…» вместо выдуманного ответа.
   const [models, setModels] = useState<ModelView[]>([]);
   const [status, setStatus] = useState<DictationStatus | null>(null);
+  const [devices, setDevices] = useState<string[]>([]);
   useEffect(() => {
     getModels().then(setModels).catch(() => {});
     getDictationStatus().then(setStatus).catch(() => {});
+    getInputDevices().then(setDevices).catch(() => {});
   }, []);
+
+  // Микрофон: «как в системе» плюс все устройства ввода. Выбранное, но
+  // отключённое сейчас устройство остаётся в списке — иначе контрол показал бы
+  // не то, что записано, — а запись с него всё равно уйдёт на вход по умолчанию.
+  const MICS: readonly Choice<string>[] = [
+    { value: "", label: t("optSystem"), icon: Monitor },
+    ...(devices.includes(d.input_device) || d.input_device === "" ? devices : [...devices, d.input_device])
+      .map(name => ({ value: name, label: name })),
+  ];
 
   // Черновик словаря — см. шапку файла.
   const [draft, setDraft] = useState(d.dictionary);
@@ -199,7 +210,17 @@ export function DictationPanel({
             вместе и одинаково: после обновления переключатель горит, а звука нет.
             Без разрешения macOS отдаёт тишину, а не ошибку, и по одной записи
             этого не понять — поэтому спрашиваем систему. */}
-        <Row icon={MicVocal} label={t("setDictationMic")} hint={t("setDictationMicHint")}>
+        <Row
+          icon={MicVocal} label={t("setDictationMic")} hint={t("setDictationMicHint")}
+          footer={
+            <div className="w-full border-t border-line pt-3">
+              <Segmented
+                name="mc-dictation-mic" label={t("setDictationMic")} value={d.input_device}
+                choices={MICS} onPick={input_device => set({ input_device })}
+              />
+            </div>
+          }
+        >
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`rounded-md px-2 py-1 text-xs font-semibold ${

@@ -120,7 +120,7 @@ export const dict: Dict = {
   showLog: "Pokaż plik",
   modelNotInstalled: "niepobrany",
   setDictationMic: "Mikrofon",
-  setDictationMicHint: "Bez uprawnienia macOS oddaje ciszę zamiast dźwięku, a Whisper z ciszy wymyśla napisy końcowe. Po aktualizacji przełącznik może być włączony, ale martwy — wyłącz i włącz ponownie.",
+  setDictationMicHint: "„Jak system” to ostatnio podłączony zestaw: AirPodsy w etui pozostają domyślnym wejściem i oddają ciszę. Dyktujesz przy laptopie — wybierz jego mikrofon wprost. Bez uprawnienia macOS też oddaje ciszę, nie błąd.",
   micGranted: "Nadane",
   micMissing: "Nienadane",
   micUndetermined: "Jeszcze nie pytano",

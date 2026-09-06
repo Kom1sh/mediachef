@@ -121,7 +121,7 @@ export const dict: Dict = {
   showLog: "إظهار الملف",
   modelNotInstalled: "غير منزَّل",
   setDictationMic: "الميكروفون",
-  setDictationMicHint: "بدون الإذن يعطي macOS صمتاً بدل الصوت، وWhisper يخترع من الصمت اعتمادات ترجمة. بعد التحديث قد يكون المفتاح مفعّلاً لكن ميتاً — أطفئه ثم شغّله.",
+  setDictationMicHint: "«كإعدادات النظام» تعني آخر سماعة متصلة: AirPods في علبتها تبقى مدخل الصوت الافتراضي وتعطي صمتاً. إن كنت تُملي على الحاسوب فاختر ميكروفونه صراحةً. وبدون الإذن يعطي macOS صمتاً أيضاً لا خطأ.",
   micGranted: "مُمنوح",
   micMissing: "غير ممنوح",
   micUndetermined: "لم يُطلب بعد",

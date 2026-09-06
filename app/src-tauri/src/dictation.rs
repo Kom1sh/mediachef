@@ -638,7 +638,12 @@ fn perform(app: &AppHandle, rt: &Arc<Runtime>, action: Action) {
                 let rt = rt.clone();
                 move |m| trace(&rt, m)
             });
-            match Recorder::start() {
+            let preferred = rt
+                .settings
+                .lock()
+                .map(|s| s.dictation.input_device.clone())
+                .unwrap_or_default();
+            match Recorder::start(&preferred) {
                 Ok(r) => {
                     trace(rt, "микрофон открыт, пишем");
                     // Новая диктовка — новое поколение: фоновые потоки прошлой
@@ -907,8 +912,8 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
             trace(
                 rt,
                 &format!(
-                    "запись {:?}, пик {:.3}, причина {:?}, до первого сэмпла {:?}",
-                    r.duration, r.peak, r.reason, r.first_sample_delay
+                    "запись {:?}, пик {:.3}, источник {}, причина {:?}, до первого сэмпла {:?}",
+                    r.duration, r.peak, r.source, r.reason, r.first_sample_delay
                 ),
             );
             r
@@ -941,7 +946,7 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
     // порога — это не тихая речь, а мёртвый вход, и чаще всего это отсутствие
     // разрешения на микрофон: macOS в таком случае отдаёт нули, а не ошибку.
     if recording.peak < crate::mic::SILENT_PEAK {
-        silent_microphone(app, rt, recording.peak);
+        silent_microphone(app, rt, recording.peak, &recording.source);
         return;
     }
 
@@ -1151,20 +1156,33 @@ fn no_speech(app: &AppHandle, rt: &Arc<Runtime>) {
 /// всего слетевшее после обновления разрешение, но бывает и выключенная
 /// гарнитура, и открывать системные настройки на каждую такую диктовку было
 /// бы наказанием.
-fn silent_microphone(app: &AppHandle, rt: &Arc<Runtime>, peak: f32) {
+fn silent_microphone(app: &AppHandle, rt: &Arc<Runtime>, peak: f32, source: &str) {
     rt.send_after.store(false, Ordering::Relaxed);
     trace(
         rt,
-        &format!("микрофон отдал тишину (пик {peak:.4}) — в Whisper не отправляем"),
+        &format!(
+            "микрофон отдал тишину (пик {peak:.4}, источник {source}) — в Whisper не отправляем"
+        ),
     );
-    let first_time = !rt.asked_microphone.swap(true, Ordering::Relaxed);
+    // Устройство — в уведомлении по имени. Тишина с Bluetooth-гарнитуры,
+    // лежащей в кейсе, и тишина от слетевшего разрешения выглядят для
+    // приложения одинаково, а для человека это два разных действия: надеть
+    // наушники или сходить в настройки.
+    let device = source.split(" @ ").next().unwrap_or(source);
     deliver::notify(
         app,
         "Микрофон молчит",
-        "Запись пустая. Проверьте разрешение на микрофон для MediaChef: Системные настройки → \
-         Конфиденциальность → Микрофон. Переключатель уже включён — выключите и включите заново.",
+        &format!(
+            "Запись с «{device}» пустая. Если это гарнитура — наденьте её или выберите другой микрофон \
+             в Системных настройках → Звук. Если микрофон на месте — проверьте разрешение для MediaChef: \
+             Конфиденциальность → Микрофон (переключатель включён — выключите и включите заново)."
+        ),
     );
-    if first_time {
+    // Раздел настроек — один раз за запуск, и только когда система говорит,
+    // что доступа нет: пустая гарнитура — не повод открывать настройки.
+    if deliver::microphone_status() != "authorized"
+        && !rt.asked_microphone.swap(true, Ordering::Relaxed)
+    {
         deliver::open_microphone_settings();
     }
 }
