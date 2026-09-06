@@ -110,7 +110,7 @@ export const dict: Dict = {
   setDictationDictionaryHint: "Ein Hinweis für das Modell, keine Ersetzungsliste: 15–25 Wörter, die Sie oft sagen und die es verdreht.",
   dictionaryCount: "{n} von {max} Zeichen",
   setDictationPermission: "Bedienungshilfen-Berechtigung",
-  setDictationPermissionHint: "Nötig, um die Auslösetaste zu hören und ins Feld zu tippen. Danach MediaChef neu starten. Schalter schon an, hier steht aber „nicht erteilt“? Aus- und wieder einschalten — nach einem Update behandelt macOS MediaChef als neue App.",
+  setDictationPermissionHint: "Nötig, um die Auslösetaste zu hören und ins Feld zu tippen. Nach einem Update behandelt macOS MediaChef als neue App: es entfernt den alten Eintrag selbst und fragt erneut — in der Liste einschalten und neu starten.",
   permGranted: "Erteilt",
   permMissing: "Nicht erteilt",
   permUnknown: "Prüfe…",

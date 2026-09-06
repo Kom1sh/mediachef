@@ -195,18 +195,20 @@ restart the app, and it works — verified on a real machine.
 
 Two things about that permission, both stated here rather than discovered later:
 
-- **It survives updates only because every build is signed with the same
-  certificate.** macOS ties the permission to the app's code signature: an
-  ad-hoc-signed build gets a new signature every time, and 0.8.0 shipped that
-  way — the toggle in System Settings stayed on while the permission was gone,
-  and the fix was to switch it off and on again. Since then releases are signed
-  with a self-signed certificate, `MediaChef Dev Signing` (not a Developer ID —
-  Gatekeeper behaves as before; only the designated requirement becomes stable:
-  `identifier "com.mediachef.dev" and certificate root = H"…"`). CI takes it
-  from the `APPLE_CERTIFICATE` (base64 `.p12`) and `APPLE_CERTIFICATE_PASSWORD`
-  secrets and refuses to release without them. A local build must sign the same
-  way or it will knock the permission out again:
-  `APPLE_SIGNING_IDENTITY="MediaChef Dev Signing" npm run tauri build`.
+- **It does not survive updates, and the app heals that itself.** macOS ties
+  the permission to the app's code signature; an ad-hoc-signed build gets a new
+  signature every time, so after an update the toggle in System Settings stays
+  on while the permission is gone — and flipping it off and on does *not*
+  rebind it (tried on a real machine). A self-signed certificate was tried and
+  rejected: the Accessibility toggle then works, but `tccd` silently drops the
+  *microphone* request from an app whose certificate the system does not trust
+  — no prompt, no entry, zeros on the input. So the app stays ad-hoc and, when
+  it finds itself without access, runs `tccutil reset Accessibility
+  com.mediachef.dev` on its own entry and calls
+  `AXIsProcessTrustedWithOptions(prompt)`, which makes macOS show its own dialog
+  and put MediaChef back into the list; the microphone gets the same treatment
+  on the first silent recording. One toggle plus one "Allow" per update is the
+  honest price of not paying Apple $99 a year.
 - **Nothing is lost when the permission is missing.** `type` writes to the
   clipboard before giving up, so the worst case is one `Cmd+V`; the app says so
   instead of failing silently, and if the toggle is already on it tells you to

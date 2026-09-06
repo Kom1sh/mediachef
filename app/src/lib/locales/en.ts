@@ -144,7 +144,7 @@ export const dict = {
   setDictationDictionaryHint: "A hint to the model, not a replacement list: 15–25 words you say often and it keeps getting wrong.",
   dictionaryCount: "{n} of {max} characters",
   setDictationPermission: "Accessibility permission",
-  setDictationPermissionHint: "Needed to hear the trigger key and to type into the field. Restart MediaChef after granting it. Switch already on but it says “not granted” here? Turn it off and on again — after an update macOS treats MediaChef as a new app.",
+  setDictationPermissionHint: "Needed to hear the trigger key and to type into the field. After an update macOS treats MediaChef as a new app: it removes the old entry itself and asks again — switch it on in the list and restart.",
   permGranted: "Granted",
   permMissing: "Not granted",
   permUnknown: "Checking…",

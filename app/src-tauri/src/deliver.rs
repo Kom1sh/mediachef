@@ -114,6 +114,81 @@ pub fn open_microphone_settings() {
 #[cfg(not(target_os = "macos"))]
 pub fn open_microphone_settings() {}
 
+/// Снимает свою запись в TCC для службы (`"Microphone"`, `"Accessibility"`).
+///
+/// Зачем приложению трогать собственные разрешения: сборка подписана ad-hoc,
+/// и после обновления macOS считает её новым приложением, а запись в
+/// системных настройках остаётся от прежней копии — переключатель горит, а
+/// разрешения нет. Переспрашивать система не станет и переключение
+/// туда-сюда не помогает (проверено на живой машине). `tccutil reset` для
+/// пользовательских служб не требует прав администратора и снимает ровно
+/// нашу запись; следующее обращение к службе вызывает системный запрос.
+pub fn reset_tcc(service: &str) -> bool {
+    std::process::Command::new("tccutil")
+        .args(["reset", service, "com.mediachef.dev"])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+/// Просит систему показать запрос на «Универсальный доступ».
+///
+/// `AXIsProcessTrustedWithOptions` с `kAXTrustedCheckOptionPrompt` — единственный
+/// способ, которым приложение попадает в список «Универсальный доступ» само:
+/// macOS показывает свой диалог с кнопкой в системные настройки и добавляет
+/// строку (выключенную). Без этого после сброса записи человеку пришлось бы
+/// искать приложение через «+» — ровно то, обо что он споткнулся.
+/// Возвращает, выдан ли доступ уже сейчас.
+#[cfg(target_os = "macos")]
+pub fn request_accessibility_prompt() -> bool {
+    use std::ffi::c_void;
+    #[link(name = "ApplicationServices", kind = "framework")]
+    extern "C" {
+        fn AXIsProcessTrustedWithOptions(options: *const c_void) -> bool;
+        static kAXTrustedCheckOptionPrompt: *const c_void;
+    }
+    #[link(name = "CoreFoundation", kind = "framework")]
+    extern "C" {
+        fn CFDictionaryCreate(
+            allocator: *const c_void,
+            keys: *const *const c_void,
+            values: *const *const c_void,
+            count: isize,
+            key_callbacks: *const c_void,
+            value_callbacks: *const c_void,
+        ) -> *const c_void;
+        fn CFRelease(cf: *const c_void);
+        static kCFBooleanTrue: *const c_void;
+        static kCFTypeDictionaryKeyCallBacks: u8;
+        static kCFTypeDictionaryValueCallBacks: u8;
+    }
+    // SAFETY: словарь из одного ключа-константы фреймворка и булева значения,
+    // сигнатуры CoreFoundation объявлены как в заголовках; словарь
+    // освобождается после вызова.
+    unsafe {
+        let keys = [kAXTrustedCheckOptionPrompt];
+        let values = [kCFBooleanTrue];
+        let options = CFDictionaryCreate(
+            std::ptr::null(),
+            keys.as_ptr(),
+            values.as_ptr(),
+            1,
+            &kCFTypeDictionaryKeyCallBacks as *const u8 as *const c_void,
+            &kCFTypeDictionaryValueCallBacks as *const u8 as *const c_void,
+        );
+        let trusted = AXIsProcessTrustedWithOptions(options);
+        if !options.is_null() {
+            CFRelease(options);
+        }
+        trusted
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn request_accessibility_prompt() -> bool {
+    true
+}
+
 /// Состояние разрешения на микрофон: `authorized`, `denied`, `restricted`,
 /// `undetermined` или `unknown`.
 ///
@@ -263,8 +338,8 @@ pub fn ask_about_permission(app: &AppHandle, reason: PermissionReason) -> Permis
             "Системные настройки уже открыты за этим окном.\n\n\
              1. Найдите там MediaChef и включите переключатель.\n\
              2. Перезапустите MediaChef — без перезапуска разрешение не подействует.\n\n\
-             Переключатель уже включён? Выключите и включите его заново: после обновления macOS \
-             считает MediaChef новым приложением, а старая галка относится к прежней копии.\n\n\
+             После обновления приложения это повторяется: macOS считает обновлённый MediaChef \
+             новым приложением. Старую запись он снимает сам и просит разрешение заново.\n\n\
              Не нужна печать прямо в поле? Нажмите «Класть в буфер»: текст будет копироваться, \
              и вы вставите его сами через Cmd+V.",
             // Две кнопки, а не три. С тремя непонятно, какая из них какая:
@@ -278,8 +353,8 @@ pub fn ask_about_permission(app: &AppHandle, reason: PermissionReason) -> Permis
              Системные настройки уже открыты за этим окном.\n\n\
              1. Найдите там MediaChef и включите переключатель.\n\
              2. Перезапустите MediaChef — без перезапуска разрешение не подействует.\n\n\
-             Переключатель уже включён? Выключите и включите его заново: после обновления macOS \
-             считает MediaChef новым приложением, а старая галка относится к прежней копии.",
+             После обновления приложения это повторяется: macOS считает обновлённый MediaChef \
+             новым приложением. Старую запись он снимает сам и просит разрешение заново.",
             // Одна кнопка: без разрешения не заработает ни триггер, ни печать,
             // и предлагать здесь буфер обмена было бы обманом.
             MessageDialogButtons::OkCustom(BTN_OK.into()),

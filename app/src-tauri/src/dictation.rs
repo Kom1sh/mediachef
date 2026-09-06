@@ -330,6 +330,12 @@ pub fn apply(
         .clone();
 
     maybe_selftest(app, &rt);
+    // Разрешение на микрофон — в журнал сразу: без него macOS отдаёт тишину
+    // молча, и без этой строки тишина неотличима от сломанного микрофона.
+    trace(
+        &rt,
+        &format!("разрешение на микрофон: {}", deliver::microphone_status()),
+    );
     // Самоотчёт плашки слушаем независимо от того, включена ли диктовка:
     // самопроверка гоняет плашку и при выключенной.
     overlay_probe_listener_once(app, &rt);
@@ -544,6 +550,55 @@ fn overlay_probe_listener_once(app: &AppHandle, rt: &Arc<Runtime>) {
     });
 }
 
+/// Самопроверка микрофона: `MEDIACHEF_SELFTEST=mic`.
+///
+/// Открывает вход по умолчанию на полторы секунды и пишет в журнал пик,
+/// источник и состояние разрешения — то, что нужно, чтобы отличить «macOS
+/// молча отдаёт нули» от «микрофон и правда молчит». Запускать через
+/// `open -a … --env MEDIACHEF_SELFTEST=mic`: так приложение стартует тем же
+/// путём, что у человека, и TCC относит запрос к нему, а не к терминалу.
+fn selftest_mic(app: &AppHandle, rt: &Arc<Runtime>) {
+    static STARTED: AtomicBool = AtomicBool::new(false);
+    if STARTED.swap(true, Ordering::Relaxed) {
+        return;
+    }
+    let app = app.clone();
+    let rt = rt.clone();
+    std::thread::Builder::new()
+        .name("dictation-selftest-mic".into())
+        .spawn(move || {
+            std::thread::sleep(Duration::from_secs(2));
+            trace(
+                &rt,
+                &format!("самопроверка микрофона: до открытия разрешение = {}", deliver::microphone_status()),
+            );
+            match Recorder::start("") {
+                Ok(rec) => {
+                    // Двенадцать секунд, а не полторы: если система покажет
+                    // запрос на микрофон, человек должен успеть ответить, пока
+                    // процесс жив — иначе диалог исчезнет вместе с ним.
+                    std::thread::sleep(Duration::from_secs(12));
+                    match rec.stop() {
+                        Ok(r) => trace(
+                            &rt,
+                            &format!(
+                                "самопроверка микрофона: пик {:.4}, источник {}, разрешение после = {}",
+                                r.peak,
+                                r.source,
+                                deliver::microphone_status()
+                            ),
+                        ),
+                        Err(e) => trace(&rt, &format!("самопроверка микрофона: стоп не удался: {e}")),
+                    }
+                }
+                Err(e) => trace(&rt, &format!("самопроверка микрофона: не открылся: {e}")),
+            }
+            std::thread::sleep(Duration::from_secs(1));
+            app.exit(0);
+        })
+        .ok();
+}
+
 /// Самопроверка плашки без микрофона: `MEDIACHEF_SELFTEST=overlay`.
 ///
 /// Показывает плашку, гонит по ней уровень, скрывает — и выходит. Нужна,
@@ -556,7 +611,12 @@ fn overlay_probe_listener_once(app: &AppHandle, rt: &Arc<Runtime>) {
 /// то: показ идёт с главного (там живёт обработчик хоткея), скрытие — с
 /// фонового (там живёт расшифровка).
 fn maybe_selftest(app: &AppHandle, rt: &Arc<Runtime>) {
-    if std::env::var("MEDIACHEF_SELFTEST").as_deref() != Ok("overlay") {
+    let mode = std::env::var("MEDIACHEF_SELFTEST").unwrap_or_default();
+    if mode == "mic" {
+        selftest_mic(app, rt);
+        return;
+    }
+    if mode != "overlay" {
         return;
     }
     // `apply` зовут при каждой смене настроек; проверка нужна одна.
@@ -1120,6 +1180,17 @@ fn ask_permission_once(app: &AppHandle, rt: &Arc<Runtime>, reason: deliver::Perm
         deliver::notify(app, title, body);
         return;
     }
+    // Сюда попадают только без доступа: записи нет, она мёртвая (после
+    // обновления) или человек отказал. Во всех трёх случаях верно одно и то
+    // же: снять свою запись и попросить систему спросить заново — тогда macOS
+    // покажет свой диалог и сама добавит MediaChef в список. Переключение
+    // туда-сюда мёртвую запись не лечит — проверено.
+    let reset = deliver::reset_tcc("Accessibility");
+    let trusted = deliver::request_accessibility_prompt();
+    trace(
+        rt,
+        &format!("«Универсальный доступ»: запись сброшена = {reset}, системный запрос показан, доступ сейчас = {trusted}"),
+    );
     match deliver::ask_about_permission(app, reason) {
         deliver::PermissionChoice::OpenSettings => {
             // Настройки уже открыты — их открывает сама модалка, до показа.
@@ -1178,12 +1249,30 @@ fn silent_microphone(app: &AppHandle, rt: &Arc<Runtime>, peak: f32, source: &str
              Конфиденциальность → Микрофон (переключатель включён — выключите и включите заново)."
         ),
     );
-    // Раздел настроек — один раз за запуск, и только когда система говорит,
-    // что доступа нет: пустая гарнитура — не повод открывать настройки.
-    if deliver::microphone_status() != "authorized"
-        && !rt.asked_microphone.swap(true, Ordering::Relaxed)
-    {
-        deliver::open_microphone_settings();
+    // Самолечение — один раз за запуск. Сборка подписана ad-hoc, и после
+    // обновления строка микрофона в TCC относится к прежней копии: macOS не
+    // переспрашивает, а молча отдаёт нули. Снять свою строку приложение
+    // может само (`tccutil reset` для пользовательских служб не требует
+    // прав), и следующее же нажатие вызовет системный запрос. Проверено
+    // живьём: сброс → запуск → диалог → «Разрешить» → authorized.
+    // Гарнитура в кейсе даст ложный сброс и один лишний диалог — цена
+    // приемлемая, лечение важнее.
+    if !rt.asked_microphone.swap(true, Ordering::Relaxed) {
+        let reset = deliver::reset_tcc("Microphone");
+        trace(
+            rt,
+            &format!(
+                "сброс строки микрофона в TCC: {}",
+                if reset { "ок" } else { "не удался" }
+            ),
+        );
+        if reset {
+            deliver::notify(
+                app,
+                "Нажмите триггер ещё раз",
+                "macOS переспросит про микрофон — нажмите «Разрешить».",
+            );
+        }
     }
 }
 

@@ -110,7 +110,7 @@ export const dict: Dict = {
   setDictationDictionaryHint: "Podpowiedź dla modelu, nie lista zamian: 15–25 słów, które często wypowiadasz i które model przekręca.",
   dictionaryCount: "{n} z {max} znaków",
   setDictationPermission: "Uprawnienie Dostępność",
-  setDictationPermissionHint: "Potrzebne, by słyszeć klawisz wyzwalający i wpisywać do pola. Po nadaniu uruchom MediaChef ponownie. Przełącznik już włączony, a tu „nienadane”? Wyłącz i włącz go ponownie — po aktualizacji macOS traktuje MediaChef jak nową aplikację.",
+  setDictationPermissionHint: "Potrzebne, by słyszeć klawisz wyzwalający i wpisywać do pola. Po aktualizacji macOS traktuje MediaChef jak nową aplikację: sam usuwa stary wpis i prosi o uprawnienie ponownie — włącz go na liście i uruchom ponownie.",
   permGranted: "Nadane",
   permMissing: "Nienadane",
   permUnknown: "Sprawdzam…",
