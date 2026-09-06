@@ -21,6 +21,7 @@ import {
   Keyboard,
   Languages,
   Mic,
+  MicVocal,
   Monitor,
   RadioTower,
   ScrollText,
@@ -28,7 +29,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { LOCALES, LOCALE_FLAGS, LOCALE_NAMES, useT } from "../lib/i18n";
-import { getDictationStatus, getModels, openAccessibilitySettings, revealFile } from "../lib/ipc";
+import { getDictationStatus, getModels, openAccessibilitySettings, openMicrophoneSettings, revealFile } from "../lib/ipc";
 import { DICTATION_HOTKEYS, DICTIONARY_MAX_CHARS } from "../lib/types";
 import type { AppSettings, Dictation, DictationStatus, ModelView } from "../lib/types";
 import { Row, Segmented, SoftButton, Switch, type Choice } from "./controls";
@@ -191,6 +192,31 @@ export function DictationPanel({
             {status?.accessibility ? null : (
               <SoftButton onClick={() => void openAccessibilitySettings()}>{t("openSystemSettings")}</SoftButton>
             )}
+          </div>
+        </Row>
+
+        {/* Микрофон — рядом с «Универсальным доступом», потому что слетают они
+            вместе и одинаково: после обновления переключатель горит, а звука нет.
+            Без разрешения macOS отдаёт тишину, а не ошибку, и по одной записи
+            этого не понять — поэтому спрашиваем систему. */}
+        <Row icon={MicVocal} label={t("setDictationMic")} hint={t("setDictationMicHint")}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-md px-2 py-1 text-xs font-semibold ${
+                status === null ? "bg-card-2 text-ink-2" : status.microphone === "authorized" ? "bg-basil text-basil-ink" : "bg-card-2 text-ink"
+              }`}
+            >
+              {status === null
+                ? t("permUnknown")
+                : status.microphone === "authorized"
+                  ? t("micGranted")
+                  : status.microphone === "undetermined"
+                    ? t("micUndetermined")
+                    : t("micMissing")}
+            </span>
+            {status && status.microphone !== "authorized" ? (
+              <SoftButton onClick={() => void openMicrophoneSettings()}>{t("openSystemSettings")}</SoftButton>
+            ) : null}
           </div>
         </Row>
 

@@ -361,6 +361,13 @@ fn dictation_open_accessibility() {
     deliver::open_accessibility_settings();
 }
 
+/// Открывает раздел «Микрофон» системных настроек — кнопка на вкладке
+/// диктовки рядом с состоянием разрешения.
+#[tauri::command]
+fn dictation_open_microphone() {
+    deliver::open_microphone_settings();
+}
+
 /// The folder picker behind "Choose folder" in Settings. `None` means the user
 /// cancelled the dialog, which is not an error and must not clear the setting.
 ///
@@ -876,7 +883,8 @@ pub fn run() {
             system_locale,
             platform_info,
             dictation_status,
-            dictation_open_accessibility
+            dictation_open_accessibility,
+            dictation_open_microphone
         ])
         // `build` + `run(callback)` rather than plain `run(context)`, which is the
         // same thing with an empty callback — the callback is the only place a

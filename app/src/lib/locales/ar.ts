@@ -120,6 +120,11 @@ export const dict: Dict = {
   setDictationLogHint: "ما ضُغط وما تُعرّف عليه وإلى أين ذهب. النص المُملى نفسه لا يُكتب فيه.",
   showLog: "إظهار الملف",
   modelNotInstalled: "غير منزَّل",
+  setDictationMic: "الميكروفون",
+  setDictationMicHint: "بدون الإذن يعطي macOS صمتاً بدل الصوت، وWhisper يخترع من الصمت اعتمادات ترجمة. بعد التحديث قد يكون المفتاح مفعّلاً لكن ميتاً — أطفئه ثم شغّله.",
+  micGranted: "مُمنوح",
+  micMissing: "غير ممنوح",
+  micUndetermined: "لم يُطلب بعد",
   setWorkers: "التحويلات المتوازية",
   setWorkersHint: "كم مهمة ffmpeg تعمل في وقت واحد. يسري بعد إعادة التشغيل.",
 

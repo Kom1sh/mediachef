@@ -152,7 +152,7 @@ use crate::deliver;
 use crate::mic::{MicError, Recorder, StopReason};
 use crate::overlay;
 use crate::settings::AppSettings;
-use mediachef_core::dictate::{transcribe_wav, DictateError};
+use mediachef_core::dictate::{is_hallucination, transcribe_wav, DictateError};
 use mediachef_core::process::CancelToken;
 use mediachef_core::{locate, models};
 use std::path::PathBuf;
@@ -240,6 +240,8 @@ struct Runtime {
     settings_dir: PathBuf,
     /// Спрашивали ли уже про разрешение в этом запуске.
     asked_permission: AtomicBool,
+    /// Раздел «Микрофон» системных настроек уже открывали в этом запуске.
+    asked_microphone: AtomicBool,
     /// Нажать ли Enter после доставки текущей диктовки. Ставится в момент
     /// начала записи тем хоткеем, которым её начали, и снимается при любом
     /// исходе — иначе следующая обычная диктовка унаследовала бы отправку.
@@ -316,6 +318,7 @@ pub fn apply(
                 models_dir: models_dir.clone(),
                 settings_dir: models_dir.parent().unwrap_or(&models_dir).to_path_buf(),
                 asked_permission: AtomicBool::new(false),
+                asked_microphone: AtomicBool::new(false),
                 send_after: AtomicBool::new(false),
                 registered_send: Mutex::new(None),
                 generation: AtomicU64::new(0),
@@ -850,12 +853,16 @@ pub struct Status {
     pub accessibility: bool,
     /// Путь к журналу — чтобы вкладка могла его показать.
     pub log_path: String,
+    /// Разрешение на микрофон: `authorized` / `denied` / `restricted` /
+    /// `undetermined` / `unknown`.
+    pub microphone: String,
 }
 
 /// Снимок состояния для вкладки. Пустой путь — рантайм ещё не создан.
 pub fn status() -> Status {
     Status {
         accessibility: deliver::can_paste(),
+        microphone: deliver::microphone_status().to_string(),
         log_path: RUNTIME
             .get()
             .map(|r| r.log.display().to_string())
@@ -900,8 +907,8 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
             trace(
                 rt,
                 &format!(
-                    "запись {:?}, причина {:?}, до первого сэмпла {:?}",
-                    r.duration, r.reason, r.first_sample_delay
+                    "запись {:?}, пик {:.3}, причина {:?}, до первого сэмпла {:?}",
+                    r.duration, r.peak, r.reason, r.first_sample_delay
                 ),
             );
             r
@@ -926,6 +933,16 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
             "Достигнут предел в пять минут. Расшифровываю записанное.",
         ),
         StopReason::Asked => {}
+    }
+
+    // Тишина в Whisper не едет. На пустом звуке он не молчит, а выдумывает:
+    // русская модель выдавала титры «Редактор субтитров А.Семкин Корректор
+    // А.Егорова», и они печатались в поле как результат диктовки. Пик ниже
+    // порога — это не тихая речь, а мёртвый вход, и чаще всего это отсутствие
+    // разрешения на микрофон: macOS в таком случае отдаёт нули, а не ошибку.
+    if recording.peak < crate::mic::SILENT_PEAK {
+        silent_microphone(app, rt, recording.peak);
+        return;
     }
 
     let (model_id, language, dictionary, ui_language, delivery) = {
@@ -978,6 +995,14 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
         &CancelToken::new(),
     ) {
         Ok(text) if text.is_empty() => {
+            no_speech(app, rt);
+        }
+        // Известные титры-галлюцинации — признак шума без речи, а не текст.
+        Ok(text) if is_hallucination(&text) => {
+            trace(
+                rt,
+                &format!("галлюцинация Whisper на шуме: «{text}» — считаем тишиной"),
+            );
             no_speech(app, rt);
         }
         Ok(text) => deliver_text(app, rt, &text, &delivery),
@@ -1118,6 +1143,30 @@ fn no_speech(app: &AppHandle, rt: &Arc<Runtime>) {
     rt.send_after.store(false, Ordering::Relaxed);
     trace(rt, "речи не слышно, Enter не нажимаем");
     deliver::notify(app, "Диктовка", "Речи не слышно — буфер обмена не тронут.");
+}
+
+/// Запись без единого звука: сказать человеку, где искать причину.
+///
+/// Раздел настроек открывается один раз за запуск: мёртвый вход — это чаще
+/// всего слетевшее после обновления разрешение, но бывает и выключенная
+/// гарнитура, и открывать системные настройки на каждую такую диктовку было
+/// бы наказанием.
+fn silent_microphone(app: &AppHandle, rt: &Arc<Runtime>, peak: f32) {
+    rt.send_after.store(false, Ordering::Relaxed);
+    trace(
+        rt,
+        &format!("микрофон отдал тишину (пик {peak:.4}) — в Whisper не отправляем"),
+    );
+    let first_time = !rt.asked_microphone.swap(true, Ordering::Relaxed);
+    deliver::notify(
+        app,
+        "Микрофон молчит",
+        "Запись пустая. Проверьте разрешение на микрофон для MediaChef: Системные настройки → \
+         Конфиденциальность → Микрофон. Переключатель уже включён — выключите и включите заново.",
+    );
+    if first_time {
+        deliver::open_microphone_settings();
+    }
 }
 
 /// Переключает способ доставки и сохраняет настройки на диск.

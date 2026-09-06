@@ -98,10 +98,24 @@ pub struct Recording {
     /// Сколько прошло от открытия потока до первого сэмпла. Ради этой цифры
     /// и затевался замер — см. заметку про преролл в шапке модуля.
     pub first_sample_delay: Option<Duration>,
+    /// Пик за всю запись, 0.0..=1.0. По нему отличают тихую речь от мёртвого
+    /// входа: без разрешения на микрофон macOS отдаёт нули, а не ошибку, и
+    /// такая запись не должна доезжать до Whisper — см. [`SILENT_PEAK`].
+    pub peak: f32,
     /// Временная папка: удаляется вместе со структурой, унося WAV. На диск
     /// пользователя не попадает ничего.
     _dir: tempfile::TempDir,
 }
+
+/// Ниже этого пика запись считается тишиной и не расшифровывается.
+///
+/// Порог — около −50 дБ: обычная речь даёт пик 0,1–0,5, шум пустой комнаты
+/// через ноутбучный микрофон — 0,01–0,03, а поток без разрешения на микрофон
+/// — ровно ноль. Порог ловит последнее и не трогает тихую речь. Отправлять
+/// тишину в Whisper нельзя: на пустом звуке он не молчит, а выдумывает —
+/// русская модель печатала в поле титры «Редактор субтитров А.Семкин
+/// Корректор А.Егорова» как результат диктовки.
+pub const SILENT_PEAK: f32 = 0.003;
 
 /// Разделяемое с аудиопотоком: пиковый уровень для оверлея.
 ///
@@ -142,6 +156,7 @@ impl Recorder {
     pub fn start() -> Result<Self, MicError> {
         let stop = Arc::new(AtomicBool::new(false));
         let level = Arc::new(Level::new());
+        let peak_max = Arc::new(Level::new());
         let samples: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(Vec::new()));
         let sample_rate = Arc::new(AtomicU32::new(0));
         let (done_tx, done_rx) = mpsc::channel();
@@ -151,12 +166,13 @@ impl Recorder {
 
         let stop_t = stop.clone();
         let level_t = level.clone();
+        let peak_t = peak_max.clone();
         let samples_t = samples.clone();
         let rate_t = sample_rate.clone();
         std::thread::Builder::new()
             .name("dictation-mic".into())
             .spawn(move || {
-                let result = record(&stop_t, level_t, samples_t, rate_t, &ready_tx);
+                let result = record(&stop_t, level_t, peak_t, samples_t, rate_t, &ready_tx);
                 // Если поток не открылся, про это уже сказано через ready_tx.
                 let _ = done_tx.send(result);
             })
@@ -225,6 +241,7 @@ pub fn warm_up() -> Option<Duration> {
 fn record(
     stop: &AtomicBool,
     level: Arc<Level>,
+    peak_max: Arc<Level>,
     samples: Arc<Mutex<Vec<f32>>>,
     rate_out: Arc<AtomicU32>,
     ready: &mpsc::Sender<Result<(), MicError>>,
@@ -269,6 +286,7 @@ fn record(
             let sink = samples.clone();
             let first = first_at.clone();
             let lvl = level.clone();
+            let pk = peak_max.clone();
             device.build_input_stream(
                 config.clone().into(),
                 move |data: &[$t], _: &cpal::InputCallbackInfo| {
@@ -278,7 +296,13 @@ fn record(
                         }
                     }
                     let mono = downmix::<$t>(data, channels);
-                    lvl.set(peak(&mono));
+                    let p = peak(&mono);
+                    lvl.set(p);
+                    // Максимум за запись — для порога тишины. Гонки нет:
+                    // пишет только этот колбэк.
+                    if p > pk.get() {
+                        pk.set(p);
+                    }
                     if let Ok(mut s) = sink.lock() {
                         s.extend_from_slice(&mono);
                     }
@@ -350,6 +374,7 @@ fn record(
     Ok(Recording {
         path,
         reason,
+        peak: peak_max.get(),
         duration,
         first_sample_delay,
         _dir: dir,

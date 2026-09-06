@@ -120,6 +120,11 @@ export const dict: Dict = {
   setDictationLogHint: "Qué se pulsó, qué se reconoció y adónde fue. El texto dictado no se guarda.",
   showLog: "Mostrar archivo",
   modelNotInstalled: "no descargado",
+  setDictationMic: "Micrófono",
+  setDictationMicHint: "Sin el permiso macOS entrega silencio en vez de audio, y Whisper se inventa créditos de subtítulos a partir del silencio. Tras una actualización el interruptor puede estar activado pero muerto: desactívalo y actívalo.",
+  micGranted: "Concedido",
+  micMissing: "No concedido",
+  micUndetermined: "Aún no solicitado",
   setWorkers: "Conversiones en paralelo",
   setWorkersHint: "Cuántas tareas de ffmpeg se ejecutan a la vez. Surte efecto tras reiniciar.",
 

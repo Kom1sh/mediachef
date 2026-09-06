@@ -61,6 +61,8 @@ export const DICTIONARY_MAX_CHARS = 400;
 /** Ответ `dictation_status`: что вкладке диктовки нужно знать помимо настроек. */
 export interface DictationStatus {
   accessibility: boolean;
+  /** «authorized» | «denied» | «restricted» | «undetermined» | «unknown». */
+  microphone: string;
   log_path: string;
 }
 

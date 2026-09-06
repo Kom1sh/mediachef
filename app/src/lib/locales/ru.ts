@@ -133,6 +133,11 @@ export const dict: Dict = {
   setDictationLogHint: "Что нажималось, что распознавалось и куда ушло. Сам надиктованный текст туда не пишется.",
   showLog: "Показать файл",
   modelNotInstalled: "не скачана",
+  setDictationMic: "Микрофон",
+  setDictationMicHint: "Без разрешения macOS отдаёт тишину вместо звука, а Whisper на тишине выдумывает титры. После обновления переключатель может гореть впустую — выключите и включите заново.",
+  micGranted: "Разрешён",
+  micMissing: "Не разрешён",
+  micUndetermined: "Ещё не спрашивали",
   setWorkers: "Параллельные конвертации",
   // «Сколько задач … выполняется», singular: "сколько" + genitive plural takes a
   // singular predicate. "Выполняется" is also the word st_running uses for a job

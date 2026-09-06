@@ -99,6 +99,71 @@ pub fn open_accessibility_settings() {
 #[cfg(not(target_os = "macos"))]
 pub fn open_accessibility_settings() {}
 
+/// Открывает раздел «Микрофон» системных настроек — те же два адреса, что и
+/// у «Универсального доступа», по той же причине.
+#[cfg(target_os = "macos")]
+pub fn open_microphone_settings() {
+    for url in [
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Microphone",
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone",
+    ] {
+        let _ = std::process::Command::new("open").arg(url).spawn();
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn open_microphone_settings() {}
+
+/// Состояние разрешения на микрофон: `authorized`, `denied`, `restricted`,
+/// `undetermined` или `unknown`.
+///
+/// Спрашивается у AVFoundation, а не выводится из записи: без разрешения
+/// macOS не отказывает, а отдаёт тишину, и по одной тишине нельзя отличить
+/// «не разрешено» от «выключенная гарнитура». Вкладка диктовки показывает
+/// это состояние рядом с «Универсальным доступом» — после обновления
+/// неподписанной копии слетали оба.
+#[cfg(target_os = "macos")]
+pub fn microphone_status() -> &'static str {
+    use std::ffi::c_void;
+    #[link(name = "AVFoundation", kind = "framework")]
+    extern "C" {
+        static AVMediaTypeAudio: *const c_void;
+    }
+    extern "C" {
+        fn objc_getClass(name: *const u8) -> *mut c_void;
+        fn sel_registerName(name: *const u8) -> *const c_void;
+        fn objc_msgSend();
+    }
+    // SAFETY: метод класса `+[AVCaptureDevice authorizationStatusForMediaType:]`
+    // принимает NSString и возвращает NSInteger; `AVMediaTypeAudio` — константа
+    // фреймворка.
+    unsafe {
+        let send: extern "C" fn(*mut c_void, *const c_void, *const c_void) -> isize =
+            std::mem::transmute(objc_msgSend as *const ());
+        let cls = objc_getClass(c"AVCaptureDevice".as_ptr() as *const u8);
+        if cls.is_null() {
+            return "unknown";
+        }
+        match send(
+            cls,
+            sel_registerName(c"authorizationStatusForMediaType:".as_ptr() as *const u8),
+            AVMediaTypeAudio,
+        ) {
+            0 => "undetermined",
+            1 => "restricted",
+            2 => "denied",
+            3 => "authorized",
+            _ => "unknown",
+        }
+    }
+}
+
+/// Вне macOS отдельного разрешения на микрофон у приложения нет.
+#[cfg(not(target_os = "macos"))]
+pub fn microphone_status() -> &'static str {
+    "authorized"
+}
+
 /// Печатает текст прямо в активное поле ввода, **не трогая буфер обмена**.
 ///
 /// Единственный способ доставить текст туда, где стоит курсор. Буфер при этом

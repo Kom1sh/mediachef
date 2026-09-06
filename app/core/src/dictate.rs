@@ -110,9 +110,78 @@ pub fn transcribe_wav(
     }
 }
 
+/// Известные галлюцинации Whisper — то, что он «слышит» в тишине и шуме.
+///
+/// Это не словарь замен и не фильтр пользовательской речи: список состоит из
+/// титров и подписей, которых модель наелась в обучающих субтитрах и которые
+/// она выдаёт целиком, когда речи в записи нет. Русская модель на пустом звуке
+/// печатает «Редактор субтитров А.Семкин Корректор А.Егорова»; английская
+/// благодарит за просмотр; половина языков ссылается на сообщество Amara.
+/// Такой результат — не текст, а признак тишины, и обрабатывается как она.
+const HALLUCINATIONS: &[&str] = &[
+    "Редактор субтитров А.Семкин Корректор А.Егорова",
+    "Субтитры сделал DimaTorzok",
+    "Субтитры делал DimaTorzok",
+    "Продолжение следует...",
+    "Спасибо за просмотр!",
+    "Спасибо за внимание!",
+    "Thank you for watching!",
+    "Thanks for watching!",
+    "Subtitles by the Amara.org community",
+    "Untertitelung des ZDF, 2020",
+    "Untertitel im Auftrag des ZDF für funk, 2017",
+    "Untertitel von Stephanie Geiges",
+    "Sous-titres réalisés para la communauté d'Amara.org",
+    "Sous-titrage ST' 501",
+    "Subtítulos realizados por la comunidad de Amara.org",
+    "Legendas pela comunidade Amara.org",
+    "Sottotitoli creati dalla comunità Amara.org",
+    "Sottotitoli e revisione a cura di QTSS",
+    "Napisy stworzone przez społeczność Amara.org",
+    "字幕由Amara.org社区提供",
+    "ترجمة نانسي قنقر",
+];
+
+/// Совпадает ли расшифровка целиком с известной галлюцинацией.
+///
+/// Сравнение по нормализованной форме — без регистра, пробелов и знаков
+/// препинания: модель ставит точку, восклицательный знак или ничего. Только
+/// целиком: фраза «спасибо за просмотр» внутри настоящей диктовки — речь, а
+/// не артефакт.
+pub fn is_hallucination(text: &str) -> bool {
+    fn norm(s: &str) -> String {
+        s.chars()
+            .filter(|c| c.is_alphanumeric())
+            .flat_map(|c| c.to_lowercase())
+            .collect()
+    }
+    let t = norm(text);
+    !t.is_empty() && HALLUCINATIONS.iter().any(|h| norm(h) == t)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn known_credits_are_hallucinations() {
+        assert!(is_hallucination(
+            "Редактор субтитров А.Семкин Корректор А.Егорова"
+        ));
+        // Регистр, пробелы и знаки препинания — не считаются.
+        assert!(is_hallucination(
+            " редактор субтитров а. семкин, корректор а. егорова. "
+        ));
+        assert!(is_hallucination("Thanks for watching"));
+    }
+
+    #[test]
+    fn real_speech_is_not() {
+        assert!(!is_hallucination("Привет, как дела?"));
+        // Артефакт внутри настоящей фразы — речь.
+        assert!(!is_hallucination("Ну всё, спасибо за просмотр, до завтра"));
+        assert!(!is_hallucination(""));
+    }
 
     /// Интеграционный: живой whisper на голосовой фикстуре.
     ///

@@ -119,6 +119,11 @@ export const dict: Dict = {
   setDictationLogHint: "按了什么、识别出什么、去了哪里。听写的正文本身不会写入。",
   showLog: "显示文件",
   modelNotInstalled: "未下载",
+  setDictationMic: "麦克风",
+  setDictationMicHint: "没有该权限时 macOS 会返回静音而不是声音，而 Whisper 会从静音中编造字幕署名。更新后开关可能亮着却失效——请关掉再打开。",
+  micGranted: "已授予",
+  micMissing: "未授予",
+  micUndetermined: "尚未询问",
   setWorkers: "并行转换数",
   setWorkersHint: "同时运行多少个 ffmpeg 任务。重启后生效。",
 
