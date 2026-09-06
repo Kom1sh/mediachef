@@ -124,7 +124,7 @@ export const dict: Dict = {
   setDictationDictionaryHint: "Подсказка модели, а не список замен: 15–25 слов, которые вы произносите часто и которые она коверкает.",
   dictionaryCount: "{n} из {max} знаков",
   setDictationPermission: "Универсальный доступ",
-  setDictationPermissionHint: "Нужен, чтобы слышать клавишу-триггер и печатать в поле. После выдачи перезапустите MediaChef.",
+  setDictationPermissionHint: "Нужен, чтобы слышать клавишу-триггер и печатать в поле. После выдачи перезапустите MediaChef. Переключатель уже включён, а здесь «не выдан»? Выключите и включите его заново — после обновления macOS считает MediaChef новым приложением.",
   permGranted: "Выдан",
   permMissing: "Не выдан",
   permUnknown: "Проверяю…",

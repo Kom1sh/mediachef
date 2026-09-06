@@ -110,7 +110,7 @@ export const dict: Dict = {
   setDictationDictionaryHint: "Un suggerimento per il modello, non un elenco di sostituzioni: 15–25 parole che dici spesso e che storpia.",
   dictionaryCount: "{n} di {max} caratteri",
   setDictationPermission: "Permesso Accessibilità",
-  setDictationPermissionHint: "Serve per sentire il tasto di attivazione e scrivere nel campo. Dopo averlo concesso riavvia MediaChef.",
+  setDictationPermissionHint: "Serve per sentire il tasto di attivazione e scrivere nel campo. Dopo averlo concesso riavvia MediaChef. Interruttore già attivo ma qui dice «non concesso»? Disattivalo e riattivalo: dopo un aggiornamento macOS considera MediaChef un'app nuova.",
   permGranted: "Concesso",
   permMissing: "Non concesso",
   permUnknown: "Controllo…",

@@ -110,7 +110,7 @@ export const dict: Dict = {
   setDictationDictionaryHint: "Une indication pour le modèle, pas une liste de remplacements : 15 à 25 mots que vous dites souvent et qu'il écorche.",
   dictionaryCount: "{n} sur {max} caractères",
   setDictationPermission: "Autorisation d'accessibilité",
-  setDictationPermissionHint: "Nécessaire pour entendre la touche de déclenchement et taper dans le champ. Redémarrez MediaChef après l'avoir accordée.",
+  setDictationPermissionHint: "Nécessaire pour entendre la touche de déclenchement et taper dans le champ. Redémarrez MediaChef après l'avoir accordée. L'interrupteur est déjà activé mais ici c'est « non accordée » ? Désactivez-le puis réactivez-le : après une mise à jour, macOS traite MediaChef comme une nouvelle app.",
   permGranted: "Accordée",
   permMissing: "Non accordée",
   permUnknown: "Vérification…",

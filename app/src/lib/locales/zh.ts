@@ -110,7 +110,7 @@ export const dict: Dict = {
   setDictationDictionaryHint: "给模型的提示，而不是替换表：15–25 个你常说且它常听错的词。",
   dictionaryCount: "{n} / {max} 个字符",
   setDictationPermission: "辅助功能权限",
-  setDictationPermissionHint: "用于监听触发键并向输入框输入文字。授予后请重启 MediaChef。",
+  setDictationPermissionHint: "用于监听触发键并向输入框输入文字。授予后请重启 MediaChef。 开关已打开但这里显示「未授予」？请关掉再打开——更新后 macOS 会把 MediaChef 当作新应用。",
   permGranted: "已授予",
   permMissing: "未授予",
   permUnknown: "检查中…",

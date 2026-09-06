@@ -111,7 +111,7 @@ export const dict: Dict = {
   setDictationDictionaryHint: "تلميح للنموذج وليس قائمة استبدال: 15–25 كلمة تقولها كثيرًا ويخطئ فيها.",
   dictionaryCount: "{n} من {max} حرفًا",
   setDictationPermission: "إذن إمكانية الوصول",
-  setDictationPermissionHint: "مطلوب لسماع مفتاح التشغيل والكتابة في الحقل. أعد تشغيل MediaChef بعد منحه.",
+  setDictationPermissionHint: "مطلوب لسماع مفتاح التشغيل والكتابة في الحقل. أعد تشغيل MediaChef بعد منحه. المفتاح مفعّل لكن هنا «غير ممنوح»؟ أطفئه ثم شغّله من جديد — بعد التحديث يعتبر macOS أن MediaChef تطبيق جديد.",
   permGranted: "مُمنوح",
   permMissing: "غير ممنوح",
   permUnknown: "جارٍ التحقق…",
