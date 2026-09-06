@@ -13,7 +13,7 @@ export default {
   crumb: "Voice to text",
 
   answer:
-    "Press ⌥ Space anywhere on your Mac, say a sentence, press it again — and the text is typed straight into whatever field your cursor sits in: a terminal, a chat, a browser form. Recognition happens on your own machine with the same Whisper engine MediaChef already carries, so the audio never leaves your disk and there is no per-minute charge. In our measurement a five-second phrase came back in 780 milliseconds. This is the one feature on this site that has not shipped yet: it is finished and in daily use internally, and it arrives in the next version.",
+    "Press the right ⌥ key anywhere on your Mac, say a sentence, press it again — and the text is typed straight into whatever field your cursor sits in: a terminal, a chat, a browser form. Recognition happens on your own machine with the same Whisper engine MediaChef already carries, so the audio never leaves your disk and there is no per-minute charge. In our measurement a five-second phrase came back in 780 milliseconds. This is the one feature on this site that has not shipped yet: it is finished and in daily use internally, and it arrives in the next version.",
 
   facts: [
     { k: "Status", v: "Not in a release yet — ships in the next version" },
@@ -181,7 +181,7 @@ export default {
     },
     {
       q: "Which hotkey does it use?",
-      a: "⌥ Space by default, with ⌃⌥ Space and ⌃⌥ D as alternatives. Deliberately not Cmd plus a letter: a global shortcut is grabbed before any application sees it, so claiming ⌘D would break \"duplicate\" in every app you own.",
+      a: "The right ⌥ key by default — a lone modifier: hold it and speak, or tap once to start and again to stop; with Shift the text is sent with Enter. A modifier on its own types nothing and clashes with nothing. Combos like ⌥ Space typed a space in hold mode when ⌥ was released first, so they were dropped; ⌃⌥ Space and ⌃⌥ D remain as fallbacks.",
     },
     {
       q: "Why does it need the Accessibility permission?",

@@ -10,7 +10,7 @@ export default {
   crumb: "Dictado por voz",
 
   answer:
-    "Pulse ⌥ Space en cualquier parte del Mac, diga una frase y púlselo otra vez: el texto se escribe directamente en el campo donde está el cursor, sea un terminal, un chat o un formulario del navegador. Reconoce el mismo Whisper que MediaChef ya lleva dentro, así que el audio no sale de su disco y nadie cuenta los minutos. En nuestra medición una frase de cinco segundos volvió en 780 milisegundos. Es la única función de este sitio que aún no está publicada: está terminada y en uso diario internamente, y llega en la próxima versión.",
+    "Pulse la tecla ⌥ derecha en cualquier parte del Mac, diga una frase y púlselo otra vez: el texto se escribe directamente en el campo donde está el cursor, sea un terminal, un chat o un formulario del navegador. Reconoce el mismo Whisper que MediaChef ya lleva dentro, así que el audio no sale de su disco y nadie cuenta los minutos. En nuestra medición una frase de cinco segundos volvió en 780 milisegundos. Es la única función de este sitio que aún no está publicada: está terminada y en uso diario internamente, y llega en la próxima versión.",
 
   facts: [
     { k: "Estado", v: "Aún no publicada — llega en la próxima versión" },
@@ -178,7 +178,7 @@ export default {
     },
     {
       q: "¿Qué combinación usa?",
-      a: "⌥ Space por defecto, con ⌃⌥ Space y ⌃⌥ D como alternativas. Deliberadamente no Cmd más una letra: un atajo global se captura antes de que lo vea cualquier aplicación, así que quedarse con ⌘D rompería «duplicar» en todos sus programas.",
+      a: "Por defecto, la tecla ⌥ derecha — un modificador solo: mantenla y habla, o púlsala una vez para empezar y otra para terminar; con Shift el texto se envía con Enter. Un modificador solo no escribe nada ni choca con nada. Combinaciones como ⌥ Space escribían un espacio en modo mantenido si soltabas antes ⌥, así que se retiraron; ⌃⌥ Space y ⌃⌥ D quedan como alternativas.",
     },
     {
       q: "¿Por qué necesita el permiso de Accesibilidad?",

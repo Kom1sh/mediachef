@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "overlay",
+  "description": "Плашка диктовки: только события. Без этого файла окно плашки не имело права слушать события Tauri, и `listen()` в нём молча отваливался — плашка показывалась, но ни уровень, ни текст в ней не менялись.",
+  "windows": ["dictation-overlay"],
+  "permissions": ["core:event:default"]
+}

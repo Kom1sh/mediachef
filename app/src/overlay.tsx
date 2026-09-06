@@ -22,9 +22,9 @@
  * осталась бы плотно-чёрной — и стык стал бы виден именно там, где его быть
  * не должно.
  */
-import { StrictMode, useEffect, useState } from "react";
+import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 
 type Phase = "listening" | "working" | "done";
 
@@ -83,11 +83,50 @@ function Meter({ level }: { level: number }) {
 
 function Overlay() {
   const [status, setStatus] = useState<Status>({ phase: "listening", level: 0, text: "" });
+  // Рост из монобровы стартует не на монтировании, а по первому событию
+  // статуса — первому свидетельству, что окно уже показано и живёт. Окно
+  // строится невидимым, и анимация, запущенная на монтировании, могла бы
+  // отыграть впустую до показа. Запасной таймер — на случай, если событий
+  // нет: лучше остров без роста, чем остров размером с монобровь навсегда.
+  const [grown, setGrown] = useState(false);
+  const received = useRef(0);
 
   useEffect(() => {
-    const stop = listen<Status>("dictation:status", e => setStatus(e.payload));
+    const stop = listen<Status>("dictation:status", e => {
+      received.current += 1;
+      setGrown(true);
+      setStatus(e.payload);
+    });
+    const fallback = window.setTimeout(() => setGrown(true), 250);
     return () => {
+      window.clearTimeout(fallback);
       stop.then(unlisten => unlisten());
+    };
+  }, []);
+
+  // Самоотчёт плашки — одна строка в журнал диктовки на каждый показ: видит
+  // ли WebKit страницу видимой, крутятся ли кадры, доходят ли события. Без
+  // этого «в плашке ничего не происходит» разбиралось бы вслепую.
+  useEffect(() => {
+    const mounted = performance.now();
+    let frames = 0;
+    let raf = 0;
+    const tick = () => {
+      frames += 1;
+      if (performance.now() - mounted < 1000) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    const report = window.setTimeout(() => {
+      emit("dictation:overlay-probe", {
+        visibility: document.visibilityState,
+        frames,
+        events: received.current,
+        sinceMountMs: Math.round(performance.now() - mounted),
+      }).catch(() => {});
+    }, 1200);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(report);
     };
   }, []);
 
@@ -111,14 +150,21 @@ function Overlay() {
           flexDirection: "column",
           gap: 6,
           // Рост из монобровы: первый кадр совпадает с ней по размеру и форме,
-          // поэтому старта не видно — видно только, как она раздаётся.
+          // поэтому старта не видно — видно только, как она раздаётся. До
+          // сигнала «выросли» панель стоит сжатой до монобровы.
           transformOrigin: "top center",
-          animation: "mc-grow 320ms cubic-bezier(0.22, 1, 0.36, 1) both",
+          transform: grown ? undefined : `scale(${NOTCH_WIDTH / WIDTH}, ${NOTCH_HEIGHT / HEIGHT})`,
+          animation: grown ? "mc-grow 320ms cubic-bezier(0.22, 1, 0.36, 1) both" : "none",
         }}
       >
         {/* Содержимое проявляется после того, как остров вырос: во время
             растяжения оно было бы сплющено вместе с панелью. */}
-        <div style={{ animation: "mc-fade 200ms ease 200ms both" }}>
+        <div
+          style={{
+            opacity: grown ? undefined : 0,
+            animation: grown ? "mc-fade 200ms ease 200ms both" : "none",
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span
               style={{

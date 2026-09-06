@@ -145,7 +145,7 @@ describe("SettingsPanel", () => {
  */
 const dictation = {
   enabled: true,
-  hotkey: "Option+Space",
+  hotkey: "RightOption",
   model: "small",
   language: "",
   dictionary: "",
@@ -200,7 +200,7 @@ const dictation = {
     // Переключатель включён — значит на экране есть switch со значением true.
     expect(markup).toContain('role="switch" aria-checked="true"');
     // И выбранная комбинация отмечена, а не просто нарисована.
-    const picked = markup.match(/<input[^>]*name="mc-dictation-key"[^>]*value="Option\+Space"[^>]*>/);
+    const picked = markup.match(/<input[^>]*name="mc-dictation-key"[^>]*value="RightOption"[^>]*>/);
     expect(picked).not.toBeNull();
     expect(picked?.[0]).toContain('checked=""');
     // Запасные варианты тоже предложены: одного «правильного» мало, если он у

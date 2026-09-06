@@ -130,11 +130,26 @@ pub const DICTIONARY_MAX_CHARS: usize = 400;
 /// потерянное, и мало, чтобы файл разросся.
 const MAX_HISTORY: u8 = 100;
 
+impl Dictation {
+    /// Триггер по умолчанию.
+    ///
+    /// На macOS — правый ⌥, одиночный модификатор: он ничего не печатает, и в
+    /// сочетаниях его почти не используют (жмут левый). Первая редакция брала
+    /// `Option+Space`, и на живых руках это провалилось — см. `modkey.rs`. На
+    /// других системах одиночный модификатор не реализован, там остаётся
+    /// комбинация для плагина хоткеев.
+    pub const DEFAULT_HOTKEY: &'static str = if cfg!(target_os = "macos") {
+        "RightOption"
+    } else {
+        "Ctrl+Option+D"
+    };
+}
+
 impl Default for Dictation {
     fn default() -> Self {
         Self {
             enabled: false,
-            hotkey: "Option+Space".into(),
+            hotkey: Self::DEFAULT_HOTKEY.into(),
             model: "small".into(),
             language: String::new(),
             dictionary: String::new(),
@@ -283,6 +298,12 @@ fn sanitize_dictation(mut d: Dictation) -> Dictation {
     if d.hotkey.trim().is_empty() {
         d.hotkey = Dictation::default().hotkey;
     }
+    // «Option+Space» — комбинация первой редакции, снятая по итогам живого
+    // прогона: в режиме удержания зажатый пробел печатался в поле. У кого она
+    // осталась в настройках, получают новый умолчательный триггер.
+    if d.hotkey == "Option+Space" {
+        d.hotkey = Dictation::default().hotkey;
+    }
     // Неизвестная модель — к значению по умолчанию: список тот же, что в
     // core/models.rs, и промах здесь означал бы «модель не скачана» на ровном
     // месте.
@@ -382,7 +403,11 @@ mod tests {
         s.dictation.delivery = "телепатия".into();
         s.dictation.history_depth = 250;
         let s = sanitize(s);
-        assert_eq!(s.dictation.hotkey, "Option+Space", "пустой хоткей чинится");
+        assert_eq!(
+            s.dictation.hotkey,
+            Dictation::DEFAULT_HOTKEY,
+            "пустой хоткей чинится"
+        );
         assert_eq!(s.dictation.model, "small", "неизвестная модель чинится");
         assert_eq!(
             s.dictation.delivery, "clipboard",

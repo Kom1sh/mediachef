@@ -160,6 +160,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 use tauri::AppHandle;
+use tauri::Listener;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 /// Сколько знаков расшифровки показать в уведомлении.
@@ -326,6 +327,9 @@ pub fn apply(
         .clone();
 
     maybe_selftest(app, &rt);
+    // Самоотчёт плашки слушаем независимо от того, включена ли диктовка:
+    // самопроверка гоняет плашку и при выключенной.
+    overlay_probe_listener_once(app, &rt);
 
     let (enabled, wanted) = {
         let s = rt
@@ -353,9 +357,22 @@ pub fn apply(
     }
 
     if !enabled {
+        // Перехватчик модификатора тоже гасим: выключено — значит выключено.
+        let _ = crate::modkey::configure(app, None);
         trace(&rt, "диктовка выключена в настройках");
         return Ok(());
     }
+
+    warm_up_once(&rt);
+
+    // Триггер-модификатор идёт своим путём: плагин хоткеев его не умеет.
+    if let Some(trigger) = crate::modkey::Trigger::parse(&wanted) {
+        if cfg!(target_os = "macos") {
+            return install_modifier_trigger(app, &rt, trigger);
+        }
+    }
+    let _ = crate::modkey::configure(app, None);
+    let wanted = crate::modkey::plugin_fallback(&wanted);
 
     let shortcut: Shortcut = wanted
         .parse()
@@ -417,7 +434,7 @@ pub fn apply(
 }
 
 /// Один шаг машины плюс исполнение того, что она велела.
-fn handle(app: &AppHandle, event: Event, with_enter: bool) {
+pub(crate) fn handle(app: &AppHandle, event: Event, with_enter: bool) {
     let Some(rt) = RUNTIME.get().cloned() else {
         return;
     };
@@ -446,6 +463,82 @@ fn handle(app: &AppHandle, event: Event, with_enter: bool) {
         rt.send_after.store(with_enter, Ordering::Relaxed);
     }
     perform(app, &rt, action);
+}
+
+/// Ставит триггер-модификатор (правый ⌥ или ⌘) вместо комбинации плагина.
+///
+/// Без «Универсального доступа» перехватчик клавиатуры не создать, поэтому
+/// сначала проверяем разрешение и, если его нет, показываем окно с
+/// инструкцией — с фонового потока, окно блокирующее. Возвращаем ошибку:
+/// снаружи она станет уведомлением «диктовка не включилась», и человек будет
+/// знать, что делать дальше.
+fn install_modifier_trigger(
+    app: &AppHandle,
+    rt: &Arc<Runtime>,
+    trigger: crate::modkey::Trigger,
+) -> Result<(), String> {
+    if let Ok(mut st) = rt.state.lock() {
+        *st = State::Idle;
+    }
+    if !deliver::can_paste() {
+        trace(
+            rt,
+            &format!(
+                "триггер {}: нет «Универсального доступа», перехватчик не ставим",
+                trigger.describe()
+            ),
+        );
+        let app = app.clone();
+        let rt = rt.clone();
+        std::thread::Builder::new()
+            .name("dictation-ask".into())
+            .spawn(move || ask_permission_once(&app, &rt, deliver::PermissionReason::Hotkey))
+            .ok();
+        return Err("нужно разрешение «Универсальный доступ» — окно с инструкцией открыто".into());
+    }
+    crate::modkey::configure(app, Some(trigger))?;
+    trace(
+        rt,
+        &format!(
+            "триггер: {} — зажать и говорить, нажать — включить, с Shift — отправить",
+            trigger.describe()
+        ),
+    );
+    Ok(())
+}
+
+/// Прогрев CoreAudio — один раз за запуск, в фоне. См. `mic::warm_up`.
+fn warm_up_once(rt: &Arc<Runtime>) {
+    static WARMED: AtomicBool = AtomicBool::new(false);
+    if WARMED.swap(true, Ordering::Relaxed) {
+        return;
+    }
+    let rt = rt.clone();
+    std::thread::Builder::new()
+        .name("dictation-warmup".into())
+        .spawn(move || match crate::mic::warm_up() {
+            Some(took) => trace(
+                &rt,
+                &format!("CoreAudio прогрет за {} мс", took.as_millis()),
+            ),
+            None => trace(&rt, "прогрев: устройства ввода не найдено"),
+        })
+        .ok();
+}
+
+/// Самоотчёт плашки — в журнал. Плашка присылает его сама через секунду
+/// после показа: видима ли страница по мнению WebKit, крутятся ли кадры,
+/// доходят ли события. Одна строка на диктовку, зато «в плашке ничего не
+/// происходит» больше не разбирается вслепую.
+fn overlay_probe_listener_once(app: &AppHandle, rt: &Arc<Runtime>) {
+    static LISTENING: AtomicBool = AtomicBool::new(false);
+    if LISTENING.swap(true, Ordering::Relaxed) {
+        return;
+    }
+    let rt = rt.clone();
+    app.listen_any("dictation:overlay-probe", move |e| {
+        trace(&rt, &format!("плашка сообщает: {}", e.payload()));
+    });
 }
 
 /// Самопроверка плашки без микрофона: `MEDIACHEF_SELFTEST=overlay`.
@@ -532,35 +625,42 @@ fn perform(app: &AppHandle, rt: &Arc<Runtime>, action: Action) {
         // отдельного тракта воспроизведения. Молчание здесь честнее пустого
         // уведомления — человек и так видит, что ничего не произошло.
         Action::Reject => {}
-        Action::StartRecording => match Recorder::start() {
-            Ok(r) => {
-                trace(rt, "микрофон открыт, пишем");
-                // Новая диктовка — новое поколение: фоновые потоки прошлой
-                // увидят смену и выйдут сами.
-                let gen = rt.generation.fetch_add(1, Ordering::Relaxed) + 1;
-                if let Ok(mut t) = rt.preview.lock() {
-                    t.clear();
+        Action::StartRecording => {
+            // Плашку — до микрофона, а не после. Первое открытие микрофона за
+            // запуск занимает до двух секунд: просыпается CoreAudio. Человек,
+            // не видя отклика, отпускал клавишу раньше, чем запись началась,
+            // и получал запись в 46 миллисекунд. Плашка сразу говорит
+            // «слушаю», и держать клавишу становится естественно.
+            overlay::show(app, {
+                let rt = rt.clone();
+                move |m| trace(&rt, m)
+            });
+            match Recorder::start() {
+                Ok(r) => {
+                    trace(rt, "микрофон открыт, пишем");
+                    // Новая диктовка — новое поколение: фоновые потоки прошлой
+                    // увидят смену и выйдут сами.
+                    let gen = rt.generation.fetch_add(1, Ordering::Relaxed) + 1;
+                    if let Ok(mut t) = rt.preview.lock() {
+                        t.clear();
+                    }
+                    if let Ok(mut slot) = rt.recorder.lock() {
+                        *slot = Some(r);
+                    }
+                    spawn_meter(app, rt, gen);
+                    spawn_preview(rt, gen);
                 }
-                if let Ok(mut slot) = rt.recorder.lock() {
-                    *slot = Some(r);
+                Err(e) => {
+                    // Не смогли открыть микрофон — возвращаемся в покой, иначе
+                    // следующее нажатие попыталось бы «остановить» несуществующую
+                    // запись.
+                    trace(rt, &format!("микрофон не открылся: {e}"));
+                    overlay::hide(app);
+                    reset(rt);
+                    deliver::notify(app, "Диктовка", &mic_error_text(&e));
                 }
-                overlay::show(app, {
-                    let rt = rt.clone();
-                    move |m| trace(&rt, m)
-                });
-                spawn_meter(app, rt, gen);
-                spawn_preview(rt, gen);
             }
-            Err(e) => {
-                // Не смогли открыть микрофон — возвращаемся в покой, иначе
-                // следующее нажатие попыталось бы «остановить» несуществующую
-                // запись.
-                trace(rt, &format!("микрофон не открылся: {e}"));
-                overlay::hide(app);
-                reset(rt);
-                deliver::notify(app, "Диктовка", &mic_error_text(&e));
-            }
-        },
+        }
         Action::Cancel => {
             rt.send_after.store(false, Ordering::Relaxed);
             // Поколение сдвигаем: фоновые потоки прошлой диктовки выйдут, а
@@ -890,7 +990,7 @@ fn deliver_text(app: &AppHandle, rt: &Arc<Runtime>, text: &str, delivery: &str) 
                 // Текст всё равно спасаем в буфер: правило «ни один отказ не
                 // теряет надиктованное» сильнее обещания не трогать буфер.
                 let _ = deliver::to_clipboard(app, text);
-                ask_permission_once(app, rt);
+                ask_permission_once(app, rt, deliver::PermissionReason::Typing);
                 return;
             }
             Err(e) => {
@@ -927,17 +1027,23 @@ fn deliver_text(app: &AppHandle, rt: &Arc<Runtime>, text: &str, delivery: &str) 
 /// когда человек говорит, — это не помощь, а наказание. Одного показа хватает:
 /// после перезапуска (которого окно и требует) счётчик обнулится сам, а если
 /// человек перезапускать не стал, он уже видел объяснение.
-fn ask_permission_once(app: &AppHandle, rt: &Arc<Runtime>) {
+fn ask_permission_once(app: &AppHandle, rt: &Arc<Runtime>, reason: deliver::PermissionReason) {
     if rt.asked_permission.swap(true, Ordering::Relaxed) {
         // Уже спрашивали в этом запуске — ограничиваемся уведомлением.
-        deliver::notify(
-            app,
-            "Текст в буфере — вставьте сами",
-            "Разрешение «Универсальный доступ» так и не выдано.",
-        );
+        let (title, body) = match reason {
+            deliver::PermissionReason::Typing => (
+                "Текст в буфере — вставьте сами",
+                "Разрешение «Универсальный доступ» так и не выдано.",
+            ),
+            deliver::PermissionReason::Hotkey => (
+                "Диктовка ждёт разрешения",
+                "Включите «Универсальный доступ» для MediaChef и перезапустите приложение.",
+            ),
+        };
+        deliver::notify(app, title, body);
         return;
     }
-    match deliver::ask_about_permission(app) {
+    match deliver::ask_about_permission(app, reason) {
         deliver::PermissionChoice::OpenSettings => {
             // Настройки уже открыты — их открывает сама модалка, до показа.
             trace(rt, "выбрано: пойти выдавать разрешение");
@@ -1068,8 +1174,14 @@ mod tests {
     #[test]
     fn default_hotkey_parses() {
         let s = crate::settings::Dictation::default().hotkey;
-        let parsed: Result<Shortcut, _> = s.parse();
-        assert!(parsed.is_ok(), "хоткей по умолчанию «{s}» не разобрался");
+        // Умолчание — либо триггер-модификатор (на macOS), либо комбинация,
+        // которую понимает плагин: третьего пути в `apply` нет.
+        let as_trigger = crate::modkey::Trigger::parse(&s).is_some();
+        let as_shortcut = s.parse::<Shortcut>().is_ok();
+        assert!(
+            as_trigger || as_shortcut,
+            "хоткей по умолчанию «{s}» не разобрался ни как триггер, ни как комбинация"
+        );
     }
 
     /// Заодно проверяем сам разбор на том, что мы обещаем в README как

@@ -10,7 +10,7 @@ export default {
   crumb: "Spracheingabe",
 
   answer:
-    "Drücken Sie ⌥ Space irgendwo auf dem Mac, sagen Sie einen Satz, drücken Sie noch einmal — und der Text wird direkt in das Feld getippt, in dem der Cursor steht: ein Terminal, ein Chat, ein Browserformular. Erkannt wird von demselben Whisper, den MediaChef schon mitbringt, also verlässt der Ton Ihre Festplatte nicht und niemand zählt Minuten. In unserer Messung kam ein Satz von fünf Sekunden nach 780 Millisekunden zurück. Es ist die einzige Funktion auf dieser Seite, die noch nicht veröffentlicht ist: sie ist fertig und intern im täglichen Gebrauch, und sie kommt mit der nächsten Version.",
+    "Drücken Sie die rechte ⌥-Taste irgendwo auf dem Mac, sagen Sie einen Satz, drücken Sie noch einmal — und der Text wird direkt in das Feld getippt, in dem der Cursor steht: ein Terminal, ein Chat, ein Browserformular. Erkannt wird von demselben Whisper, den MediaChef schon mitbringt, also verlässt der Ton Ihre Festplatte nicht und niemand zählt Minuten. In unserer Messung kam ein Satz von fünf Sekunden nach 780 Millisekunden zurück. Es ist die einzige Funktion auf dieser Seite, die noch nicht veröffentlicht ist: sie ist fertig und intern im täglichen Gebrauch, und sie kommt mit der nächsten Version.",
 
   facts: [
     { k: "Stand", v: "Noch nicht veröffentlicht — kommt mit der nächsten Version" },
@@ -178,7 +178,7 @@ export default {
     },
     {
       q: "Welche Kombination benutzt es?",
-      a: "⌥ Space als Standard, mit ⌃⌥ Space und ⌃⌥ D als Alternativen. Bewusst nicht Cmd plus Buchstabe: ein systemweiter Kurzbefehl wird abgefangen, bevor irgendeine Anwendung ihn sieht — sich ⌘D zu nehmen würde also „duplizieren“ in jedem Ihrer Programme zerstören.",
+      a: "Standard ist die rechte ⌥-Taste — ein einzelner Modifier: halten und sprechen, oder einmal tippen zum Starten und noch einmal zum Beenden; mit Shift wird der Text per Enter abgeschickt. Ein Modifier allein tippt nichts und kollidiert mit nichts. Kombinationen wie ⌥ Space tippten im Haltemodus ein Leerzeichen, wenn ⌥ zuerst losgelassen wurde — deshalb sind sie raus; ⌃⌥ Space und ⌃⌥ D bleiben als Ausweichmöglichkeiten.",
     },
     {
       q: "Warum braucht es die Bedienungshilfen-Freigabe?",

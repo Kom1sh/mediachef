@@ -66,8 +66,13 @@ export interface Dictation {
  *
  * All three below are claimed by neither macOS nor typical applications.
  */
+// Первые два — одиночные модификаторы, их подписи локализуются («Правый ⌥»);
+// остальные — комбинации для плагина хоткеев, подписи-символы одни для всех
+// языков. «Option+Space» из списка снят: в режиме удержания человек отпускал
+// Option раньше пробела, и зажатый пробел печатался в поле автоповтором.
 export const DICTATION_HOTKEYS = [
-  { value: "Option+Space", label: "⌥ Space" },
+  { value: "RightOption", labelKey: "hotkeyRightOption" },
+  { value: "RightCommand", labelKey: "hotkeyRightCommand" },
   { value: "Ctrl+Option+Space", label: "⌃⌥ Space" },
   { value: "Ctrl+Option+D", label: "⌃⌥ D" },
 ] as const;

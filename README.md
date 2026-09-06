@@ -132,7 +132,7 @@ restart:
 {
   "dictation": {
     "enabled": true,
-    "hotkey": "Option+Space",
+    "hotkey": "RightOption",
     "model": "small",
     "language": "",
     "dictionary": "MediaChef, ffmpeg, whisper, хоткей, кодек, битрейт",
@@ -145,7 +145,7 @@ restart:
 | Key | Values | Notes |
 | --- | --- | --- |
 | `enabled` | `true` \| `false` | off by default; the hotkey is not registered at all until you turn it on |
-| `hotkey` | `Option+Space` by default | see below; always a combination — a lone modifier cannot be a global shortcut |
+| `hotkey` | `RightOption` by default; also `RightCommand`, `Ctrl+Option+Space`, `Ctrl+Option+D` | see below; the two lone modifiers are macOS-only and need the Accessibility permission |
 | `model` | `tiny` \| `base` \| `small` \| `large-v3-turbo` | `small` by default: the recipes use it too, so it is usually already on disk |
 | `language` | `""` \| `auto` \| a language code | empty means "same as the interface language" |
 | `dictionary` | free text, ≤400 chars | fixes how names and jargon are spelled; see below |
@@ -155,18 +155,25 @@ restart:
 Editing the file by hand needs a restart; the two controls on the Settings
 screen do not — the hotkey is re-registered the moment it is saved.
 
-**Why `Option+Space` and not `Cmd`+letter.** A global shortcut is grabbed
-*before* any application sees it, so the combinations that feel simplest are the
-worst possible choice: `Cmd`+letter is exactly what applications use for their
-own menus, and registering `Cmd+D` globally would break "duplicate" and
-"bookmark" everywhere. `Ctrl+Shift`+letter is no better — editors and terminals
-claim those (`Ctrl+Shift+D` is already taken in Claude Code). `Option+Space` is
-claimed by neither macOS nor typical applications: `Cmd` with Space is
-Spotlight, `Ctrl` with Space switches input source, and `Option` with Space is
-free. It costs one thing, stated plainly: in macOS text fields that combination
-inserts a non-breaking space, and once the hotkey is registered you lose that.
-If it does clash on your machine, `Ctrl+Option+D` is the fallback nothing else
-wants.
+**Why a lone right `Option` and not a combination.** The dictation key is held
+while you speak, and any combination with a printable key fails at exactly that:
+release the modifier a moment before the key and the key — Space, a letter —
+starts auto-repeating into the field you were dictating into. The first
+release shipped `Option+Space` and this is precisely how it failed on real
+hands. A modifier on its own types nothing by definition; this is how
+push-to-talk works in Discord and in dictation tools like Wispr Flow. The
+*right* `Option` (and `RightCommand` as the alternative) is chosen because
+macOS assigns no action of its own to it — unlike the Globe/Fn key — and
+because shortcuts are almost always pressed with the left one. Hold it and
+speak, or tap it once to start and again to stop; press it together with
+`Shift` and the text is sent with Enter. If you press another key while
+holding it, that is a shortcut, not dictation — the recording is cancelled.
+The plugin's global shortcuts cannot express a lone modifier, so this is a
+listen-only `CGEventTap` of our own, which is why it needs the same
+Accessibility permission as typing. `Ctrl+Option+Space` and `Ctrl+Option+D`
+remain as plain-combination fallbacks (and as the defaults outside macOS).
+`Cmd`+letter was never an option: a global shortcut is grabbed before any
+application sees it, so claiming `Cmd+D` would break "duplicate" everywhere.
 
 **The dictionary earns its place.** It is passed to whisper as an initial
 prompt, and on our measurement it turned «медиашиф» and «ходкий» into

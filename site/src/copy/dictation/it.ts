@@ -10,7 +10,7 @@ export default {
   crumb: "Dettatura vocale",
 
   answer:
-    "Premi ⌥ Space in qualsiasi punto del Mac, di' una frase, premi di nuovo: il testo viene scritto direttamente nel campo dove sta il cursore — un terminale, una chat, un modulo del browser. Riconosce lo stesso Whisper che MediaChef porta già con sé, quindi l'audio non esce dal tuo disco e nessuno conta i minuti. Nella nostra misura una frase di cinque secondi è tornata in 780 millisecondi. È l'unica funzione di questo sito non ancora pubblicata: è finita e in uso quotidiano all'interno, e arriva con la prossima versione.",
+    "Premi il tasto ⌥ destro in qualsiasi punto del Mac, di' una frase, premi di nuovo: il testo viene scritto direttamente nel campo dove sta il cursore — un terminale, una chat, un modulo del browser. Riconosce lo stesso Whisper che MediaChef porta già con sé, quindi l'audio non esce dal tuo disco e nessuno conta i minuti. Nella nostra misura una frase di cinque secondi è tornata in 780 millisecondi. È l'unica funzione di questo sito non ancora pubblicata: è finita e in uso quotidiano all'interno, e arriva con la prossima versione.",
 
   facts: [
     { k: "Stato", v: "Non ancora pubblicata — arriva con la prossima versione" },
@@ -178,7 +178,7 @@ export default {
     },
     {
       q: "Quale combinazione usa?",
-      a: "⌥ Space per impostazione predefinita, con ⌃⌥ Space e ⌃⌥ D come alternative. Deliberatamente non Cmd più una lettera: una scorciatoia globale viene intercettata prima che la veda qualsiasi applicazione, quindi prendersi ⌘V o ⌘D romperebbe quel comando in ogni programma che hai.",
+      a: "Di default il tasto ⌥ destro — un modificatore da solo: tienilo premuto e parla, oppure premilo una volta per iniziare e di nuovo per finire; con Shift il testo viene inviato con Invio. Un modificatore da solo non scrive nulla e non entra in conflitto con nulla. Combinazioni come ⌥ Space scrivevano uno spazio in modalità pressione prolungata se ⌥ veniva rilasciato prima, quindi sono state tolte; ⌃⌥ Space e ⌃⌥ D restano come alternative.",
     },
     {
       q: "Perché serve il permesso Accessibilità?",

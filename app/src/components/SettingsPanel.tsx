@@ -308,7 +308,10 @@ export function SettingsPanel({
               // Закрытый список, а не поле ввода: глобальный хоткей
               // перехватывается до всех приложений, и самые естественные
               // комбинации — как раз самые негодные.
-              choices={DICTATION_HOTKEYS.map(h => ({ value: h.value, label: h.label }))}
+              choices={DICTATION_HOTKEYS.map(h => ({
+                value: h.value,
+                label: "labelKey" in h ? t(h.labelKey) : h.label,
+              }))}
               onPick={hotkey => onChange({ ...s, dictation: { ...s.dictation, hotkey } })}
             />
           </Row>

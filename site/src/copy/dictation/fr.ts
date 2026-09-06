@@ -10,7 +10,7 @@ export default {
   crumb: "Dictée vocale",
 
   answer:
-    "Appuyez sur ⌥ Space n'importe où sur le Mac, dites une phrase, appuyez encore : le texte s'écrit directement dans le champ où se trouve le curseur — un terminal, une conversation, un formulaire de navigateur. C'est le même Whisper que MediaChef transporte déjà qui reconnaît, donc l'audio ne quitte pas votre disque et personne ne compte les minutes. Dans notre mesure, une phrase de cinq secondes est revenue en 780 millisecondes. C'est la seule fonction de ce site qui n'est pas encore publiée : elle est terminée et utilisée chaque jour en interne, et elle arrive dans la prochaine version.",
+    "Appuyez sur la touche ⌥ droite n'importe où sur le Mac, dites une phrase, appuyez encore : le texte s'écrit directement dans le champ où se trouve le curseur — un terminal, une conversation, un formulaire de navigateur. C'est le même Whisper que MediaChef transporte déjà qui reconnaît, donc l'audio ne quitte pas votre disque et personne ne compte les minutes. Dans notre mesure, une phrase de cinq secondes est revenue en 780 millisecondes. C'est la seule fonction de ce site qui n'est pas encore publiée : elle est terminée et utilisée chaque jour en interne, et elle arrive dans la prochaine version.",
 
   facts: [
     { k: "État", v: "Pas encore publiée — arrive dans la prochaine version" },
@@ -178,7 +178,7 @@ export default {
     },
     {
       q: "Quelle combinaison utilise-t-elle ?",
-      a: "⌥ Space par défaut, avec ⌃⌥ Space et ⌃⌥ D en variantes. Délibérément pas Cmd plus une lettre : un raccourci global est capté avant que la moindre application le voie, donc s'approprier ⌘D casserait « dupliquer » dans tous vos logiciels.",
+      a: "Par défaut, la touche ⌥ droite — un modificateur seul : maintenez-la et parlez, ou appuyez une fois pour démarrer et une autre pour arrêter ; avec Shift, le texte est envoyé par Entrée. Un modificateur seul ne tape rien et n'entre en conflit avec rien. Des combinaisons comme ⌥ Space tapaient une espace en mode maintien si ⌥ était relâché en premier — elles ont donc été retirées ; ⌃⌥ Space et ⌃⌥ D restent en solutions de repli.",
     },
     {
       q: "Pourquoi a-t-elle besoin de l'autorisation d'Accessibilité ?",

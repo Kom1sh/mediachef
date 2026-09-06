@@ -10,7 +10,7 @@ export default {
   crumb: "Dyktowanie głosem",
 
   answer:
-    "Naciśnij ⌥ Space gdziekolwiek na Macu, powiedz zdanie, naciśnij ponownie — a tekst wpisze się prosto w to pole, w którym stoi kursor: w terminalu, w czacie, w formularzu przeglądarki. Rozpoznaje ten sam Whisper, który MediaChef już ze sobą nosi, więc dźwięk nie opuszcza twojego dysku i nikt nie liczy minut. W naszym pomiarze pięciosekundowe zdanie wróciło w 780 milisekund. To jedyna funkcja na tej stronie, której jeszcze nie ma w wydaniu: jest dokończona i codziennie używana wewnętrznie, a wyjdzie w następnej wersji.",
+    "Naciśnij prawy ⌥ gdziekolwiek na Macu, powiedz zdanie, naciśnij ponownie — a tekst wpisze się prosto w to pole, w którym stoi kursor: w terminalu, w czacie, w formularzu przeglądarki. Rozpoznaje ten sam Whisper, który MediaChef już ze sobą nosi, więc dźwięk nie opuszcza twojego dysku i nikt nie liczy minut. W naszym pomiarze pięciosekundowe zdanie wróciło w 780 milisekund. To jedyna funkcja na tej stronie, której jeszcze nie ma w wydaniu: jest dokończona i codziennie używana wewnętrznie, a wyjdzie w następnej wersji.",
 
   facts: [
     { k: "Stan", v: "Jeszcze nie wydana — wyjdzie w następnej wersji" },
@@ -178,7 +178,7 @@ export default {
     },
     {
       q: "Jakiej kombinacji używa?",
-      a: "⌥ Space domyślnie, a do wyboru jeszcze ⌃⌥ Space i ⌃⌥ D. Celowo nie Cmd z literą: skrót globalny jest przechwytywany, zanim zobaczy go jakikolwiek program, więc zabranie ⌘D zepsułoby „duplikuj” we wszystkich twoich programach.",
+      a: "Domyślnie prawy ⌥ — sam modyfikator: trzymaj i mów albo naciśnij raz, by zacząć, i jeszcze raz, by skończyć; z Shiftem tekst zostanie wysłany Enterem. Sam modyfikator nic nie wpisuje i z niczym nie koliduje. Kombinacje takie jak ⌥ Space w trybie trzymania wpisywały spację, gdy ⌥ puszczano wcześniej — dlatego zniknęły; ⌃⌥ Space i ⌃⌥ D zostają jako zapasowe.",
     },
     {
       q: "Po co mu uprawnienie Dostępność?",

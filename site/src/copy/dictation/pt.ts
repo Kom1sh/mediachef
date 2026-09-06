@@ -10,7 +10,7 @@ export default {
   crumb: "Ditado por voz",
 
   answer:
-    "Aperte ⌥ Space em qualquer lugar do Mac, fale uma frase e aperte de novo: o texto é digitado direto no campo onde está o cursor, seja um terminal, um chat ou um formulário do navegador. Quem reconhece é o mesmo Whisper que o MediaChef já carrega, então o áudio não sai do seu disco e ninguém conta os minutos. Na nossa medição uma frase de cinco segundos voltou em 780 milissegundos. É o único recurso deste site que ainda não foi publicado: está pronto e em uso diário internamente, e chega na próxima versão.",
+    "Aperte a tecla ⌥ direita em qualquer lugar do Mac, fale uma frase e aperte de novo: o texto é digitado direto no campo onde está o cursor, seja um terminal, um chat ou um formulário do navegador. Quem reconhece é o mesmo Whisper que o MediaChef já carrega, então o áudio não sai do seu disco e ninguém conta os minutos. Na nossa medição uma frase de cinco segundos voltou em 780 milissegundos. É o único recurso deste site que ainda não foi publicado: está pronto e em uso diário internamente, e chega na próxima versão.",
 
   facts: [
     { k: "Situação", v: "Ainda não publicado — chega na próxima versão" },
@@ -178,7 +178,7 @@ export default {
     },
     {
       q: "Qual combinação ele usa?",
-      a: "⌥ Space por padrão, com ⌃⌥ Space e ⌃⌥ D como alternativas. Deliberadamente não Cmd mais uma letra: um atalho global é capturado antes de qualquer aplicativo ver, então tomar o ⌘D quebraria «duplicar» em todos os programas que você tem.",
+      a: "Por padrão, a tecla ⌥ direita — um modificador sozinho: segure e fale, ou toque uma vez para começar e outra para terminar; com Shift o texto é enviado com Enter. Um modificador sozinho não digita nada e não conflita com nada. Combinações como ⌥ Space digitavam um espaço no modo de segurar se ⌥ fosse solto primeiro, por isso foram retiradas; ⌃⌥ Space e ⌃⌥ D ficam como alternativas.",
     },
     {
       q: "Por que precisa da permissão de Acessibilidade?",
