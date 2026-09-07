@@ -208,6 +208,54 @@ export default {
       q: "¿De verdad es gratis?",
       a: `Sí. MediaChef es de código abierto bajo GPL-3.0, sin versión de pago ni suscripción — el dictado incluido. La versión publicada es la ${FACTS.version}, con el dictado incluido.`,
     },
+    {
+      q: "¿Por qué el panel muestra un texto distinto del que se escribe?",
+      a: "Son dos pasadas distintas. Mientras hablas, el panel muestra un borrador que produce un modelo ligero cada segundo y medio para poder seguir el habla. Lo que se escribe es el resultado final del modelo principal sobre la grabación completa, con tu diccionario de términos. Ambos modelos se eligen en la pestaña Dictado: pon en la vista previa el mismo modelo que el principal y la diferencia desaparece, a cambio de que el panel se retrase.",
+    },
+    {
+      q: "¿Por qué vuelve a pedir permisos después de una actualización?",
+      a: "macOS vincula el permiso a la firma de la aplicación, no a su nombre. MediaChef no tiene certificado de Apple —no vamos a pagarlo—, así que cada versión va firmada distinto y el sistema trata la aplicación actualizada como nueva. La propia aplicación borra la entrada caducada y vuelve a pedir el permiso: un interruptor y un «Permitir» por actualización.",
+    },
+    {
+      q: "El interruptor en Ajustes del Sistema está activado, pero el dictado no funciona.",
+      a: "Entonces esa entrada pertenece a la copia anterior de la aplicación, que es lo que pasa tras una actualización. Desactivarlo y volver a activarlo no lo reasocia: lo comprobamos. MediaChef borra esa entrada por su cuenta y provoca el aviso del sistema: actívalo en la lista y reinicia la aplicación.",
+    },
+    {
+      q: "La grabación salió vacía aunque el micrófono funciona.",
+      a: "Casi siempre es el auricular: unos AirPods en su estuche siguen conectados y siguen siendo la entrada por defecto, y macOS entrega ceros planos desde ellos, a cualquier aplicación y no solo a la nuestra. La notificación nombra el dispositivo del que vino el silencio. Ponte el auricular o elige el micrófono explícitamente en la pestaña Dictado.",
+    },
+    {
+      q: "¿Puedo elegir un micrófono concreto?",
+      a: "Sí: la pestaña Dictado lista los dispositivos de entrada. «Como el sistema» significa el último auricular conectado, no el micrófono del portátil, y por eso una elección explícita es más fiable.",
+    },
+    {
+      q: "¿Qué pasa si pulso el disparador y no digo nada?",
+      a: "No se escribe nada. Una grabación vacía ni llega al reconocimiento: Whisper no se calla ante el silencio, se lo inventa — el modelo ruso escribía créditos de subtítulos. Esas firmas de subtituladores se reconocen y se tratan como silencio, y en su lugar recibes «no se oye habla».",
+    },
+    {
+      q: "¿Por qué la primera pulsación tras abrir la aplicación es más lenta?",
+      a: "El subsistema de audio de macOS está despertando: hasta dos segundos la primera vez que se abre el micrófono en cada arranque. El panel aparece de inmediato, antes de que empiece la grabación, así que mantén la tecla hasta que diga que está escuchando. Después, abrirlo cuesta decenas de milisegundos.",
+    },
+    {
+      q: "¿Cómo envío un mensaje con la voz sin pulsar Enter?",
+      a: "Pulsa el disparador junto con Shift: el texto se escribe y Enter se pulsa solo. Un dictado vacío nunca pulsa Enter; de lo contrario, callarse enviaría un mensaje vacío o ejecutaría el comando anterior en un terminal.",
+    },
+    {
+      q: "¿Qué ocurre si pulso otra tecla mientras mantengo el disparador?",
+      a: "La grabación se cancela y no se escribe nada. La ⌥ derecha más una letra es el atajo de otra aplicación, no un dictado, y así lo interpreta el programa.",
+    },
+    {
+      q: "¿Lo que dicto se guarda en el disco?",
+      a: "No. La grabación vive en una carpeta temporal y se borra con ella, y guardar un historial de transcripciones está desactivado por defecto. La aplicación promete que tu contenido no sale del ordenador; escribir en él todo lo que dictas en texto plano encajaría mal con eso: la gente dicta contraseñas y trozos de conversaciones privadas.",
+    },
+    {
+      q: "¿Funciona sobre aplicaciones a pantalla completa?",
+      a: "Sí. El panel se dibuja por encima de las ventanas a pantalla completa y en todos los escritorios: los editores y terminales a pantalla completa son justo donde se dicta.",
+    },
+    {
+      q: "Otra aplicación ya usa el disparador. ¿Qué hago?",
+      a: "La pestaña Dictado ofrece también la ⌘ derecha —el otro modificador solo al que macOS no asigna ninguna acción propia— y dos combinaciones normales, ⌃⌥ Espacio y ⌃⌥ D, por si ambos modificadores ya están ocupados.",
+    },
   ],
 
   ctaTitle: "MediaChef hoy",

@@ -208,6 +208,54 @@ export default {
       q: "C'est vraiment gratuit ?",
       a: `Oui. MediaChef est open source sous GPL-3.0, sans version payante ni abonnement — dictée comprise. La version publiée est la ${FACTS.version}, dictée comprise.`,
     },
+    {
+      q: "Pourquoi le panneau affiche-t-il un texte différent de ce qui est tapé ?",
+      a: "Ce sont deux passes distinctes. Pendant que vous parlez, le panneau affiche un brouillon produit par un modèle léger toutes les secondes et demie, afin de suivre la parole. Ce qui est tapé, c'est le résultat final du modèle principal sur l'enregistrement entier, avec votre dictionnaire de termes. Les deux modèles se choisissent dans l'onglet Dictée : mettez pour l'aperçu le même modèle que le principal et l'écart disparaît — au prix d'un panneau en retard.",
+    },
+    {
+      q: "Pourquoi redemande-t-il les autorisations après une mise à jour ?",
+      a: "macOS rattache l'autorisation à la signature de l'application, pas à son nom. MediaChef n'a pas de certificat Apple — nous ne le paierons pas —, donc chaque version est signée différemment et le système considère l'application mise à jour comme nouvelle. L'application retire elle-même l'entrée périmée et redemande l'autorisation : un interrupteur et un « Autoriser » par mise à jour.",
+    },
+    {
+      q: "L'interrupteur dans les Réglages Système est activé, mais la dictée ne marche pas.",
+      a: "C'est que cette entrée appartient à la copie précédente de l'application, ce qui arrive après une mise à jour. La désactiver puis la réactiver ne la relie pas — nous avons essayé. MediaChef efface cette entrée de lui-même et déclenche la demande du système : activez-la dans la liste et redémarrez l'application.",
+    },
+    {
+      q: "L'enregistrement est vide alors que le micro fonctionne.",
+      a: "C'est le plus souvent le casque : des AirPods dans leur boîtier restent connectés et restent l'entrée par défaut, et macOS en renvoie des zéros parfaits — à toute application, pas seulement à la nôtre. La notification nomme l'appareil d'où vient le silence. Mettez le casque, ou choisissez le micro explicitement dans l'onglet Dictée.",
+    },
+    {
+      q: "Puis-je choisir un micro précis ?",
+      a: "Oui : l'onglet Dictée liste les périphériques d'entrée. « Comme le système » désigne le dernier casque connecté et non le micro du portable, et c'est précisément pourquoi un choix explicite est plus fiable.",
+    },
+    {
+      q: "Que se passe-t-il si j'appuie sur le déclencheur sans rien dire ?",
+      a: "Rien n'est tapé. Un enregistrement vide n'atteint même pas la reconnaissance : Whisper ne se taît pas devant le silence, il invente — le modèle russe tapait des crédits de sous-titres. Ces signatures de sous-titreurs sont reconnues et traitées comme du silence, et vous obtenez « aucune parole ».",
+    },
+    {
+      q: "Pourquoi le premier appui après le lancement est-il plus lent ?",
+      a: "Le sous-système audio de macOS se réveille : jusqu'à deux secondes pour la première ouverture du micro à chaque lancement. Le panneau apparaît immédiatement, avant que l'enregistrement ne démarre, donc gardez la touche jusqu'à ce qu'il annonce qu'il écoute. Ensuite, l'ouverture prend quelques dizaines de millisecondes.",
+    },
+    {
+      q: "Comment envoyer un message à la voix sans appuyer sur Entrée ?",
+      a: "Appuyez sur le déclencheur avec Shift : le texte est tapé et Entrée suit tout seul. Une dictée vide n'appuie jamais sur Entrée — sinon se taire enverrait un message vide, ou relancerait la commande précédente dans un terminal.",
+    },
+    {
+      q: "Que se passe-t-il si j'appuie sur une autre touche en maintenant le déclencheur ?",
+      a: "L'enregistrement est annulé et rien n'est tapé. La touche ⌥ droite plus une lettre, c'est le raccourci de quelqu'un d'autre, pas une dictée, et l'application le traite comme tel.",
+    },
+    {
+      q: "Ce que je dicte est-il enregistré sur le disque ?",
+      a: "Non. L'enregistrement vit dans un dossier temporaire et disparaît avec lui, et conserver un historique des transcriptions est désactivé par défaut. L'application promet que votre contenu ne quitte pas la machine ; y écrire en clair tout ce que vous dictez cadrerait mal avec cette promesse — on dicte des mots de passe et des morceaux de conversations privées.",
+    },
+    {
+      q: "Est-ce que ça fonctionne par-dessus les applications en plein écran ?",
+      a: "Oui. Le panneau est dessiné au-dessus des fenêtres en plein écran et sur tous les bureaux — les éditeurs et les terminaux en plein écran sont justement là où l'on dicte.",
+    },
+    {
+      q: "Une autre application utilise déjà le déclencheur. Que faire ?",
+      a: "L'onglet Dictée propose aussi la touche ⌘ droite — l'autre modificateur seul auquel macOS n'attribue aucune action propre — plus deux combinaisons ordinaires, ⌃⌥ Espace et ⌃⌥ D, si les deux modificateurs sont déjà pris.",
+    },
   ],
 
   ctaTitle: "MediaChef aujourd'hui",

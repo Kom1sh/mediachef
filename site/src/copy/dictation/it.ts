@@ -208,6 +208,54 @@ export default {
       q: "È davvero gratis?",
       a: `Sì. MediaChef è open source con licenza GPL-3.0, senza versione a pagamento e senza abbonamento — dettatura compresa. La versione pubblicata è la ${FACTS.version}, dettatura compresa.`,
     },
+    {
+      q: "Perché il pannello mostra un testo diverso da quello che viene scritto?",
+      a: "Sono due passaggi distinti. Mentre parli, il pannello mostra una bozza prodotta da un modello leggero ogni secondo e mezzo, per stare al passo con il parlato. Ciò che viene scritto è il risultato finale del modello principale sull'intera registrazione, con il tuo dizionario dei termini. Entrambi i modelli si scelgono nella scheda Dettatura: imposta per l'anteprima lo stesso modello del principale e la differenza sparisce — al prezzo di un pannello in ritardo.",
+    },
+    {
+      q: "Perché dopo un aggiornamento chiede di nuovo i permessi?",
+      a: "macOS lega il permesso alla firma dell'app, non al suo nome. MediaChef non ha un certificato Apple — non intendiamo pagarlo — quindi ogni versione è firmata in modo diverso e il sistema tratta l'app aggiornata come nuova. L'app stessa rimuove la voce scaduta e richiede il permesso: un interruttore e un «Consenti» per aggiornamento.",
+    },
+    {
+      q: "L'interruttore nelle Impostazioni di Sistema è attivo, ma la dettatura non funziona.",
+      a: "Vuol dire che quella voce appartiene alla copia precedente dell'app: è quello che succede dopo un aggiornamento. Disattivarla e riattivarla non la ricollega, abbiamo provato. MediaChef cancella quella voce da sé e fa comparire la richiesta di sistema: attivala nell'elenco e riavvia l'app.",
+    },
+    {
+      q: "La registrazione è venuta vuota anche se il microfono funziona.",
+      a: "Di solito è l'auricolare: gli AirPods nella custodia restano collegati e restano l'ingresso predefinito, e macOS ne consegna zeri puri — a qualunque app, non solo alla nostra. La notifica dice da quale dispositivo è arrivato il silenzio. Indossa l'auricolare, oppure scegli il microfono esplicitamente nella scheda Dettatura.",
+    },
+    {
+      q: "Posso scegliere un microfono specifico?",
+      a: "Sì: la scheda Dettatura elenca i dispositivi di ingresso. «Come il sistema» significa l'ultimo auricolare collegato e non il microfono del portatile, ed è proprio per questo che una scelta esplicita è più affidabile.",
+    },
+    {
+      q: "Cosa succede se premo l'attivatore e non dico niente?",
+      a: "Non viene scritto nulla. Una registrazione vuota non arriva nemmeno al riconoscimento: Whisper non tace davanti al silenzio, inventa — il modello russo scriveva i crediti dei sottotitoli. Quelle firme dei sottotitolatori vengono riconosciute e trattate come silenzio, e tu ricevi «nessun parlato».",
+    },
+    {
+      q: "Perché la prima pressione dopo l'avvio è più lenta?",
+      a: "Il sottosistema audio di macOS si sta svegliando: fino a due secondi alla prima apertura del microfono per avvio. Il pannello compare subito, prima che parta la registrazione, quindi tieni premuto il tasto finché non dice che sta ascoltando. Dopo, l'apertura richiede decine di millisecondi.",
+    },
+    {
+      q: "Come invio un messaggio con la voce senza premere Invio?",
+      a: "Premi l'attivatore insieme a Shift: il testo viene scritto e Invio arriva da sé. Una dettatura vuota non premerà mai Invio — altrimenti tacere invierebbe un messaggio vuoto, o eseguirebbe il comando precedente in un terminale.",
+    },
+    {
+      q: "Cosa succede se premo un altro tasto tenendo l'attivatore?",
+      a: "La registrazione viene annullata e non viene scritto nulla. Il tasto ⌥ destro più una lettera è la scorciatoia di qualcun altro, non una dettatura, e il programma la interpreta così.",
+    },
+    {
+      q: "Quello che detto viene salvato su disco?",
+      a: "No. La registrazione vive in una cartella temporanea e viene cancellata con essa, e conservare uno storico delle trascrizioni è disattivato per impostazione predefinita. L'app promette che i tuoi contenuti non lasciano la macchina; scriverci sopra in chiaro tutto ciò che detti stonerebbe con quella promessa — si dettano password e pezzi di conversazioni private.",
+    },
+    {
+      q: "Funziona sopra le applicazioni a schermo intero?",
+      a: "Sì. Il pannello viene disegnato sopra le finestre a schermo intero e su tutte le scrivanie — editor e terminali a schermo intero sono esattamente dove si detta.",
+    },
+    {
+      q: "Un'altra app usa già l'attivatore. E ora?",
+      a: "La scheda Dettatura offre anche il tasto ⌘ destro — l'altro modificatore da solo a cui macOS non assegna azioni proprie — più due combinazioni ordinarie, ⌃⌥ Spazio e ⌃⌥ D, nel caso entrambi i modificatori siano già occupati.",
+    },
   ],
 
   ctaTitle: "MediaChef oggi",

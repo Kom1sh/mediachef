@@ -208,6 +208,54 @@ export default {
       q: "É mesmo grátis?",
       a: `Sim. O MediaChef é de código aberto sob GPL-3.0, sem versão paga e sem assinatura — o ditado incluído. A versão publicada é a ${FACTS.version}, com o ditado incluído.`,
     },
+    {
+      q: "Por que o painel mostra um texto diferente do que é digitado?",
+      a: "São duas passagens distintas. Enquanto você fala, o painel mostra um rascunho produzido por um modelo leve a cada segundo e meio, para conseguir acompanhar a fala. O que é digitado é o resultado final do modelo principal sobre a gravação inteira, com o seu dicionário de termos. Os dois modelos são escolhidos na aba Ditado: coloque na prévia o mesmo modelo do principal e a diferença desaparece — ao custo de o painel ficar atrasado.",
+    },
+    {
+      q: "Por que ele pede as permissões de novo depois de uma atualização?",
+      a: "O macOS vincula a permissão à assinatura do aplicativo, não ao nome dele. O MediaChef não tem certificado da Apple — não vamos pagar por um —, então cada versão é assinada de forma diferente e o sistema trata o aplicativo atualizado como novo. O próprio aplicativo remove a entrada vencida e pede a permissão outra vez: um interruptor e um «Permitir» por atualização.",
+    },
+    {
+      q: "O interruptor nos Ajustes do Sistema está ligado, mas o ditado não funciona.",
+      a: "Então aquela entrada pertence à cópia anterior do aplicativo, que é o que acontece depois de uma atualização. Desligar e ligar de novo não a revincula — nós testamos. O MediaChef limpa essa entrada por conta própria e dispara o aviso do sistema: ligue-o na lista e reinicie o aplicativo.",
+    },
+    {
+      q: "A gravação saiu vazia mesmo com o microfone funcionando.",
+      a: "Normalmente é o fone: AirPods na caixa continuam conectados e continuam sendo a entrada padrão, e o macOS entrega zeros absolutos a partir deles — para qualquer aplicativo, não só o nosso. A notificação diz de qual dispositivo veio o silêncio. Coloque o fone ou escolha o microfone explicitamente na aba Ditado.",
+    },
+    {
+      q: "Posso escolher um microfone específico?",
+      a: "Sim: a aba Ditado lista os dispositivos de entrada. «Como o sistema» significa o último fone conectado, e não o microfone do notebook — por isso a escolha explícita é mais confiável.",
+    },
+    {
+      q: "O que acontece se eu apertar o acionador e não falar nada?",
+      a: "Nada é digitado. Uma gravação vazia nem chega ao reconhecimento: o Whisper não fica calado diante do silêncio, ele inventa — o modelo russo digitava créditos de legendas. Essas assinaturas de legendadores são reconhecidas e tratadas como silêncio, e você recebe «não se ouve fala».",
+    },
+    {
+      q: "Por que o primeiro acionamento depois de abrir o aplicativo é mais lento?",
+      a: "O subsistema de áudio do macOS está acordando: até dois segundos na primeira abertura do microfone por execução. O painel aparece imediatamente, antes de a gravação começar, então segure a tecla até ele dizer que está ouvindo. Depois disso, abrir leva dezenas de milissegundos.",
+    },
+    {
+      q: "Como envio uma mensagem por voz sem apertar Enter?",
+      a: "Aperte o acionador junto com Shift: o texto é digitado e o Enter vem automaticamente. Um ditado vazio nunca aperta Enter — caso contrário, ficar calado enviaria uma mensagem vazia ou executaria o comando anterior num terminal.",
+    },
+    {
+      q: "O que acontece se eu apertar outra tecla segurando o acionador?",
+      a: "A gravação é cancelada e nada é digitado. A ⌥ direita mais uma letra é o atalho de outro aplicativo, não um ditado, e o programa entende assim.",
+    },
+    {
+      q: "O que eu dito fica salvo no disco?",
+      a: "Não. A gravação vive numa pasta temporária e é apagada junto com ela, e guardar um histórico de transcrições vem desligado por padrão. O aplicativo promete que o seu conteúdo não sai da máquina; escrever nela tudo o que você dita em texto puro combinaria mal com isso — as pessoas ditam senhas e trechos de conversas privadas.",
+    },
+    {
+      q: "Funciona sobre aplicativos em tela cheia?",
+      a: "Sim. O painel é desenhado acima das janelas em tela cheia e em todas as áreas de trabalho — editores e terminais em tela cheia são justamente onde se dita.",
+    },
+    {
+      q: "Outro aplicativo já usa o acionador. E agora?",
+      a: "A aba Ditado também oferece a ⌘ direita — o outro modificador sozinho ao qual o macOS não atribui ação própria — mais duas combinações comuns, ⌃⌥ Espaço e ⌃⌥ D, caso os dois modificadores já estejam ocupados.",
+    },
   ],
 
   ctaTitle: "O MediaChef hoje",

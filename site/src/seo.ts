@@ -207,6 +207,66 @@ export function guideBody(g: {
   return parts.join("\n\n");
 }
 
+/**
+ * Плоский текст посадочной для `articleBody`.
+ *
+ * Отдельно от [`guideBody`], потому что раскладка другая: у посадочной одна
+ * таблица плоскими ключами, нет блока фактов и нет раздела «когда не надо».
+ * Свести их в одну функцию значило бы принимать половину полей как
+ * необязательные и внутри разбираться, что именно пришло, — то есть спрятать
+ * два разных типа страниц под один и тот же неочевидный интерфейс.
+ *
+ * Порядок тот же, что на странице: заголовок, вводный абзац, образец
+ * результата, шаги, таблица, доводы, вопросы.
+ */
+export function intentBody(l: {
+  h1: string;
+  lead: string;
+  outLabel?: string;
+  outSample?: string;
+  outNote?: string;
+  stepsTitle: string;
+  steps: readonly { h: string; p: string }[];
+  tableTitle: string;
+  tableLead: string;
+  tableHead: readonly string[];
+  tableRows: readonly (readonly string[])[];
+  tableNote: string;
+  whyTitle: string;
+  whyBullets: readonly { h: string; p: string }[];
+  faqTitle: string;
+  faq: readonly { q: string; a: string }[];
+}): string {
+  const parts: string[] = [l.h1, l.lead];
+
+  // Образец результата — то, за чем на страницу и приходят: готовая
+  // расшифровка. Есть он не у всех посадочных.
+  if (l.outSample) {
+    parts.push([l.outLabel, l.outSample, l.outNote].filter(Boolean).join("\n"));
+  }
+
+  parts.push(l.stepsTitle);
+  parts.push(l.steps.map((st, i) => `${i + 1}. ${st.h} — ${st.p}`).join("\n"));
+
+  parts.push(l.tableTitle, l.tableLead);
+  // Как и у гайдов: строка разворачивается в пары «шапка: значение», чтобы
+  // число не отрывалось от своей подписи при пересказе.
+  parts.push(
+    l.tableRows
+      .map((r) => r.map((cell, i) => `${l.tableHead[i]}: ${cell}`).join("; "))
+      .join("\n"),
+  );
+  if (l.tableNote) parts.push(l.tableNote);
+
+  parts.push(l.whyTitle);
+  parts.push(l.whyBullets.map((b) => `${b.h} ${b.p}`).join("\n"));
+
+  parts.push(l.faqTitle);
+  parts.push(l.faq.map((f) => `${f.q}\n${f.a}`).join("\n\n"));
+
+  return parts.join("\n\n");
+}
+
 export function howToLd(opts: {
   name: string;
   description: string;

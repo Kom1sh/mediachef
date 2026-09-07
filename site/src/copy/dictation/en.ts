@@ -209,7 +209,55 @@ export default {
     },
     {
       q: "Is it really free?",
-      a: `Yes. MediaChef is open source under GPL-3.0 with no paid tier and no subscription — dictation included. The current release is ${FACTS.version}, dictation included.`,
+      a: `Yes. MediaChef is open source under GPL-3.0 with no paid tier and no subscription. The current release is ${FACTS.version}, dictation included.`,
+    },
+    {
+      q: "Why does the panel show different text from what gets typed?",
+      a: "Those are two separate passes. While you speak, the panel shows a draft produced by a light model every second and a half, so it can keep up with speech. What gets typed is the final result from your main model over the whole recording, with your term dictionary applied. Both models are picked on the Dictation tab: set the live preview to the same model as the main one and the difference disappears — at the cost of the panel lagging behind.",
+    },
+    {
+      q: "Why does it ask for permissions again after an update?",
+      a: "macOS ties a permission to the app's code signature, not to its name. MediaChef has no Apple certificate — we are not paying for one — so every version is signed differently and the system treats the updated app as a new one. The app removes the stale entry itself and asks again: one toggle and one “Allow” per update.",
+    },
+    {
+      q: "The toggle in System Settings is on, but dictation does not work.",
+      a: "Then the entry in that list belongs to the previous copy of the app, which is what happens after an update. Switching it off and on again does not rebind it — we tried. MediaChef clears that entry itself and triggers the system prompt: switch it on in the list and restart the app.",
+    },
+    {
+      q: "The recording came out empty even though the microphone works.",
+      a: "Usually it is the headset: AirPods sitting in their case stay connected and stay the default input, and macOS hands out flat zeros from them — to every app, not just ours. The notification names the device the silence came from. Put the headset on, or pick the microphone explicitly on the Dictation tab.",
+    },
+    {
+      q: "Can I choose a specific microphone?",
+      a: "Yes — the Dictation tab lists the input devices. “System default” means the last connected headset rather than the laptop microphone, which is exactly why an explicit choice is more reliable.",
+    },
+    {
+      q: "What happens if I press the trigger and say nothing?",
+      a: "Nothing is typed. An empty recording never even reaches recognition: Whisper does not stay quiet on silence, it invents — the Russian model would type out subtitle credits. Those subtitler signatures are recognised and treated as silence, and you get “no speech” instead.",
+    },
+    {
+      q: "Why is the first press after launch slower?",
+      a: "The macOS audio subsystem is waking up — up to two seconds for the first microphone open per launch. The panel appears immediately, before recording starts, so hold the key until it says it is listening. After that, opening takes tens of milliseconds.",
+    },
+    {
+      q: "How do I send a message by voice without pressing Enter?",
+      a: "Press the trigger together with Shift: the text is typed and Enter follows automatically. An empty dictation never presses Enter — otherwise staying silent would send an empty message, or run the previous command in a terminal.",
+    },
+    {
+      q: "What happens if I press another key while holding the trigger?",
+      a: "The recording is cancelled and nothing is typed. The right ⌥ plus a letter is somebody else's keyboard shortcut, not dictation, and the app treats it as one.",
+    },
+    {
+      q: "Is what I dictate saved to disk?",
+      a: "No. The recording lives in a temporary folder and is deleted with it, and keeping a history of transcripts is off by default. The app promises your content never leaves the machine; writing everything you dictate onto it in plain text would sit oddly with that — people dictate passwords and pieces of private conversations.",
+    },
+    {
+      q: "Does it work over full-screen applications?",
+      a: "Yes. The panel is drawn above full-screen windows and on every desktop — full-screen editors and terminals are exactly where people dictate.",
+    },
+    {
+      q: "Another app already uses the trigger. What now?",
+      a: "The Dictation tab also offers the right ⌘ — the other lone modifier macOS assigns no action of its own to — plus two ordinary combinations, ⌃⌥ Space and ⌃⌥ D, in case both modifiers are already taken.",
     },
   ],
 

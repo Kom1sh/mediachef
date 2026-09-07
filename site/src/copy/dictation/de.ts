@@ -208,6 +208,54 @@ export default {
       q: "Wirklich kostenlos?",
       a: `Ja. MediaChef ist quelloffen unter GPL-3.0, ohne Bezahlversion und ohne Abo — das Diktat eingeschlossen. Veröffentlicht ist Version ${FACTS.version}, das Diktat ist enthalten.`,
     },
+    {
+      q: "Warum zeigt das Panel einen anderen Text als den, der getippt wird?",
+      a: "Das sind zwei getrennte Durchläufe. Während Sie sprechen, zeigt das Panel einen Entwurf, den ein leichtes Modell alle anderthalb Sekunden erzeugt, damit es der Sprache folgen kann. Getippt wird das Endergebnis Ihres Hauptmodells über die ganze Aufnahme, mit Ihrem Fachwörterbuch. Beide Modelle wählt man im Diktat-Tab: setzen Sie für die Vorschau dasselbe Modell wie für das Hauptmodell, und der Unterschied verschwindet — um den Preis, dass das Panel hinterherhängt.",
+    },
+    {
+      q: "Warum fragt es nach einem Update erneut nach Berechtigungen?",
+      a: "macOS bindet die Berechtigung an die Signatur der App, nicht an ihren Namen. MediaChef hat kein Apple-Zertifikat — wir werden keines bezahlen —, also ist jede Version anders signiert, und das System behandelt die aktualisierte App als eine neue. Die App entfernt den veralteten Eintrag selbst und fragt erneut: ein Schalter und ein „Erlauben“ pro Update.",
+    },
+    {
+      q: "Der Schalter in den Systemeinstellungen ist an, das Diktat funktioniert aber nicht.",
+      a: "Dann gehört dieser Eintrag zur vorigen Kopie der App — genau das passiert nach einem Update. Aus- und wieder einschalten bindet ihn nicht neu, das haben wir ausprobiert. MediaChef löscht diesen Eintrag von sich aus und löst die Systemabfrage aus: in der Liste einschalten und die App neu starten.",
+    },
+    {
+      q: "Die Aufnahme ist leer, obwohl das Mikrofon funktioniert.",
+      a: "Meist liegt es am Headset: AirPods im Case bleiben verbunden und bleiben der Standardeingang, und macOS liefert von ihnen glatte Nullen — an jede App, nicht nur an unsere. Die Benachrichtigung nennt das Gerät, von dem die Stille kam. Setzen Sie das Headset auf oder wählen Sie das Mikrofon ausdrücklich im Diktat-Tab.",
+    },
+    {
+      q: "Kann ich ein bestimmtes Mikrofon wählen?",
+      a: "Ja, der Diktat-Tab listet die Eingabegeräte. „Wie das System“ heißt: das zuletzt verbundene Headset, nicht das Laptop-Mikrofon — und genau darum ist die ausdrückliche Wahl verlässlicher.",
+    },
+    {
+      q: "Was passiert, wenn ich den Auslöser drücke und nichts sage?",
+      a: "Es wird nichts getippt. Eine leere Aufnahme erreicht die Erkennung nicht einmal: Whisper schweigt bei Stille nicht, es erfindet — das russische Modell tippte Untertitel-Credits. Solche Untertitler-Signaturen werden erkannt und als Stille behandelt, und Sie bekommen „keine Sprache gehört“.",
+    },
+    {
+      q: "Warum ist der erste Druck nach dem Start langsamer?",
+      a: "Das Audiosystem von macOS wacht auf: bis zu zwei Sekunden beim ersten Öffnen des Mikrofons pro Start. Das Panel erscheint sofort, noch bevor die Aufnahme läuft — halten Sie die Taste also, bis es sagt, dass es zuhört. Danach dauert das Öffnen zig Millisekunden.",
+    },
+    {
+      q: "Wie schicke ich eine Nachricht per Stimme, ohne Enter zu drücken?",
+      a: "Drücken Sie den Auslöser zusammen mit Shift: der Text wird getippt, und Enter folgt von selbst. Ein leeres Diktat drückt niemals Enter — sonst würde Schweigen eine leere Nachricht senden oder im Terminal den vorigen Befehl ausführen.",
+    },
+    {
+      q: "Was passiert, wenn ich bei gehaltenem Auslöser eine andere Taste drücke?",
+      a: "Die Aufnahme wird abgebrochen und nichts getippt. Die rechte ⌥ plus ein Buchstabe ist der Kurzbefehl einer anderen Anwendung, kein Diktat, und die App behandelt ihn genau so.",
+    },
+    {
+      q: "Wird das Diktierte auf die Festplatte geschrieben?",
+      a: "Nein. Die Aufnahme liegt in einem temporären Ordner und wird mit ihm gelöscht, und eine Historie der Abschriften ist standardmäßig aus. Die App verspricht, dass Ihre Inhalte das Gerät nicht verlassen; alles Diktierte im Klartext darauf zu schreiben würde dazu schlecht passen — diktiert werden Passwörter und Ausschnitte privater Gespräche.",
+    },
+    {
+      q: "Funktioniert es über Vollbild-Anwendungen?",
+      a: "Ja. Das Panel wird über Vollbildfenstern und auf allen Schreibtischen gezeichnet — Vollbild-Editoren und -Terminals sind genau dort, wo diktiert wird.",
+    },
+    {
+      q: "Eine andere App belegt den Auslöser schon. Was nun?",
+      a: "Der Diktat-Tab bietet auch die rechte ⌘ — der andere einzelne Modifier, dem macOS keine eigene Aktion zuweist — sowie zwei gewöhnliche Kombinationen, ⌃⌥ Leertaste und ⌃⌥ D, falls beide Modifier bereits vergeben sind.",
+    },
   ],
 
   ctaTitle: "MediaChef heute",

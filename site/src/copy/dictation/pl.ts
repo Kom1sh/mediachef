@@ -208,6 +208,54 @@ export default {
       q: "Naprawdę darmowe?",
       a: `Tak. MediaChef jest otwartoźródłowy na licencji GPL-3.0, bez wersji płatnej i bez subskrypcji — dyktowanie także. Wydana wersja to ${FACTS.version}, dyktowanie w niej jest.`,
     },
+    {
+      q: "Dlaczego panel pokazuje inny tekst niż ten, który zostaje wpisany?",
+      a: "To dwa osobne przebiegi. Gdy mówisz, panel pokazuje szkic tworzony przez lekki model co półtorej sekundy, żeby nadążyć za mową. Wpisywany jest wynik końcowy modelu głównego z całego nagrania, z twoim słownikiem terminów. Oba modele wybiera się na karcie Dyktowanie: ustaw w podglądzie ten sam model co główny i różnica zniknie — kosztem opóźnienia panelu.",
+    },
+    {
+      q: "Dlaczego po aktualizacji znów prosi o uprawnienia?",
+      a: "macOS wiąże uprawnienie z podpisem aplikacji, nie z jej nazwą. MediaChef nie ma certyfikatu Apple — nie będziemy za niego płacić — więc każda wersja jest podpisana inaczej i system traktuje zaktualizowaną aplikację jak nową. Aplikacja sama usuwa nieaktualny wpis i prosi o uprawnienie ponownie: jeden przełącznik i jedno „Zezwól” na aktualizację.",
+    },
+    {
+      q: "Przełącznik w Ustawieniach systemowych jest włączony, a dyktowanie nie działa.",
+      a: "To znaczy, że ten wpis należy do poprzedniej kopii aplikacji — tak właśnie bywa po aktualizacji. Wyłączenie i włączenie go z powrotem nic nie zmienia, sprawdziliśmy. MediaChef sam czyści ten wpis i wywołuje pytanie systemu: włącz go na liście i uruchom aplikację ponownie.",
+    },
+    {
+      q: "Nagranie wyszło puste, choć mikrofon działa.",
+      a: "Najczęściej winny jest zestaw słuchawkowy: AirPodsy w etui pozostają połączone i pozostają wejściem domyślnym, a macOS oddaje z nich równe zera — każdej aplikacji, nie tylko naszej. Powiadomienie podaje urządzenie, z którego przyszła cisza. Założ słuchawki albo wybierz mikrofon wprost na karcie Dyktowanie.",
+    },
+    {
+      q: "Czy mogę wybrać konkretny mikrofon?",
+      a: "Tak: karta Dyktowanie wypisuje urządzenia wejściowe. „Jak system” to ostatnio podłączony zestaw słuchawkowy, a nie mikrofon laptopa — i właśnie dlatego jawny wybór jest pewniejszy.",
+    },
+    {
+      q: "Co się stanie, jeśli nacisnę wyzwalacz i nic nie powiem?",
+      a: "Nic nie zostanie wpisane. Puste nagranie nawet nie dociera do rozpoznawania: Whisper nie milczy wobec ciszy, tylko wymyśla — model rosyjski wpisywał napisy końcowe. Takie podpisy autorów napisów są rozpoznawane i traktowane jak cisza, a ty dostajesz „nie słychać mowy”.",
+    },
+    {
+      q: "Dlaczego pierwsze naciśnięcie po uruchomieniu jest wolniejsze?",
+      a: "Budzi się podsystem audio macOS: do dwóch sekund przy pierwszym otwarciu mikrofonu w danym uruchomieniu. Panel pojawia się od razu, jeszcze przed startem nagrywania, więc trzymaj klawisz, aż napisze, że słucha. Potem otwarcie zajmuje dziesiątki milisekund.",
+    },
+    {
+      q: "Jak wysłać wiadomość głosem bez naciskania Enter?",
+      a: "Naciśnij wyzwalacz razem z Shiftem: tekst zostanie wpisany, a Enter naciśnie się sam. Puste dyktowanie nigdy nie naciska Entera — inaczej milczenie wysłałoby pustą wiadomość albo wykonało poprzednie polecenie w terminalu.",
+    },
+    {
+      q: "Co się stanie, jeśli nacisnę inny klawisz, trzymając wyzwalacz?",
+      a: "Nagranie zostanie anulowane i nic nie zostanie wpisane. Prawy ⌥ z literą to czyjś skrót klawiaturowy, a nie dyktowanie, i program tak to rozumie.",
+    },
+    {
+      q: "Czy to, co dyktuję, zapisuje się na dysku?",
+      a: "Nie. Nagranie żyje w folderze tymczasowym i znika razem z nim, a przechowywanie historii transkrypcji jest domyślnie wyłączone. Aplikacja obiecuje, że twoje treści nie opuszczają komputera; zapisywanie na nim wszystkiego, co dyktujesz, otwartym tekstem źle by z tym współgrało — ludzie dyktują hasła i fragmenty prywatnych rozmów.",
+    },
+    {
+      q: "Czy działa nad aplikacjami na pełnym ekranie?",
+      a: "Tak. Panel rysuje się nad okrami na pełnym ekranie i na wszystkich pulpitach — edytory i terminale na pełnym ekranie to dokładnie te miejsca, gdzie się dyktuje.",
+    },
+    {
+      q: "Inna aplikacja już zajmuje wyzwalacz. Co teraz?",
+      a: "Karta Dyktowanie oferuje też prawy ⌘ — drugi samotny modyfikator, któremu macOS nie przypisuje własnego działania — oraz dwie zwykłe kombinacje, ⌃⌥ Spacja i ⌃⌥ D, gdyby oba modyfikatory były już zajęte.",
+    },
   ],
 
   ctaTitle: "MediaChef dzisiaj",
