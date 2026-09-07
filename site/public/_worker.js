@@ -8,6 +8,11 @@
 //  2. Заголовки безопасности и кеширования навешиваются здесь же: в advanced
 //     mode файл _headers может не применяться, а терять их не хочется.
 //     public/_headers оставлен как дубль для обычного режима — значения те же.
+//  3. Заходы роботов пишутся в D1 (`env.CRAWLERS`). Зачем не хватило готовой
+//     аналитики: панель Cloudflare показывает роботов сводкой — сколько раз
+//     приходил GPTBot, — но не отвечает на вопрос «что именно он забрал и с
+//     каким кодом». Здесь пишется строка на запрос: кто, когда, что, в каком
+//     формате, с каким статусом и из какой сети.
 
 const SECURITY = {
   "x-content-type-options": "nosniff",
@@ -53,6 +58,135 @@ function pickLocale(header) {
   return DEFAULT_LOCALE;
 }
 
+// Известные роботы: [подстрока User-Agent в нижнем регистре, имя для журнала].
+// Порядок значим — первое совпадение выигрывает, поэтому частные случаи стоят
+// раньше общих: «claudebot» до «claude», «bingbot» до «bing», «googlebot» до
+// «google». ИИ-роботы идут первыми не для приоритета, а чтобы список читался
+// по назначению.
+const BOTS = [
+  // ИИ: обучение, поиск ассистентов, переходы по ссылке из ответа.
+  ["gptbot", "GPTBot"],
+  ["oai-searchbot", "OAI-SearchBot"],
+  ["chatgpt-user", "ChatGPT-User"],
+  ["claudebot", "ClaudeBot"],
+  ["claude-searchbot", "Claude-SearchBot"],
+  ["claude-user", "Claude-User"],
+  ["anthropic-ai", "anthropic-ai"],
+  ["perplexitybot", "PerplexityBot"],
+  ["perplexity-user", "Perplexity-User"],
+  ["google-extended", "Google-Extended"],
+  ["googleother", "GoogleOther"],
+  ["applebot-extended", "Applebot-Extended"],
+  ["meta-externalagent", "meta-externalagent"],
+  ["meta-externalfetcher", "meta-externalfetcher"],
+  ["facebookbot", "FacebookBot"],
+  ["bytespider", "Bytespider"],
+  ["ccbot", "CCBot"],
+  ["amazonbot", "Amazonbot"],
+  ["duckassistbot", "DuckAssistBot"],
+  ["mistralai-user", "MistralAI-User"],
+  ["cohere-ai", "cohere-ai"],
+  ["ai2bot", "Ai2Bot"],
+  ["youbot", "YouBot"],
+  ["diffbot", "Diffbot"],
+  ["timpibot", "Timpibot"],
+  ["omgilibot", "Omgilibot"],
+  ["imagesiftbot", "ImagesiftBot"],
+  ["pangubot", "PanguBot"],
+  // Поисковые.
+  ["googlebot", "Googlebot"],
+  ["bingbot", "Bingbot"],
+  ["yandexbot", "YandexBot"],
+  ["yandex", "Yandex-other"],
+  ["duckduckbot", "DuckDuckBot"],
+  ["baiduspider", "Baiduspider"],
+  ["applebot", "Applebot"],
+  ["seznambot", "SeznamBot"],
+  ["naver", "Naver"],
+  ["petalbot", "PetalBot"],
+  ["sogou", "Sogou"],
+  ["slurp", "Yahoo-Slurp"],
+  // Соцсети и мессенджеры — превью ссылок.
+  ["facebookexternalhit", "facebookexternalhit"],
+  ["twitterbot", "Twitterbot"],
+  ["linkedinbot", "LinkedInBot"],
+  ["slackbot", "Slackbot"],
+  ["telegrambot", "TelegramBot"],
+  ["discordbot", "Discordbot"],
+  ["whatsapp", "WhatsApp"],
+  ["redditbot", "redditbot"],
+  ["vkshare", "VK"],
+  // SEO-сканеры: трафика не приносят, но объясняют скачки в статистике.
+  ["ahrefsbot", "AhrefsBot"],
+  ["semrushbot", "SemrushBot"],
+  ["mj12bot", "MJ12bot"],
+  ["dotbot", "DotBot"],
+  ["screaming frog", "ScreamingFrog"],
+  ["dataforseo", "DataForSeo"],
+  // Наши же проверки доступности и пинги.
+  ["bingpreview", "BingPreview"],
+  ["indexnow", "IndexNow"],
+];
+
+/**
+ * Имя робота по User-Agent или `null`, если это похоже на человека.
+ *
+ * Два уровня. Сначала известные роботы по таблице выше — их имена нужны
+ * ровно для того, чтобы группировка в отчётах не рассыпалась по версиям.
+ * Потом общая примета (`bot`, `crawler`, `spider`) — новый робот попадёт в
+ * журнал как «other» вместе с полным User-Agent, и его можно будет опознать
+ * и добавить в таблицу. Пустой User-Agent — тоже «other»: у браузеров он
+ * есть всегда.
+ */
+function botFrom(ua) {
+  if (!ua) return "other";
+  const low = ua.toLowerCase();
+  for (const [needle, name] of BOTS) if (low.includes(needle)) return name;
+  if (/bot\b|bot\/|crawler|spider|crawl;/.test(low)) return "other";
+  return null;
+}
+
+/**
+ * Пишет одну строку в журнал. Зовётся только через `ctx.waitUntil`: ответ
+ * человеку (точнее, роботу) не должен ждать базу — и не должен падать вместе
+ * с ней, поэтому ошибка здесь проглатывается. Журнал заходов — не та вещь,
+ * ради которой можно отдать 500 на живой странице.
+ *
+ * Раз в двести записей заодно чистится хвост старше девяноста дней: жить
+ * вечно этой таблице незачем, а отдельный планировщик ради уборки — это
+ * второй воркер и второй конфиг.
+ */
+async function logHit(env, entry) {
+  try {
+    await env.CRAWLERS.prepare(
+      "INSERT INTO hits (at, bot, method, path, status, type, asn, country, ua)" +
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+      .bind(
+        entry.at,
+        entry.bot,
+        entry.method,
+        entry.path,
+        entry.status,
+        entry.type,
+        entry.asn,
+        entry.country,
+        entry.ua,
+      )
+      .run();
+    if (Math.random() < 0.005) {
+      const cutoff = entry.at - 90 * 24 * 60 * 60 * 1000;
+      await env.CRAWLERS.prepare("DELETE FROM hits WHERE at < ?").bind(cutoff).run();
+    }
+  } catch (e) {
+    // Ответ роботу не должен ни ждать базу, ни падать вместе с ней — поэтому
+    // проглатываем. Но не бесследно: строка видна в
+    // `npx wrangler pages deployment tail`, иначе пустой журнал не отличить
+    // от «роботы не заходили».
+    console.error("crawlers: заход не записан:", e?.message || String(e));
+  }
+}
+
 function cacheControlFor(pathname) {
   // Файлы из /_astro/ — с хешем в имени, живут вечно.
   if (pathname.startsWith("/_astro/")) return "public, max-age=31536000, immutable";
@@ -61,12 +195,43 @@ function cacheControlFor(pathname) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    // Робота определяем один раз на запрос: User-Agent читается дважды —
+    // для журнала редиректа и для журнала страницы.
+    const ua = request.headers.get("user-agent") || "";
+    const bot = botFrom(ua);
+    // Журнал включается наличием привязки. Без неё (локальный `astro dev`,
+    // чужая копия проекта) сайт работает ровно как раньше.
+    if (bot && !env.CRAWLERS) {
+      console.error("crawlers: привязки CRAWLERS нет — заходы роботов не пишутся");
+    }
+    const record = bot && env.CRAWLERS ? (status, type) => {
+      ctx.waitUntil(
+        logHit(env, {
+          at: Date.now(),
+          bot,
+          method: request.method,
+          // Без query: у роботов её не бывает, а группировку по страницам
+          // она бы разнесла.
+          path: url.pathname,
+          status,
+          type,
+          // `cf` на бесплатном тарифе отдаёт ASN и страну — этого хватает,
+          // чтобы поймать подделку User-Agent.
+          asn: request.cf?.asn ?? null,
+          country: request.cf?.country ?? null,
+          ua,
+        }),
+      );
+    } : null;
 
     if (url.pathname === "/") {
       const locale = pickLocale(request.headers.get("accept-language"));
       const target = new URL(`/${locale}/` + url.search, url);
+      // Редирект тоже в журнал: по нему видно, что робот пришёл на корень —
+      // и на какой язык его увело.
+      record?.(302, null);
       return new Response(null, {
         status: 302,
         headers: {
@@ -79,7 +244,10 @@ export default {
     }
 
     const asset = await env.ASSETS.fetch(request);
-    if (NULL_BODY.has(asset.status)) return asset;
+    if (NULL_BODY.has(asset.status)) {
+      record?.(asset.status, asset.headers.get("content-type"));
+      return asset;
+    }
 
     // Заголовки ответа ASSETS иммутабельны — правим копию.
     const out = new Response(asset.body, asset);
@@ -96,6 +264,9 @@ export default {
     } else {
       out.headers.set("cache-control", "no-store");
     }
+    // После правки заголовков: в журнал уезжает то, что реально ушло роботу,
+    // включая итоговый Content-Type.
+    record?.(out.status, out.headers.get("content-type"));
     return out;
   },
 };
