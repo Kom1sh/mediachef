@@ -148,15 +148,46 @@ const HALLUCINATIONS: &[&str] = &[
 /// препинания: модель ставит точку, восклицательный знак или ничего. Только
 /// целиком: фраза «спасибо за просмотр» внутри настоящей диктовки — речь, а
 /// не артефакт.
+/// Маркеры-имена: если в расшифровке есть хоть один — это титры, в какой бы
+/// форме Whisper их ни сочинил. Список целых фраз выше ловит точное
+/// совпадение, но модель варьирует глагол («сделал», «делал», «создавал»,
+/// «подготовил»), и на живом прогоне «Субтитры создавал DimaTorzok» прошло
+/// мимо. Имена авторов субтитров и сообществ в настоящей диктовке не
+/// встречаются — по ним и режем. Хранятся в нормализованном виде (без
+/// пробелов и знаков, строчными), как и сравниваемый текст.
+const HALLUCINATION_MARKERS: &[&str] = &[
+    "dimatorzok",
+    "amaraorg",
+    "редакторсубтитров",
+    "корректорaегорова",
+    "корректораегорова",
+    "асемкин",
+    "субтитрысделал",
+    "субтитрыделал",
+    "субтитрысоздавал",
+    "субтитрыподготовил",
+    "untertitelungdeszdf",
+    "untertitelimauftragdeszdf",
+    "untertitelvonstephaniegeiges",
+    "soustitragest501",
+    "acuradiqtss",
+    "ترجمةنانسيقنقر",
+];
+
+fn norm(s: &str) -> String {
+    s.chars()
+        .filter(|c| c.is_alphanumeric())
+        .flat_map(|c| c.to_lowercase())
+        .collect()
+}
+
 pub fn is_hallucination(text: &str) -> bool {
-    fn norm(s: &str) -> String {
-        s.chars()
-            .filter(|c| c.is_alphanumeric())
-            .flat_map(|c| c.to_lowercase())
-            .collect()
-    }
     let t = norm(text);
-    !t.is_empty() && HALLUCINATIONS.iter().any(|h| norm(h) == t)
+    if t.is_empty() {
+        return false;
+    }
+    HALLUCINATIONS.iter().any(|h| norm(h) == t)
+        || HALLUCINATION_MARKERS.iter().any(|m| t.contains(m))
 }
 
 #[cfg(test)]
@@ -175,8 +206,23 @@ mod tests {
         assert!(is_hallucination("Thanks for watching"));
     }
 
+    /// Глагол у титров плавает — ловим по имени автора в любой форме и в любом
+    /// окружении.
+    #[test]
+    fn credits_are_caught_by_author_marker() {
+        assert!(is_hallucination("Субтитры создавал DimaTorzok"));
+        assert!(is_hallucination("Субтитры подготовил DimaTorzok."));
+        assert!(is_hallucination(
+            "Субтитры создавал DimaTorzok Продолжение следует"
+        ));
+        assert!(is_hallucination("Subtitles by the Amara.org community"));
+        assert!(is_hallucination("Редактор субтитров А. Семкин"));
+    }
+
     #[test]
     fn real_speech_is_not() {
+        // Слово «субтитры» само по себе — нормальная речь про MediaChef.
+        assert!(!is_hallucination("Сделай субтитры к этому видео"));
         assert!(!is_hallucination("Привет, как дела?"));
         // Артефакт внутри настоящей фразы — речь.
         assert!(!is_hallucination("Ну всё, спасибо за просмотр, до завтра"));

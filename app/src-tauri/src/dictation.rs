@@ -972,8 +972,8 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
             trace(
                 rt,
                 &format!(
-                    "запись {:?}, пик {:.3}, источник {}, причина {:?}, до первого сэмпла {:?}",
-                    r.duration, r.peak, r.source, r.reason, r.first_sample_delay
+                    "запись {:?}, пик {:.3}, громкость {:.4}, источник {}, причина {:?}, до первого сэмпла {:?}",
+                    r.duration, r.peak, r.loudest, r.source, r.reason, r.first_sample_delay
                 ),
             );
             r
@@ -1007,6 +1007,20 @@ fn transcribe_and_deliver(app: &AppHandle, rt: &Arc<Runtime>, rec: Recorder) {
     // разрешения на микрофон: macOS в таком случае отдаёт нули, а не ошибку.
     if recording.peak < crate::mic::SILENT_PEAK {
         silent_microphone(app, rt, recording.peak, &recording.source);
+        return;
+    }
+    // Шум без речи — тоже не для Whisper: на нём он сочиняет титры. Это не
+    // мёртвый вход (звук есть), поэтому без разговоров про разрешения —
+    // просто «речи не слышно».
+    if recording.loudest < crate::mic::QUIET_RMS {
+        trace(
+            rt,
+            &format!(
+                "речи нет: самый громкий блок {:.4} RMS ниже порога — в Whisper не отправляем",
+                recording.loudest
+            ),
+        );
+        no_speech(app, rt);
         return;
     }
 

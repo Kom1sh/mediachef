@@ -102,6 +102,10 @@ pub struct Recording {
     /// входа: без разрешения на микрофон macOS отдаёт нули, а не ошибку, и
     /// такая запись не должна доезжать до Whisper — см. [`SILENT_PEAK`].
     pub peak: f32,
+    /// Самый громкий блок записи по RMS, 0.0..=1.0 — мера речи, а не щелчка.
+    /// Пик ловит одиночный стук, RMS блока в 10–20 мс поднимается только на
+    /// голосе. Ниже [`QUIET_RMS`] речи в записи нет — см. там.
+    pub loudest: f32,
     /// Откуда писали: имя устройства, частота и формат сэмплов. В журнал —
     /// чтобы тишину можно было отнести к устройству (Bluetooth-гарнитура,
     /// виртуальный вход), а не гадать.
@@ -120,6 +124,16 @@ pub struct Recording {
 /// русская модель печатала в поле титры «Редактор субтитров А.Семкин
 /// Корректор А.Егорова» как результат диктовки.
 pub const SILENT_PEAK: f32 = 0.003;
+
+/// Ниже этого RMS самого громкого блока в записи нет речи — только шум.
+///
+/// Около −44 дБ. Шум пустой комнаты через ноутбучный микрофон — 0,001–0,003
+/// RMS, вентилятор рядом — до 0,005; голос даже вполголоса даёт на гласных
+/// блоки по 0,02 и выше, AirPods — от 0,02. Whisper на одном шуме не молчит, а
+/// сочиняет титры («Субтитры создавал DimaTorzok»), поэтому такую запись до
+/// него не доводим — человек получает «речи не слышно», а не чужую подпись
+/// в своём поле ввода.
+pub const QUIET_RMS: f32 = 0.006;
 
 /// Разделяемое с аудиопотоком: пиковый уровень для оверлея.
 ///
@@ -165,6 +179,7 @@ impl Recorder {
         let stop = Arc::new(AtomicBool::new(false));
         let level = Arc::new(Level::new());
         let peak_max = Arc::new(Level::new());
+        let loud_max = Arc::new(Level::new());
         let samples: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(Vec::new()));
         let sample_rate = Arc::new(AtomicU32::new(0));
         let (done_tx, done_rx) = mpsc::channel();
@@ -173,16 +188,17 @@ impl Recorder {
         let (ready_tx, ready_rx) = mpsc::channel();
 
         let stop_t = stop.clone();
-        let level_t = level.clone();
-        let peak_t = peak_max.clone();
+        let meters = Meters {
+            level: level.clone(),
+            peak_max: peak_max.clone(),
+            loud_max: loud_max.clone(),
+        };
         let samples_t = samples.clone();
         let rate_t = sample_rate.clone();
         std::thread::Builder::new()
             .name("dictation-mic".into())
             .spawn(move || {
-                let result = record(
-                    &preferred, &stop_t, level_t, peak_t, samples_t, rate_t, &ready_tx,
-                );
+                let result = record(&preferred, &stop_t, meters, samples_t, rate_t, &ready_tx);
                 // Если поток не открылся, про это уже сказано через ready_tx.
                 let _ = done_tx.send(result);
             })
@@ -267,15 +283,27 @@ pub fn warm_up() -> Option<Duration> {
 }
 
 /// Тело потока захвата: открыть, писать, закрыть, сложить WAV.
+/// Три счётчика аудиопотока под одной крышкой: текущий пик для полоски,
+/// максимум пика и максимум RMS за запись — для ворот тишины.
+struct Meters {
+    level: Arc<Level>,
+    peak_max: Arc<Level>,
+    loud_max: Arc<Level>,
+}
+
 fn record(
     preferred: &str,
     stop: &AtomicBool,
-    level: Arc<Level>,
-    peak_max: Arc<Level>,
+    meters: Meters,
     samples: Arc<Mutex<Vec<f32>>>,
     rate_out: Arc<AtomicU32>,
     ready: &mpsc::Sender<Result<(), MicError>>,
 ) -> Result<Recording, MicError> {
+    let Meters {
+        level,
+        peak_max,
+        loud_max,
+    } = meters;
     let host = cpal::default_host();
     // Названное устройство — по имени, иначе вход по умолчанию. Вход по
     // умолчанию у macOS — это последняя подключённая гарнитура, и AirPods в
@@ -337,6 +365,7 @@ fn record(
             let first = first_at.clone();
             let lvl = level.clone();
             let pk = peak_max.clone();
+            let ld = loud_max.clone();
             device.build_input_stream(
                 config.clone().into(),
                 move |data: &[$t], _: &cpal::InputCallbackInfo| {
@@ -352,6 +381,10 @@ fn record(
                     // пишет только этот колбэк.
                     if p > pk.get() {
                         pk.set(p);
+                    }
+                    let r = rms(&mono);
+                    if r > ld.get() {
+                        ld.set(r);
                     }
                     if let Ok(mut s) = sink.lock() {
                         s.extend_from_slice(&mono);
@@ -425,6 +458,7 @@ fn record(
         path,
         reason,
         peak: peak_max.get(),
+        loudest: loud_max.get(),
         source,
         duration,
         first_sample_delay,
@@ -451,6 +485,14 @@ where
             sum / channels as f32
         })
         .collect()
+}
+
+/// RMS блока — мера громкости, устойчивая к одиночным щелчкам.
+fn rms(samples: &[f32]) -> f32 {
+    if samples.is_empty() {
+        return 0.0;
+    }
+    (samples.iter().map(|s| s * s).sum::<f32>() / samples.len() as f32).sqrt()
 }
 
 /// Пик по модулю — для полоски уровня.
@@ -517,6 +559,16 @@ mod tests {
     fn downmix_drops_ragged_tail() {
         let data: Vec<f32> = vec![1.0, 1.0, 0.5];
         assert_eq!(downmix::<f32>(&data, 2), vec![1.0]);
+    }
+
+    #[test]
+    fn rms_of_constant_is_its_magnitude() {
+        assert!((rms(&[0.5, -0.5, 0.5, -0.5]) - 0.5).abs() < 1e-6);
+        assert_eq!(rms(&[]), 0.0);
+        // Щелчок в одном сэмпле почти не двигает RMS блока — в отличие от пика.
+        let mut block = vec![0.0f32; 480];
+        block[0] = 1.0;
+        assert!(rms(&block) < 0.05 && peak(&block) == 1.0);
     }
 
     #[test]
