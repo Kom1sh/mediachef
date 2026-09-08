@@ -116,6 +116,28 @@ export const ui = {
     "MediaChef è giovane: le build non sono ancora firmate da Apple né da Microsoft, quindi il primo avvio chiede conferma — dentro ogni download c'è una guida in testo semplice.",
   contactNote:
     "Qualcosa non funziona o manca? Scrivici:",
+  // Форма обратной связи. Отдельным блоком, а не россыпью ключей: у неё
+  // своя страница, и держать её строки вместе — единственный способ не
+  // потерять половину при добавлении языка.
+  fb: {
+    title: "Contatti — MediaChef",
+    description: "Dicci cosa non funziona o cosa manca. Il modulo funziona nel browser, senza client di posta.",
+    h1: "Dicci cosa è andato storto",
+    crumb: "Contatti",
+    lead: "Leggiamo tutto quello che arriva qui, e risponde una persona vera. Se qualcosa non ti ha funzionato, scrivere qui è la cosa più utile che puoi fare: senza messaggi semplicemente non lo veniamo a sapere.",
+    kindLabel: "Di cosa si tratta",
+    kindBug: "Qualcosa non funziona",
+    kindIdea: "Ho un suggerimento",
+    messageLabel: "Messaggio",
+    messagePlaceholder: "Cosa stavi facendo e cosa è successo invece. Più è concreto, più in fretta troviamo la causa.",
+    contactLabel: "Dove risponderti",
+    contactHint: "Facoltativo. Senza indirizzo leggeremo il messaggio ma non potremo risponderti.",
+    send: "Invia",
+    privacy: "Conserviamo solo ciò che scrivi, più la versione e il sistema se il modulo è stato aperto dall'app. Qui non registriamo né indirizzo IP, né browser, né posizione.",
+    mailAlt: "Preferisci l'email? Scrivi a",
+    thanks: "Grazie — il messaggio è arrivato.",
+    thanksBody: "Lo leggeremo. Se hai lasciato un indirizzo, ti risponderemo lì.",
+  },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Una cucina multimediale open source.",
   tocLabel: "In questa pagina",

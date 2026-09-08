@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Bell, FolderOpen, Gauge, Languages, MessageSquare, Monitor, Palette, RefreshCw } from "lucide-react";
-import { useT, LOCALES, LOCALE_FLAGS, LOCALE_NAMES } from "../lib/i18n";
+import { useT, useLocale, LOCALES, LOCALE_FLAGS, LOCALE_NAMES } from "../lib/i18n";
 import { pickFolder } from "../lib/ipc";
-import { openFeedback, FEEDBACK_EMAIL } from "../lib/feedback";
+import { openFeedback, openFeedbackForm, FEEDBACK_EMAIL } from "../lib/feedback";
 import { isUnsupportedInstall } from "../lib/updater";
 import type { Updater } from "../lib/useUpdater";
 import type { AppSettings } from "../lib/types";
@@ -36,6 +36,7 @@ export function SettingsPanel({
   updater: Updater;
 }) {
   const t = useT();
+  const locale = useLocale();
   const [pickError, setPickError] = useState("");
 
   // The language *names* stay in their own language: a Russian speaker looking for
@@ -186,18 +187,27 @@ export function SettingsPanel({
           // единственное, что остаётся человеку.
           hint={t("setFeedbackHint", { email: FEEDBACK_EMAIL })}
         >
-          <div className="flex flex-wrap gap-2">
-            {/* Тема письма — подпись нажатой кнопки: она уже переведена и точно
-                описывает то, что человек выбрал. */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Форма в браузере — основной путь. Письмом открывалось раньше, и
+                на Windows с Linux это молча не работало: почтового клиента на
+                свежей системе нет. Браузер есть у всех. */}
             {([t("fbBug"), t("fbIdea")] as const).map((label) => (
               <button
                 key={label}
-                type="button" onClick={() => void openFeedback(label)}
+                type="button" onClick={() => void openFeedbackForm(locale, "settings")}
                 className="shrink-0 rounded-md border border-line-strong bg-card-2 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-paper"
               >
                 {label}
               </button>
             ))}
+            {/* Письмо осталось вторым путём — для тех, у кого клиент настроен и
+                кому так привычнее. Тема письма — подпись «что-то не работает». */}
+            <button
+              type="button" onClick={() => void openFeedback(t("fbBug"))}
+              className="shrink-0 text-xs font-semibold text-ink-2 underline decoration-dotted hover:text-ink"
+            >
+              {t("fbByMail")}
+            </button>
           </div>
         </Row>
       </div>

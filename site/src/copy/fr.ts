@@ -116,6 +116,28 @@ export const ui = {
     "MediaChef est jeune : les binaires ne sont pas encore signés par Apple ni Microsoft, le premier lancement demande donc une confirmation — une notice en texte brut accompagne chaque téléchargement.",
   contactNote:
     "Quelque chose ne marche pas, ou manque ? Écrivez-nous :",
+  // Форма обратной связи. Отдельным блоком, а не россыпью ключей: у неё
+  // своя страница, и держать её строки вместе — единственный способ не
+  // потерять половину при добавлении языка.
+  fb: {
+    title: "Contact — MediaChef",
+    description: "Dites-nous ce qui ne marche pas ou ce qui manque. Le formulaire fonctionne dans le navigateur, sans client de messagerie.",
+    h1: "Dites-nous ce qui n'a pas marché",
+    crumb: "Contact",
+    lead: "Nous lisons tout ce qui arrive ici, et une personne réelle répond. Si quelque chose n'a pas fonctionné chez vous, écrire ici est la chose la plus utile à faire : sans message, nous ne l'apprenons tout simplement pas.",
+    kindLabel: "De quoi s'agit-il",
+    kindBug: "Quelque chose ne marche pas",
+    kindIdea: "J'ai une suggestion",
+    messageLabel: "Message",
+    messagePlaceholder: "Ce que vous faisiez et ce qui s'est produit à la place. Plus c'est précis, plus vite nous trouvons la cause.",
+    contactLabel: "Où répondre",
+    contactHint: "Facultatif. Sans adresse nous lirons votre message mais ne pourrons pas y répondre.",
+    send: "Envoyer",
+    privacy: "Nous ne conservons que ce que vous écrivez, plus la version et le système si l'application a ouvert ce formulaire. Ni adresse IP, ni navigateur, ni localisation ne sont enregistrés ici.",
+    mailAlt: "Vous préférez le courriel ? Écrivez à",
+    thanks: "Merci — le message est arrivé.",
+    thanksBody: "Nous le lirons. Si vous avez laissé une adresse, nous y répondrons.",
+  },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Une cuisine média open source.",
   tocLabel: "Sur cette page",

@@ -147,6 +147,8 @@ export const dict: Dict = {
   setFeedbackHint: "Schreibt an {email}, Version und System sind schon eingetragen. Von hier wird nichts gesendet.",
   fbBug: "Etwas funktioniert nicht",
   fbIdea: "Etwas vorschlagen",
+  reportError: "Fehler melden",
+  fbByMail: "per E-Mail",
 
   "cat_convert-video": "Video umwandeln",
   "cat_convert-audio": "Audio umwandeln",

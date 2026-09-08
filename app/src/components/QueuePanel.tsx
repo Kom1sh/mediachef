@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
-import { ChefHat, CircleAlert, Copy, FolderOpen } from "lucide-react";
+import { ChefHat, CircleAlert, Copy, FolderOpen, MessageSquare } from "lucide-react";
 import { basename, duration } from "../lib/format";
 import { KIND_ICON, KIND_LABEL, STATUS_ICON, STATUS_TINT } from "../lib/icons";
 import { loc, useLocale, useT, type TKey } from "../lib/i18n";
 import { cancelJob, listJobs, onJobUpdate, revealFile } from "../lib/ipc";
+import { openFeedbackForm } from "../lib/feedback";
 import type { JobView, Recipe } from "../lib/types";
 
 /** The five words a job can be. Exhaustive by type: a status added on the Rust
@@ -54,6 +55,7 @@ export function JobCard({
   onCancel,
   onReveal,
   onCopyLog,
+  onReport,
 }: {
   job: JobView;
   /** The recipe's name in the user's language, or its id — the panel owns the
@@ -64,6 +66,8 @@ export function JobCard({
   onCancel: () => void;
   onReveal: () => void;
   onCopyLog: () => void;
+  /** Открыть форму обратной связи с контекстом этой задачи. */
+  onReport: () => void;
 }) {
   const t = useT();
   const Status = STATUS_ICON[j.status];
@@ -159,10 +163,25 @@ export function JobCard({
             <Copy className="size-3 shrink-0" aria-hidden />
             {t("copyLog")}
           </button>
+          {/* Единственное место, где человеку правда есть что сказать.
+              Раньше предложить написать было негде: кнопка обратной связи
+              жила только в «Настройках», а туда после упавшей задачи не идут —
+              закрывают окно. Маркер ошибки и версия подставляются сами. */}
+          <button onClick={onReport}
+            className="mt-1.5 flex items-center gap-1 text-xs text-ink-2 transition hover:text-ink">
+            <MessageSquare className="size-3 shrink-0" aria-hidden />
+            {t("reportError")}
+          </button>
         </details>
       )}
     </div>
   );
+}
+
+/** Первая строка подробностей об ошибке: маркер вида `no_speech: …` стоит
+ *  именно там, а дальше идёт вывод движка, которому в адресе не место. */
+function firstLine(detail?: string | null): string {
+  return (detail ?? "").split("\n")[0].slice(0, 120);
 }
 
 export function QueuePanel({
@@ -293,6 +312,7 @@ export function QueuePanel({
             onCancel={() => cancelJob(j.id)}
             onReveal={() => attempt(revealFile(j.output))}
             onCopyLog={() => attempt(navigator.clipboard.writeText(j.error_detail ?? ""))}
+            onReport={() => void openFeedbackForm(locale, `${j.recipe_id}: ${firstLine(j.error_detail)}`)}
           />
         ))}
       </div>

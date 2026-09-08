@@ -2,9 +2,11 @@
 // страницы. Раньше файл лежал руками в public/ и его нужно было помнить: новая
 // посадочная появлялась на сайте, но не в карте. Теперь забыть нечего.
 import type { APIRoute } from "astro";
-import { SITE, ROUTES, FACTS, LOCALES, pathFor, type Locale, type PageId } from "../content";
+import { SITE, ROUTES, FACTS, LOCALES, NOINDEX, pathFor, type Locale, type PageId } from "../content";
 
-const PAGES = Object.keys(ROUTES) as PageId[];
+// Страницы вне индекса отсеиваются здесь, а не забываются: список один —
+// NOINDEX в content.ts, — и добавить туда страницу значит убрать её из карты.
+const PAGES = (Object.keys(ROUTES) as PageId[]).filter((p) => !NOINDEX.includes(p));
 
 /**
  * Корень «/» в карту не попадает намеренно: он отдаёт 302 по Accept-Language,

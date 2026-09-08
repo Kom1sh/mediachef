@@ -14,6 +14,10 @@
 //     каким кодом». Здесь пишется строка на запрос: кто, когда, что, в каком
 //     формате, с каким статусом и из какой сети.
 //
+//  4. Приём формы обратной связи: POST на страницу формы пишет сообщение в ту
+//     же базу D1. Единственный путь наружу у сайта, и он ручной — человек
+//     нажимает «отправить» сам.
+//
 // Плюс мелочь, выросшая из журнала: на HTML-ответы вешается заголовок `Link`
 // с указателем на llms.txt — см. ниже.
 
@@ -32,6 +36,157 @@ const NULL_BODY = new Set([101, 204, 205, 304]);
 // Порядок = приоритет при равном качестве совпадения.
 const SUPPORTED = ["en", "ru", "es", "pt", "fr", "de", "pl", "it", "ar", "zh"];
 const DEFAULT_LOCALE = "en";
+
+// Слаги страницы обратной связи по локалям и подписи страницы «спасибо».
+// Продублированы здесь по той же причине, что список языков: `_worker.js`
+// уезжает в dist как есть и ничего не импортирует. Поменяли слаг в
+// `content.ts` — поправьте и тут, иначе отправка формы начнёт отдавать 404.
+const FEEDBACK = {
+  en: { slug: "feedback", thanks: "Thank you — the message arrived.", body: "We will read it. If you left an address, we will reply to it." },
+  ru: { slug: "obratnaya-svyaz", thanks: "Спасибо — сообщение дошло.", body: "Мы его прочитаем. Если вы оставили адрес, ответим на него." },
+  es: { slug: "contacto", thanks: "Gracias: el mensaje ha llegado.", body: "Lo leeremos. Si dejaste una dirección, te responderemos a ella." },
+  pt: { slug: "contato", thanks: "Obrigado — a mensagem chegou.", body: "Vamos ler. Se você deixou um endereço, responderemos nele." },
+  fr: { slug: "contact", thanks: "Merci — le message est arrivé.", body: "Nous le lirons. Si vous avez laissé une adresse, nous y répondrons." },
+  de: { slug: "kontakt", thanks: "Danke — die Nachricht ist angekommen.", body: "Wir lesen sie. Wenn Sie eine Adresse hinterlassen haben, antworten wir darauf." },
+  pl: { slug: "kontakt", thanks: "Dziękujemy — wiadomość dotarła.", body: "Przeczytamy ją. Jeśli zostawiłeś adres, odpowiemy na niego." },
+  it: { slug: "contatti", thanks: "Grazie — il messaggio è arrivato.", body: "Lo leggeremo. Se hai lasciato un indirizzo, ti risponderemo lì." },
+  ar: { slug: "tawasul", thanks: "شكراً — وصلت الرسالة.", body: "سنقرأها. وإن تركت عنواناً فسنجيبك عليه." },
+  zh: { slug: "fankui", thanks: "谢谢——消息已收到。", body: "我们会读。如果你留了地址，我们会回复到那里。" },
+};
+
+/** Локаль, если путь — это страница обратной связи; иначе `null`. */
+function feedbackLocale(pathname) {
+  const m = pathname.match(/^\/([a-z]{2})\/([^/]+)\/$/);
+  if (!m) return null;
+  const [, loc, slug] = m;
+  return FEEDBACK[loc]?.slug === slug ? loc : null;
+}
+
+/** Экранирование для вставки в HTML страницы «спасибо». */
+function esc(x) {
+  return String(x).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+  );
+}
+
+/**
+ * Принимает форму и пишет сообщение в базу.
+ *
+ * Отвечает страницей «спасибо», а не редиректом: страница формы статическая и
+ * про успешную отправку ничего не знает, а показать результат человеку надо.
+ *
+ * Ошибку записи здесь проглатывать НЕЛЬЗЯ — в отличие от журнала роботов. Если
+ * сообщение не сохранилось, человек обязан об этом узнать и написать письмом:
+ * молчаливое «спасибо» на потерянное сообщение — худшее из возможных
+ * поведений для канала, который и создан затем, чтобы о поломках узнавали.
+ */
+async function takeFeedback(request, env, locale) {
+  const t = FEEDBACK[locale] ?? FEEDBACK.en;
+  const url = new URL(request.url);
+
+  let form;
+  try {
+    form = await request.formData();
+  } catch {
+    return new Response("bad form", { status: 400 });
+  }
+
+  const message = (form.get("message") || "").toString().trim();
+  const contact = (form.get("contact") || "").toString().trim().slice(0, 200);
+  const kindRaw = (form.get("kind") || "").toString();
+  const kind = kindRaw === "idea" ? "idea" : "bug";
+  const trap = (form.get("website") || "").toString().trim();
+
+  // Ловушка сработала — робот. Отвечаем как при успехе: сообщать роботу, что
+  // его раскусили, значит помогать его следующей попытке.
+  if (trap) return thanksPage(t, locale);
+
+  if (message.length < 10 || message.length > 4000) {
+    return new Response("message too short or too long", { status: 400 });
+  }
+  if (!env.CRAWLERS) {
+    return new Response("storage unavailable", { status: 503 });
+  }
+
+  // Простой предохранитель от потока: двадцать сообщений в час — заведомо
+  // больше того, что бывает у живого канала такого размера, и заведомо меньше
+  // того, чем способен завалить базу скрипт.
+  try {
+    const hour = Date.now() - 60 * 60 * 1000;
+    const { results } = await env.CRAWLERS.prepare(
+      "SELECT COUNT(*) AS n FROM feedback WHERE at > ?",
+    )
+      .bind(hour)
+      .all();
+    if ((results?.[0]?.n ?? 0) >= 20) {
+      return new Response("too many messages, try later", { status: 429 });
+    }
+  } catch {
+    // Не смогли посчитать — не повод отказать человеку в отправке.
+  }
+
+  try {
+    await env.CRAWLERS.prepare(
+      "INSERT INTO feedback (at, kind, message, contact, version, platform, locale, context)" +
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+      .bind(
+        Date.now(),
+        kind,
+        message,
+        contact || null,
+        (url.searchParams.get("v") || "").slice(0, 40) || null,
+        (url.searchParams.get("os") || "").slice(0, 80) || null,
+        locale,
+        (url.searchParams.get("ctx") || "").slice(0, 200) || null,
+      )
+      .run();
+  } catch (e) {
+    console.error("feedback: не записали сообщение:", e?.message || String(e));
+    return new Response("could not save the message", { status: 500 });
+  }
+
+  return thanksPage(t, locale);
+}
+
+/** Страница «спасибо»: минимальная, в стиле сайта, со ссылкой назад. */
+function thanksPage(t, locale) {
+  const dir = locale === "ar" ? ' dir="rtl"' : "";
+  const html = `<!doctype html>
+<html lang="${locale}"${dir}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, follow">
+<title>${esc(t.thanks)}</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+         font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         padding: 24px; text-align: center; }
+  h1 { font-size: 1.4rem; margin: 0 0 10px; }
+  p { margin: 0 0 20px; opacity: 0.75; }
+  a { color: inherit; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div>
+    <h1>${esc(t.thanks)}</h1>
+    <p>${esc(t.body)}</p>
+    <a href="/${locale}/">MediaChef</a>
+  </div>
+</body>
+</html>
+`;
+  return new Response(html, {
+    status: 200,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      ...SECURITY,
+    },
+  });
+}
 
 /**
  * Какой язык просит браузер. Смотрим не «есть ли ru где-нибудь в строке», а
@@ -228,6 +383,30 @@ export default {
         }),
       );
     } : null;
+
+    // Форма обратной связи. Только POST: обычный переход по этому адресу
+    // отдаёт статическую страницу, как и любая другая.
+    if (request.method === "POST") {
+      const fbLocale = feedbackLocale(url.pathname);
+      if (fbLocale) return takeFeedback(request, env, fbLocale);
+    }
+
+    // Один стабильный адрес формы для приложения: `/feedback/?lang=ru&v=…`.
+    // Слаги у локалей разные, и дублировать их карту ещё и в приложении —
+    // значит однажды разойтись с сайтом. Приложение знает один адрес, а
+    // раскладку по языкам делает тот, кто ей владеет.
+    if (url.pathname === "/feedback" || url.pathname === "/feedback/") {
+      const lang = url.searchParams.get("lang") || "";
+      const loc = FEEDBACK[lang] ? lang : DEFAULT_LOCALE;
+      const target = new URL(`/${loc}/${FEEDBACK[loc].slug}/`, url);
+      // Параметры приложения переносим, кроме служебного `lang`.
+      for (const [k, v] of url.searchParams) if (k !== "lang") target.searchParams.set(k, v);
+      record?.(302, null);
+      return new Response(null, {
+        status: 302,
+        headers: { location: target.toString(), "cache-control": "no-store", ...SECURITY },
+      });
+    }
 
     if (url.pathname === "/") {
       const locale = pickLocale(request.headers.get("accept-language"));

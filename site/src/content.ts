@@ -17,7 +17,17 @@ import zh from "./copy/zh";
 
 export { SITE, LINKS, FACTS, FEEDBACK_EMAIL } from "./facts";
 
-export type PageId = "home" | "mp3" | "transcribe" | "catalog" | "gif" | "compress" | "trim" | "srt" | "dictation";
+export type PageId =
+  | "home"
+  | "mp3"
+  | "transcribe"
+  | "catalog"
+  | "gif"
+  | "compress"
+  | "trim"
+  | "srt"
+  | "dictation"
+  | "feedback";
 
 /**
  * Языки с полным переводом. `name` — самоназвание: в переключателе язык
@@ -57,6 +67,9 @@ export const ROUTES: Record<PageId, Record<Locale, string>> = {
   gif: { en: "video-to-gif", zh: "shipin-zhuan-gif", ar: "tahwil-video-ila-gif", it: "video-in-gif", pl: "wideo-na-gif", de: "video-in-gif-umwandeln", fr: "video-en-gif", pt: "video-para-gif", ru: "video-v-gif", es: "video-a-gif" },
   trim: { en: "trim-video", zh: "jianqie-shipin", ar: "qass-video", it: "tagliare-video", pl: "przyciac-wideo", de: "video-schneiden", fr: "couper-une-video", pt: "cortar-video", ru: "obrezat-video", es: "recortar-video" },
   dictation: { en: "voice-to-text", zh: "yuyin-shuru", ar: "kitaba-bissawt", it: "dettatura-vocale", pl: "dyktowanie-glosem", de: "spracheingabe", fr: "dictee-vocale", pt: "ditado-por-voz", ru: "golosovoy-vvod", es: "dictado-por-voz" },
+  // Форма обратной связи. Слаги обычные для своих языков: человек, которому
+  // приложение открыло эту страницу, должен узнать её по адресу.
+  feedback: { en: "feedback", zh: "fankui", ar: "tawasul", it: "contatti", pl: "kontakt", de: "kontakt", fr: "contact", pt: "contato", ru: "obratnaya-svyaz", es: "contacto" },
   srt: { en: "video-to-srt", zh: "shipin-zhuan-zimu", ar: "tarjama-min-video", it: "creare-sottotitoli", pl: "napisy-do-wideo", de: "untertitel-erstellen", fr: "generer-des-sous-titres", pt: "gerar-legendas", ru: "subtitry-iz-video", es: "generar-subtitulos" },
 };
 
@@ -133,7 +146,21 @@ export const T: Record<Locale, UiCopy> = {
 
 /** Страницы под один поисковый интент — те, что рисует Intent.astro.
  *  У «home», «catalog» и гайдов свой макет: они устроены иначе. */
-export type IntentId = Exclude<PageId, "home" | "catalog" | "gif" | "compress" | "trim" | "srt" | "dictation">;
+export type IntentId = Exclude<
+  PageId,
+  "home" | "catalog" | "gif" | "compress" | "trim" | "srt" | "dictation" | "feedback"
+>;
+
+/**
+ * Страницы вне индекса: в карту сайта не попадают и просят робота их не
+ * индексировать.
+ *
+ * Пока здесь только форма обратной связи. Ей в выдаче делать нечего — по
+ * запросам её никто не ищет, — а в карте сайта она добавила бы десять адресов
+ * шума на каждый обход. При этом страница остаётся обычной страницей сайта:
+ * открывается по ссылке, переводится, работает без JavaScript.
+ */
+export const NOINDEX: readonly PageId[] = ["feedback"];
 
 /** Тексты каталога выведены из английского файла — форма проверяется присваиванием. */
 export type CatalogCopy = typeof en.catalog;

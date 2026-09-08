@@ -1,0 +1,166 @@
+---
+// Форма обратной связи.
+//
+// Зачем она вообще: единственным каналом было письмо, а приложение открывало
+// его через `mailto:`. На Windows и Linux — а это две трети скачиваний —
+// почтового клиента на свежей системе нет, и ссылка молча не срабатывает.
+// Человек нажимал кнопку «что-то не работает», не происходило ничего, и он
+// делал единственный возможный вывод. Форма в браузере работает у всех.
+//
+// Без единой строчки JavaScript: обычный `<form method="POST">`, который
+// умеют браузеры с девяностых. Обработчик — в `_worker.js`. Это не аскетизм
+// ради аскетизма: страница, куда человек идёт жаловаться на поломку, обязана
+// работать даже когда сломано всё остальное.
+//
+// Версию, систему и контекст приложение передаёт параметрами адреса:
+// `?v=0.8.2&os=macos+aarch64&ctx=...`. Форма отправляется БЕЗ атрибута
+// `action` — то есть на текущий адрес, вместе со строкой запроса, — и воркер
+// читает их оттуда. Отдельный `action` эти параметры потерял бы: браузер их
+// в POST не переносит, а статическая страница подставить их в скрытые поля не
+// может, у неё нет доступа к своему же адресу без JavaScript.
+//
+// Личных данных среди параметров нет: версия, название системы и маркер
+// упавшей задачи. Ни путь к файлу, ни имя пользователя сюда не попадают.
+import Base from "./Base.astro";
+import Contact from "../components/Contact.astro";
+import { T, pathFor, type Locale } from "../content";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = T[locale];
+const fb = t.fb;
+const homePath = pathFor("home", locale);
+
+---
+
+<Base locale={locale} page="feedback" title={fb.title} description={fb.description} jsonLd={[]}>
+  <main id="main">
+    <div class="band band-hero">
+      <div class="wrap hero">
+        <div>
+          <p class="crumbs"><a href={homePath}>MediaChef</a> <span aria-hidden="true">/</span> {fb.crumb}</p>
+          <h1>{fb.h1}</h1>
+          <p class="sub">{fb.lead}</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="band">
+      <div class="wrap narrow">
+        <form method="POST" class="fb">
+          <input type="hidden" name="locale" value={locale} />
+
+          <fieldset>
+            <legend>{fb.kindLabel}</legend>
+            <label class="radio">
+              <input type="radio" name="kind" value="bug" checked />
+              <span>{fb.kindBug}</span>
+            </label>
+            <label class="radio">
+              <input type="radio" name="kind" value="idea" />
+              <span>{fb.kindIdea}</span>
+            </label>
+          </fieldset>
+
+          <label class="field">
+            <span class="label">{fb.messageLabel}</span>
+            {/* minlength — не придирка, а защита от пустых отправок «проверить,
+                работает ли»: такие приходят чаще осмысленных и тонут в них. */}
+            <textarea
+              name="message" rows="7" required minlength="10" maxlength="4000"
+              placeholder={fb.messagePlaceholder}></textarea>
+          </label>
+
+          <label class="field">
+            <span class="label">{fb.contactLabel}</span>
+            <input type="text" name="contact" maxlength="200" autocomplete="email" />
+            <span class="hint">{fb.contactHint}</span>
+          </label>
+
+          {/* Ловушка для роботов: поле спрятано и для человека не существует,
+              поэтому заполненным оно бывает только у того, кто заполняет всё
+              подряд. Капчи нет намеренно — она мешает людям сильнее, чем
+              роботам, а формы такого масштаба спамят не целясь. */}
+          <div class="trap" aria-hidden="true">
+            <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
+
+          <button type="submit">{fb.send}</button>
+          <p class="privacy">{fb.privacy}</p>
+        </form>
+
+        <Contact locale={locale} />
+      </div>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .narrow { max-width: 640px; }
+
+  .fb { display: flex; flex-direction: column; gap: 18px; }
+
+  fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    align-items: center;
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  legend { font-weight: 700; padding: 0; margin-bottom: 8px; }
+
+  .radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+
+  .label { font-weight: 700; }
+
+  .hint { font-size: 0.88rem; color: var(--ink-2); }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font: inherit;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+  }
+
+  textarea { resize: vertical; min-height: 120px; }
+
+  textarea:focus-visible, input[type="text"]:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  button {
+    align-self: flex-start;
+    padding: 12px 22px;
+    font: inherit;
+    font-weight: 700;
+    color: var(--basil-ink);
+    background: var(--basil);
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  button:hover { filter: brightness(1.06); }
+
+  .privacy { margin: 0; font-size: 0.88rem; color: var(--ink-2); }
+
+  /* Убрано из потока, а не спрятано `display:none`: часть роботов заполняет
+     только видимые в разметке поля и пропускает скрытые совсем. */
+  .trap {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+</style>

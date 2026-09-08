@@ -10,6 +10,7 @@
     "indexnow": "node scripts/indexnow.mjs",
     "deploy": "astro build && npx wrangler pages deploy --branch=main && node scripts/indexnow.mjs",
     "crawlers": "node scripts/crawlers.mjs",
+    "feedback": "node scripts/feedback.mjs",
     "shots": "node scripts/shoot-app.mjs"
   },
   "dependencies": {

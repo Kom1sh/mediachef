@@ -48,6 +48,7 @@ const card = (over: Partial<JobView> = {}, locale: Locale = "en") =>
       onCancel: () => {},
       onReveal: () => {},
       onCopyLog: () => {},
+      onReport: () => {},
     }),
   );
 

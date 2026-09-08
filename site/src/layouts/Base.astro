@@ -8,7 +8,7 @@ import "@fontsource/jetbrains-mono/400.css";
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
-import { T, SITE, LOCALES, LOCALE_META, pathFor, type Locale, type PageId } from "../content";
+import { T, SITE, LOCALES, LOCALE_META, NOINDEX, pathFor, type Locale, type PageId } from "../content";
 
 interface Props {
   locale: Locale;
@@ -21,6 +21,9 @@ interface Props {
   ogType?: "website" | "article";
 }
 const { locale, page, title, description, jsonLd, ogType = "website" } = Astro.props;
+// Вне индекса — по списку NOINDEX, а не по флагу от макета: так страница не
+// может оказаться в карте сайта и одновременно закрытой от робота.
+const noindex = NOINDEX.includes(page);
 const t = T[locale];
 const meta = LOCALE_META[locale];
 
@@ -43,8 +46,17 @@ const homePath = pathFor("home", locale);
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    {alternates.map((a) => <link rel="alternate" hreflang={a.l} href={a.href} />)}
-    <link rel="alternate" hreflang="x-default" href={xDefault} />
+    {/* hreflang только у индексируемых страниц: у закрытой от робота набор
+        переводов ни на что не влияет, а разметку засоряет. `follow` при этом
+        оставлен — ссылки с формы на остальной сайт должны работать. */}
+    {noindex ? (
+      <meta name="robots" content="noindex, follow" />
+    ) : (
+      <>
+        {alternates.map((a) => <link rel="alternate" hreflang={a.l} href={a.href} />)}
+        <link rel="alternate" hreflang="x-default" href={xDefault} />
+      </>
+    )}
     {/* Указатель на llms.txt — карту сайта для ассистентов.
 
         Зачем он понадобился: журнал заходов роботов показал, что за llms.txt

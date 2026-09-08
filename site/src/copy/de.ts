@@ -116,6 +116,28 @@ export const ui = {
     "MediaChef ist jung: Die Builds sind noch nicht von Apple oder Microsoft signiert, der erste Start fragt deshalb nach — in jedem Download liegt eine Anleitung als reiner Text bei.",
   contactNote:
     "Etwas kaputt oder fehlt etwas? Schreiben Sie uns:",
+  // Форма обратной связи. Отдельным блоком, а не россыпью ключей: у неё
+  // своя страница, и держать её строки вместе — единственный способ не
+  // потерять половину при добавлении языка.
+  fb: {
+    title: "Kontakt — MediaChef",
+    description: "Sagen Sie uns, was nicht funktioniert oder fehlt. Das Formular läuft im Browser, ein Mailprogramm ist nicht nötig.",
+    h1: "Sagen Sie uns, was schiefgelaufen ist",
+    crumb: "Kontakt",
+    lead: "Wir lesen alles, was hier eintrifft, und es antwortet ein echter Mensch. Wenn bei Ihnen etwas nicht funktioniert hat, ist eine Nachricht hier das Nützlichste, was Sie tun können — ohne Nachrichten erfahren wir es einfach nicht.",
+    kindLabel: "Worum geht es",
+    kindBug: "Etwas funktioniert nicht",
+    kindIdea: "Ich habe einen Vorschlag",
+    messageLabel: "Nachricht",
+    messagePlaceholder: "Was Sie getan haben und was stattdessen passiert ist. Je konkreter, desto schneller finden wir die Ursache.",
+    contactLabel: "Wohin antworten",
+    contactHint: "Freiwillig. Ohne Adresse lesen wir Ihre Nachricht, können aber nicht antworten.",
+    send: "Senden",
+    privacy: "Wir speichern nur, was Sie schreiben, dazu Version und Betriebssystem, falls die App dieses Formular geöffnet hat. Keine IP-Adresse, kein Browser, kein Standort wird hier festgehalten.",
+    mailAlt: "Lieber per E-Mail? Schreiben an",
+    thanks: "Danke — die Nachricht ist angekommen.",
+    thanksBody: "Wir lesen sie. Wenn Sie eine Adresse hinterlassen haben, antworten wir darauf.",
+  },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Eine quelloffene Medienküche.",
   tocLabel: "Auf dieser Seite",

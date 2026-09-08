@@ -187,6 +187,8 @@ export const dict = {
   setFeedbackHint: "Writes to {email} with your version and system already filled in. Nothing is sent from here.",
   fbBug: "Something is broken",
   fbIdea: "Suggest something",
+  reportError: "Report this error",
+  fbByMail: "by email",
 
   // ── Recipe categories ────────────────────────────────────────────────────
   // One per key of `CATEGORY_ICON` in icons.ts, reached through `categoryLabel`

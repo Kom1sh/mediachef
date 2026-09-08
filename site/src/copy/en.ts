@@ -120,6 +120,28 @@ export const ui = {
   contactNote:
     "Something broken, or something missing? Write to us:",
   // ── общая обвязка ──
+  // Форма обратной связи. Отдельным блоком, а не россыпью ключей: у неё
+  // своя страница, и держать её строки вместе — единственный способ не
+  // потерять половину при добавлении языка.
+  fb: {
+    title: "Feedback — MediaChef",
+    description: "Tell us what is broken or missing. The form works in the browser; no mail client needed.",
+    h1: "Tell us what went wrong",
+    crumb: "Feedback",
+    lead: "We read everything that arrives here, and a real person answers. If something did not work for you, writing here is the most useful thing you can do — without messages we simply do not find out.",
+    kindLabel: "What is this about",
+    kindBug: "Something is broken",
+    kindIdea: "I have a suggestion",
+    messageLabel: "Message",
+    messagePlaceholder: "What you were doing and what happened instead. The more specific, the faster we find the cause.",
+    contactLabel: "Where to reply",
+    contactHint: "Optional. Without an address we will read your message but cannot answer it.",
+    send: "Send",
+    privacy: "We store only what you write, plus the version and operating system if the app opened this form. No IP address, no browser, no location is recorded here.",
+    mailAlt: "Prefer email? Write to",
+    thanks: "Thank you — the message arrived.",
+    thanksBody: "We will read it. If you left an address, we will reply to it.",
+  },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "An open-source media kitchen.",
   tocLabel: "On this page",

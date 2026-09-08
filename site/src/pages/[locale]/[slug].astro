@@ -4,6 +4,7 @@
 import Intent from "../../layouts/Intent.astro";
 import Catalog from "../../layouts/Catalog.astro";
 import Guide from "../../layouts/Guide.astro";
+import Feedback from "../../layouts/Feedback.astro";
 import { LOCALES, ROUTES, type Locale, type PageId, type IntentId } from "../../content";
 import { GUIDE_IDS, type GuideId } from "../../guides";
 
@@ -28,4 +29,6 @@ const guide = (GUIDE_IDS as string[]).includes(page) ? (page as GuideId) : null;
   ? <Guide locale={locale} guide={guide} page={page} />
   : page === "catalog"
     ? <Catalog locale={locale} />
-    : <Intent locale={locale} page={page as IntentId} />}
+    : page === "feedback"
+      ? <Feedback locale={locale} />
+      : <Intent locale={locale} page={page as IntentId} />}
