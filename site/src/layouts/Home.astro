@@ -33,17 +33,26 @@ if (t.recipes.length !== HOME_TILE_PAGES.length) {
   );
 }
 
+// Адрес плитки: страница локали плюс якорь, если плитка ведёт на карточку
+// внутри каталога.
+const tileHref = (t: { page: Parameters<typeof pathFor>[0]; hash?: string }) =>
+  pathFor(t.page, locale) + (t.hash ? `#${t.hash}` : "");
+
 // Страницы, на которые ведёт главная, — для машиночитаемой карты. Имя берём
-// то же, что в хлебных крошках самой страницы: оно короткое, переведённое и
-// уже существует, а придумывать второе значило бы однажды их рассинхронить.
-const linked = HOME_TILE_PAGES.flatMap((page, i) =>
-  page
-    ? [{
+// то же, что в плитке: оно короткое, переведённое и уже существует, а
+// придумывать второе значило бы однажды их рассинхронить.
+//
+// Плитки с якорем сюда не попадают: они ведут на карточку внутри каталога, а
+// имя карточки — не имя страницы. Назови мы каталог «Убрать звук из видео» —
+// и список стал бы врать о том, что на той странице лежит.
+const linked = HOME_TILE_PAGES.flatMap((tile, i) =>
+  tile.hash
+    ? []
+    : [{
         name: t.recipes[i].h,
-        url: SITE + pathFor(page, locale),
+        url: SITE + pathFor(tile.page, locale),
         description: t.recipes[i].p,
-      }]
-    : [],
+      }],
 );
 
 const jsonLd = [
@@ -112,26 +121,17 @@ const sample = LANDINGS.transcribe[locale].outSample!
         <h2>{t.recipesTitle}</h2>
         <p class="lead">{t.recipesLead}</p>
         <div class="recipes">
-          {t.recipes.map((r, i) => {
-            const page = HOME_TILE_PAGES[i];
-            const tile = (
-              <>
-                <div class={`tile ${r.tile}`} aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                </div>
-                <h3>{r.h}</h3>
-                <p>{r.p}</p>
-              </>
-            );
-            // Ссылка целиком плиткой, а не словом внутри неё: задача названа в
-            // заголовке, и нажимать хочется по ней. У задач без своей страницы
-            // плитка остаётся текстом — ссылка в никуда хуже её отсутствия.
-            return page ? (
-              <a class="recipe recipe-link" href={pathFor(page, locale)}>{tile}</a>
-            ) : (
-              <div class="recipe">{tile}</div>
-            );
-          })}
+          {/* Ссылка целиком плиткой, а не словом внутри неё: задача названа в
+              заголовке, и нажимать хочется по нему. */}
+          {t.recipes.map((r, i) => (
+            <a class="recipe recipe-link" href={tileHref(HOME_TILE_PAGES[i])}>
+              <div class={`tile ${r.tile}`} aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </div>
+              <h3>{r.h}</h3>
+              <p>{r.p}</p>
+            </a>
+          ))}
         </div>
 
         <h3 class="sub-h" id="out">{t.outTitle}</h3>

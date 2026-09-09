@@ -8,7 +8,7 @@ import Base from "./Base.astro";
 import Toc from "../components/Toc.astro";
 import Ctas from "../components/Ctas.astro";
 import Contact from "../components/Contact.astro";
-import { T, CATALOG, SITE, pathFor, type Locale } from "../content";
+import { T, CATALOG, SITE, pathFor, type Locale, RECIPE_PAGES } from "../content";
 import { SECTIONS } from "../recipes";
 import { organizationLd, softwareApplicationLd, breadcrumbLd, itemListLd } from "../seo";
 
@@ -74,10 +74,17 @@ const jsonLd = [
             {g.recipes.map((r) => {
               const params = r.params(locale);
               const aliases = r.aliases(locale);
+              // Свой адрес у каждой карточки: на неё ссылается плитка с
+              // главной, а заодно на карточку теперь можно дать ссылку вообще
+              // откуда угодно.
               return (
-                <li class="card">
+                <li class="card" id={`recipe-${r.id}`}>
                   <p class="card-cat">{c.cats[r.category as keyof typeof c.cats]}</p>
-                  <h3>{r.title(locale)}</h3>
+                  <h3>
+                    {RECIPE_PAGES[r.id]
+                      ? <a href={pathFor(RECIPE_PAGES[r.id], locale)}>{r.title(locale)}</a>
+                      : r.title(locale)}
+                  </h3>
                   <p class="card-desc">{r.description(locale)}</p>
                   <dl class="spec">
                     <div>
