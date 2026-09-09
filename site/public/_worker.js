@@ -265,11 +265,18 @@ const BOTS = [
   ["sogou", "Sogou"],
   ["slurp", "Yahoo-Slurp"],
   // Соцсети и мессенджеры — превью ссылок.
+  //
+  // `telegrambot` СТРОГО раньше `twitterbot`: Телеграм представляется как
+  // «TelegramBot (like TwitterBot)», и при обратном порядке весь его трафик
+  // записывается в Twitterbot. Так и было — поймали на живом журнале, когда
+  // искали, почему превью не строится: Телеграма в отчётах не было вовсе, а
+  // пять строк «Twitterbot» оказались его. Это общее свойство списка:
+  // совпадение ищется подстрокой, поэтому частное имя всегда выше общего.
   ["facebookexternalhit", "facebookexternalhit"],
+  ["telegrambot", "TelegramBot"],
   ["twitterbot", "Twitterbot"],
   ["linkedinbot", "LinkedInBot"],
   ["slackbot", "Slackbot"],
-  ["telegrambot", "TelegramBot"],
   ["discordbot", "Discordbot"],
   ["whatsapp", "WhatsApp"],
   ["redditbot", "redditbot"],
