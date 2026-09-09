@@ -90,6 +90,22 @@ export function softwareApplicationLd(locale: Locale, pageUrl: string) {
  * `mainEntity` указывает на приложение: страница о нём, и связь стоит назвать
  * прямо, а не оставлять её на догадку читающего.
  */
+/**
+ * Сайт как целое: к нему относятся все страницы. Описан отдельной функцией, а
+ * не скопирован в каждую разметку, чтобы `@id` совпадал буква в букву — на
+ * несовпадении узлы просто перестают склеиваться, и об этом никто не сообщит.
+ */
+function websiteNode() {
+  return {
+    "@type": "WebSite",
+    "@id": `${SITE}/#website`,
+    name: "MediaChef",
+    url: `${SITE}/`,
+    inLanguage: [...LOCALES],
+    publisher: { "@id": ORG_ID },
+  };
+}
+
 export function homePageLd(opts: {
   locale: Locale;
   url: string;
@@ -105,19 +121,103 @@ export function homePageLd(opts: {
     name: opts.name,
     description: opts.description,
     inLanguage: opts.locale,
-    isPartOf: {
-      "@type": "WebSite",
-      "@id": `${SITE}/#website`,
-      name: "MediaChef",
-      url: `${SITE}/`,
-      inLanguage: [...LOCALES],
-      publisher: { "@id": ORG_ID },
-    },
+    isPartOf: websiteNode(),
     mainEntity: { "@id": APP_ID },
     primaryImageOfPage: { "@type": "ImageObject", url: `${SITE}/og.png` },
     dateModified: FACTS.updated,
     text: opts.body,
   };
+}
+
+/**
+ * Каталог как страница-коллекция вместе с полным текстом.
+ *
+ * `CollectionPage`, а не `WebPage`: у schema.org это ровно «страница,
+ * представляющая набор элементов», чем каталог и является. Сам набор —
+ * `ItemList` рядом, и `mainEntity` указывает на него по адресу: иначе
+ * читающему приходится догадываться, что список на странице и есть её
+ * содержимое, а не врезка сбоку.
+ *
+ * `text` появился по той же причине, что и на главной. У каталога в разметке
+ * лежали только названия и описания рецептов, а половина фактуры страницы —
+ * что рецепт принимает, что отдаёт, какие у него настройки, какими словами он
+ * ищется — не лежала нигде, кроме вёрстки. Спрашивающему «а можно ли из видео
+ * получить WebVTT» отвечать было нечем.
+ */
+export function catalogPageLd(opts: {
+  locale: Locale;
+  url: string;
+  name: string;
+  description: string;
+  body: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": opts.url,
+    url: opts.url,
+    name: opts.name,
+    description: opts.description,
+    inLanguage: opts.locale,
+    isPartOf: websiteNode(),
+    about: { "@id": APP_ID },
+    mainEntity: { "@id": `${opts.url}#recipes` },
+    primaryImageOfPage: { "@type": "ImageObject", url: `${SITE}/og.png` },
+    dateModified: FACTS.updated,
+    text: opts.body,
+  };
+}
+
+/**
+ * Плоский текст каталога. Порядок тот же, что на странице: заголовок, лид,
+ * затем разделы и карточки внутри них.
+ *
+ * Подписи берутся со страницы («Принимает», «Отдаёт», «Ищется как»), а не
+ * пишутся здесь по-английски: текст должен читаться на языке страницы, иначе
+ * русская разметка отвечает вперемешку с английской.
+ */
+export function catalogBody(
+  c: {
+    h1: string;
+    lead: string;
+    accepts: string;
+    produces: string;
+    settings: string;
+    noParams: string;
+    searchAs: string;
+    ctaTitle: string;
+    ctaSub: string;
+  },
+  groups: readonly {
+    label: string;
+    recipes: readonly {
+      title: string;
+      description: string;
+      accepts: string;
+      ext: string;
+      settings: readonly string[];
+      aliases: readonly string[];
+    }[];
+  }[],
+): string {
+  const card = (r: (typeof groups)[number]["recipes"][number]) => {
+    const facts = [
+      `${c.accepts}: ${r.accepts}`,
+      `${c.produces}: .${r.ext}`,
+      `${c.settings}: ${r.settings.length ? r.settings.join("; ") : c.noParams}`,
+    ];
+    if (r.aliases.length) facts.push(`${c.searchAs}: ${r.aliases.join(", ")}`);
+    return `${r.title} — ${r.description} ${facts.join(". ")}.`;
+  };
+  return [
+    c.h1,
+    c.lead,
+    ...groups.map((g) => [g.label, ...g.recipes.map(card)].join("\n")),
+    c.ctaTitle,
+    c.ctaSub,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 /**
@@ -221,10 +321,16 @@ export function breadcrumbLd(home: { name: string; url: string }, current: { nam
  * у рецепта нет отдельной страницы, он живёт секцией внутри каталога, и
  * выдумывать ему адрес значило бы обещать поисковику несуществующую цель.
  */
-export function itemListLd(items: readonly { name: string; description: string }[]) {
+export function itemListLd(
+  items: readonly { name: string; description: string }[],
+  id?: string,
+) {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
+    // Адрес нужен, только если на список кто-то ссылается: у каталога это
+    // делает `CollectionPage.mainEntity`.
+    ...(id ? { "@id": id } : {}),
     numberOfItems: items.length,
     itemListElement: items.map((it, i) => ({
       "@type": "ListItem",

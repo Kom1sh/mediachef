@@ -10,7 +10,14 @@ import Ctas from "../components/Ctas.astro";
 import Contact from "../components/Contact.astro";
 import { T, CATALOG, SITE, pathFor, type Locale, RECIPE_PAGES } from "../content";
 import { SECTIONS } from "../recipes";
-import { organizationLd, softwareApplicationLd, breadcrumbLd, itemListLd } from "../seo";
+import {
+  organizationLd,
+  softwareApplicationLd,
+  breadcrumbLd,
+  itemListLd,
+  catalogPageLd,
+  catalogBody,
+} from "../seo";
 
 interface Props { locale: Locale }
 const { locale } = Astro.props;
@@ -48,7 +55,32 @@ const jsonLd = [
       name: r.title(locale),
       description: r.description(locale),
     })),
+    `${pageUrl}#recipes`,
   ),
+  catalogPageLd({
+    locale,
+    url: pageUrl,
+    name: c.title,
+    description: c.description,
+    // Карточки разворачиваем теми же строками, что видит человек: типы файлов
+    // подписями со страницы, настройки — вместе со списком значений.
+    body: catalogBody(
+      c,
+      groups.map((g) => ({
+        label: g.label,
+        recipes: g.recipes.map((r) => ({
+          title: r.title(locale),
+          description: r.description(locale),
+          accepts: r.accepts.map(typeName).join(" · "),
+          ext: r.ext,
+          settings: r
+            .params(locale)
+            .map((prm) => prm.label + (prm.values.length ? ` — ${prm.values.join(" / ")}` : "")),
+          aliases: r.aliases(locale),
+        })),
+      })),
+    ),
+  }),
 ];
 ---
 
