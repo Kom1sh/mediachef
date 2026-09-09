@@ -6,9 +6,16 @@ import Ctas from "../components/Ctas.astro";
 import Contact from "../components/Contact.astro";
 import AppWindow from "../components/AppWindow.astro";
 import Shot from "../components/Shot.astro";
-import { T, LANDINGS, LINKS, MODELS, SITE, pathFor, type Locale } from "../content";
+import { T, LANDINGS, LINKS, MODELS, SITE, pathFor, type Locale, HOME_TILE_PAGES } from "../content";
 import { homeToc } from "../nav";
-import { organizationLd, softwareApplicationLd, faqLd } from "../seo";
+import {
+  organizationLd,
+  softwareApplicationLd,
+  faqLd,
+  homePageLd,
+  pageListLd,
+  homeBody,
+} from "../seo";
 
 interface Props { locale: Locale }
 const { locale } = Astro.props;
@@ -16,9 +23,40 @@ const t = T[locale];
 const check = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
 const pageUrl = SITE + pathFor("home", locale);
 
+// Карта плиток и сами плитки должны совпадать по длине: связь между ними по
+// индексу, и разъехаться она может только молча. Ошибка на сборке — дешевле
+// любой проверки потом.
+if (t.recipes.length !== HOME_TILE_PAGES.length) {
+  throw new Error(
+    `Home: плиток ${t.recipes.length}, а в HOME_TILE_PAGES ${HOME_TILE_PAGES.length} — ` +
+      "поправьте карту в content.ts вместе с ui.recipes",
+  );
+}
+
+// Страницы, на которые ведёт главная, — для машиночитаемой карты. Имя берём
+// то же, что в хлебных крошках самой страницы: оно короткое, переведённое и
+// уже существует, а придумывать второе значило бы однажды их рассинхронить.
+const linked = HOME_TILE_PAGES.flatMap((page, i) =>
+  page
+    ? [{
+        name: t.recipes[i].h,
+        url: SITE + pathFor(page, locale),
+        description: t.recipes[i].p,
+      }]
+    : [],
+);
+
 const jsonLd = [
   organizationLd(),
   softwareApplicationLd(locale, pageUrl),
+  homePageLd({
+    locale,
+    url: pageUrl,
+    name: t.title,
+    description: t.description,
+    body: homeBody(t),
+  }),
+  pageListLd(linked),
   faqLd(t.faq),
 ];
 
@@ -74,15 +112,26 @@ const sample = LANDINGS.transcribe[locale].outSample!
         <h2>{t.recipesTitle}</h2>
         <p class="lead">{t.recipesLead}</p>
         <div class="recipes">
-          {t.recipes.map((r) => (
-            <div class="recipe">
-              <div class={`tile ${r.tile}`} aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-              </div>
-              <h3>{r.h}</h3>
-              <p>{r.p}</p>
-            </div>
-          ))}
+          {t.recipes.map((r, i) => {
+            const page = HOME_TILE_PAGES[i];
+            const tile = (
+              <>
+                <div class={`tile ${r.tile}`} aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </div>
+                <h3>{r.h}</h3>
+                <p>{r.p}</p>
+              </>
+            );
+            // Ссылка целиком плиткой, а не словом внутри неё: задача названа в
+            // заголовке, и нажимать хочется по ней. У задач без своей страницы
+            // плитка остаётся текстом — ссылка в никуда хуже её отсутствия.
+            return page ? (
+              <a class="recipe recipe-link" href={pathFor(page, locale)}>{tile}</a>
+            ) : (
+              <div class="recipe">{tile}</div>
+            );
+          })}
         </div>
 
         <h3 class="sub-h" id="out">{t.outTitle}</h3>

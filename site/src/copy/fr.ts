@@ -77,6 +77,8 @@ export const ui = {
     { tile: "tile-blue", h: "Traduire la parole en anglais", p: "Whisper transcrit et traduit en une seule passe." },
     { tile: "tile-blue", h: "Convertir MP4 en MKV", p: "Réempaquetage sans réencodage — instantané." },
     { tile: "tile-red", h: "Supprimer le son d'une vidéo", p: "Retirez toutes les pistes audio et gardez l'image." },
+    { tile: "tile-purple", h: "Couper une vidéo", p: "Extraire un passage sans réencoder — instantané." },
+    { tile: "tile-blue", h: "Saisie vocale", p: "Maintenez une touche, parlez : le texte arrive où est le curseur." },
   ],
   trTitle: "Transcrivez l'audio en texte sans quitter votre machine",
   trBullets: [

@@ -1,6 +1,7 @@
 // Сборщики JSON-LD. Ни одного выдуманного факта: версия, движки, лицензия и
 // вопросы приходят из content.ts, а вопросы совпадают с видимым FAQ страницы.
 import { SITE, LINKS, FACTS, FEEDBACK_EMAIL, LOCALES, T, type Locale } from "./content";
+import { SECTIONS } from "./recipes";
 import { SHOTS } from "./shots";
 
 const ORG_ID = `${SITE}/#organization`;
@@ -28,9 +29,12 @@ export function organizationLd() {
       contactType: "customer support",
       email: FEEDBACK_EMAIL,
       url: `${SITE}/`,
-      // Языки, на которых письмо действительно прочтут, а не все десять локалей
-      // сайта: обещать поддержку на арабском мы не можем.
-      availableLanguage: ["en", "ru"],
+      // Все десять языков сайта, а не только два. Прежде здесь стояло
+      // `["en", "ru"]` с оговоркой «обещать поддержку на арабском мы не можем»,
+      // и это устарело: письмо на любом языке мы принимаем и отвечаем через
+      // переводчик — так и написано в заметках к выпуску. Схема, утверждавшая
+      // обратное, отговаривала писать восемь языков из десяти.
+      availableLanguage: [...LOCALES],
     },
     sameAs: [LINKS.github],
   };
@@ -59,8 +63,134 @@ export function softwareApplicationLd(locale: Locale, pageUrl: string) {
     inLanguage: [...LOCALES],
     isAccessibleForFree: true,
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    // Что программа умеет — списком, из того же каталога рецептов, который
+    // рисует страница. Не рекламные формулировки, а названия задач на языке
+    // страницы: ассистент, которого спросили «а умеет ли она обрезать видео»,
+    // получает ответ из разметки, не разбирая вёрстку.
+    //
+    // `aggregateRating` здесь сознательно НЕТ и не будет, пока не появятся
+    // настоящие отзывы: рейтинг в разметке без отзывов — фальсификация и
+    // прямое нарушение правил Google, а не «дополнение разметки».
+    featureList: SECTIONS.flatMap((sec) => sec.recipes.map((r) => r.title(locale))),
     publisher: { "@id": ORG_ID },
   };
+}
+
+/**
+ * Разметка главной: сама страница и машиночитаемая карта её разделов.
+ *
+ * Главная была самой бедной страницей сайта — три схемы против шести у
+ * гайдов, — и при этом единственной, которую ChatGPT читает: сорок с лишним
+ * обращений в сутки, все на неё. Здесь исправляется именно это.
+ *
+ * `WebPage`, а не `Article`: главная — страница продукта, а не разбор темы, и
+ * называть её статьёй было бы неправдой ради поля `articleBody`. Полный текст
+ * лежит в `text` — это то же свойство `CreativeWork`, только под своим именем.
+ *
+ * `mainEntity` указывает на приложение: страница о нём, и связь стоит назвать
+ * прямо, а не оставлять её на догадку читающего.
+ */
+export function homePageLd(opts: {
+  locale: Locale;
+  url: string;
+  name: string;
+  description: string;
+  body: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": opts.url,
+    url: opts.url,
+    name: opts.name,
+    description: opts.description,
+    inLanguage: opts.locale,
+    isPartOf: {
+      "@type": "WebSite",
+      "@id": `${SITE}/#website`,
+      name: "MediaChef",
+      url: `${SITE}/`,
+      inLanguage: [...LOCALES],
+      publisher: { "@id": ORG_ID },
+    },
+    mainEntity: { "@id": APP_ID },
+    primaryImageOfPage: { "@type": "ImageObject", url: `${SITE}/og.png` },
+    dateModified: FACTS.updated,
+    text: opts.body,
+  };
+}
+
+/**
+ * Список страниц сайта с адресами — та же карта, что и ссылки в теле, только
+ * машиночитаемая.
+ *
+ * Отдельно от [`itemListLd`], который описывает рецепты внутри каталога и
+ * адресов не имеет: там перечисляются возможности программы, здесь — страницы,
+ * куда можно пойти. Смешивать их значило бы отдать читающему список, половина
+ * которого никуда не ведёт.
+ */
+export function pageListLd(items: readonly { name: string; url: string; description: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${SITE}/#pages`,
+    numberOfItems: items.length,
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      url: it.url,
+      item: { "@type": "WebPage", "@id": it.url, name: it.name, description: it.description },
+    })),
+  };
+}
+
+/**
+ * Плоский текст главной для `WebPage.text`. Порядок тот же, что на странице:
+ * заголовок, подзаголовок, шаги, плитки задач, таблица форматов, модели, FAQ.
+ */
+export function homeBody(t: {
+  heroTitle1: string;
+  heroTitle2: string;
+  heroAccent: string;
+  heroSub: string;
+  trust: readonly string[];
+  howTitle: string;
+  steps: readonly { h: string; p: string }[];
+  recipesTitle: string;
+  recipesLead: string;
+  recipes: readonly { h: string; p: string }[];
+  outTitle: string;
+  outLead: string;
+  outHead: readonly string[];
+  outRows: readonly (readonly string[])[];
+  trTitle: string;
+  trBullets: readonly { h: string; p: string }[];
+  faqTitle: string;
+  faq: readonly { q: string; a: string }[];
+}): string {
+  const parts: string[] = [
+    [t.heroTitle1, t.heroAccent, t.heroTitle2].filter(Boolean).join(" "),
+    t.heroSub,
+    t.trust.join("\n"),
+    t.howTitle,
+    t.steps.map((s, i) => `${i + 1}. ${s.h} — ${s.p}`).join("\n"),
+    t.recipesTitle,
+    t.recipesLead,
+    t.recipes.map((r) => `${r.h} — ${r.p}`).join("\n"),
+    t.outTitle,
+    t.outLead,
+    // Таблица разворачивается парами «шапка: значение», как у гайдов: так
+    // число не отрывается от своей подписи при пересказе.
+    t.outRows
+      .map((r) => r.map((cell, i) => `${t.outHead[i]}: ${String(cell).replace(/<[^>]+>/g, "")}`).join("; "))
+      .join("\n"),
+    t.trTitle,
+    t.trBullets.map((b) => `${b.h} ${b.p}`).join("\n"),
+    t.faqTitle,
+    t.faq.map((f) => `${f.q}\n${f.a}`).join("\n\n"),
+  ];
+  return parts.filter(Boolean).join("\n\n");
 }
 
 export function faqLd(items: readonly { q: string; a: string }[]) {

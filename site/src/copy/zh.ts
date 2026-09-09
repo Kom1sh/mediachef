@@ -77,6 +77,8 @@ export const ui = {
     { tile: "tile-blue", h: "把语音翻译成英文", p: "Whisper 一次完成转写和翻译。" },
     { tile: "tile-blue", h: "把 MP4 转成 MKV", p: "重新封装，不重新编码——瞬间完成。" },
     { tile: "tile-red", h: "去掉视频里的声音", p: "删除全部音轨，只保留画面。" },
+    { tile: "tile-purple", h: "裁剪视频", p: "剪出一段而不重新编码——瞬间完成。" },
+    { tile: "tile-blue", h: "语音输入", p: "按住按键说话——文字出现在光标所在的位置。" },
   ],
   trTitle: "不离开自己的电脑，把音频转成文字",
   trBullets: [

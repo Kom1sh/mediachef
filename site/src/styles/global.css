@@ -358,6 +358,14 @@ p.lead { margin-top: 14px; color: var(--ink-2); max-width: 44em; font-size: 1.05
 .recipe .tile { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 12px; }
 .recipe h3 { font-size: 0.95rem; }
 .recipe p { margin-top: 4px; font-size: 0.82rem; color: var(--ink-2); }
+/* Плитка-ссылка. Задача названа в заголовке плитки, поэтому ссылкой стала вся
+   плитка, а не слово внутри: цель нажатия — то, что человек читает. Браузерное
+   оформление ссылки здесь снято (цвет и подчёркивание), потому что плитка и
+   так выглядит нажимаемой, а восемь подчёркнутых заголовков подряд читаются
+   как список сносок. Обводка фокуса остаётся: она общая для сайта. */
+.recipe-link { display: block; color: inherit; text-decoration: none; }
+.recipe-link h3 { color: var(--ink); }
+.recipe-link:hover h3 { color: var(--basil); }
 .tile-green { background: var(--t-green-bg); color: var(--t-green); }
 .tile-ochre { background: var(--t-ochre-bg); color: var(--t-ochre); }
 .tile-blue  { background: var(--t-blue-bg);  color: var(--t-blue); }

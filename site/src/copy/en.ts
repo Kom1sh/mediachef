@@ -80,6 +80,8 @@ export const ui = {
     { tile: "tile-blue", h: "Translate speech to English", p: "Whisper transcribes and translates in one pass." },
     { tile: "tile-blue", h: "Convert MP4 to MKV", p: "Repackage without re-encoding — instant." },
     { tile: "tile-red", h: "Remove audio from video", p: "Drop every audio track, keep the picture." },
+    { tile: "tile-purple", h: "Trim video", p: "Cut a piece out without re-encoding — instant." },
+    { tile: "tile-blue", h: "Voice typing", p: "Hold a key, speak — the text lands where your cursor is." },
   ],
   trTitle: "Transcribe audio to text without leaving your device",
   trBullets: [

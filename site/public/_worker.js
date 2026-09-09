@@ -54,6 +54,52 @@ const FEEDBACK = {
   zh: { slug: "fankui", thanks: "谢谢——消息已收到。", body: "我们会读。如果你留了地址，我们会回复到那里。" },
 };
 
+/**
+ * Карточка ссылки в теле ответа-редиректа с корня.
+ *
+ * Зачем тело у 302. Голый домен отдаёт редирект без содержимого, а часть
+ * клиентов, строящих превью ссылки, по редиректу не ходит — и получает пустую
+ * карточку. Телеграм и Twitter редирект проходят (проверено по журналу),
+ * старые WhatsApp и VK — нет.
+ *
+ * 302 с телом — законный ответ HTTP: браузер уходит по `Location` и тела не
+ * видит вовсе, а такой клиент читает теги. Подмены здесь нет — всем отдаётся
+ * одно и то же, независимо от User-Agent.
+ *
+ * Заголовок и описание продублированы из `copy/en.ts` намеренно: `_worker.js`
+ * уезжает в dist как есть и ничего не импортирует. Английские, а не по языку
+ * клиента: тот, кто не пошёл по редиректу, не сообщил и языка, а десять
+ * переводов в воркере разошлись бы с сайтом на первой же правке. Источник
+ * правды — `ui.title`/`ui.description` английской локали.
+ */
+function redirectCard(target) {
+  const title = "MediaChef — free offline video converter with transcription";
+  const description =
+    "Free open-source app for macOS, Windows and Linux: convert video and audio on your own " +
+    "computer and transcribe speech to text with Whisper. No uploads, no size limits, no subscription.";
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>${title}</title>
+<meta name="description" content="${description}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MediaChef">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${description}">
+<meta property="og:url" content="${target}">
+<meta property="og:image" content="https://mediachef.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="MediaChef">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="${target}">
+</head>
+<body><p><a href="${target}">MediaChef</a></p></body>
+</html>
+`;
+}
+
 /** Локаль, если путь — это страница обратной связи; иначе `null`. */
 function feedbackLocale(pathname) {
   const m = pathname.match(/^\/([a-z]{2})\/([^/]+)\/$/);
@@ -421,12 +467,15 @@ export default {
       // Редирект тоже в журнал: по нему видно, что робот пришёл на корень —
       // и на какой язык его увело.
       record?.(302, null);
-      return new Response(null, {
+      const href = target.toString();
+      // Тело — только для тех, кто не пойдёт по `Location`: см. redirectCard.
+      return new Response(redirectCard(href), {
         status: 302,
         headers: {
-          location: target.toString(),
+          location: href,
           vary: "accept-language",
           "cache-control": "no-store",
+          "content-type": "text/html; charset=utf-8",
           ...SECURITY,
         },
       });
