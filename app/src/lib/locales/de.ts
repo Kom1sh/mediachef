@@ -149,6 +149,10 @@ export const dict: Dict = {
   fbIdea: "Etwas vorschlagen",
   reportError: "Fehler melden",
   fbByMail: "per E-Mail",
+  askText: "Ist MediaChef hilfreich? Sagen Sie uns, was fehlt oder stört – eine Minute, ohne Konto.",
+  askFeedback: "Feedback geben",
+  askStar: "Stern auf GitHub",
+  askDismiss: "Nicht mehr fragen",
 
   "cat_convert-video": "Video umwandeln",
   "cat_convert-audio": "Audio umwandeln",

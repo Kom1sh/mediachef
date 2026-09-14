@@ -19,6 +19,7 @@ import { SettingsPanel } from "./SettingsPanel";
 import { DictationPanel } from "./DictationPanel";
 import { DICTS, LocaleProvider, type Locale } from "../lib/i18n";
 import { UpdateBar } from "./UpdateBar";
+import { AskBar } from "./AskBar";
 import type { Updater } from "../lib/useUpdater";
 import type { AppSettings, JobView } from "../lib/types";
 
@@ -349,5 +350,27 @@ describe("FileCard", () => {
     expect(markup).toContain(">отпуск.mp4<");
     expect(markup).toContain('aria-label="Убрать отпуск.mp4"');
     expect(markup).not.toContain("C:\\Users");
+  });
+});
+
+describe("AskBar", () => {
+  const bar = (locale: Locale) =>
+    render(locale, createElement(AskBar, { onFeedback: () => {}, onStar: () => {}, onDismiss: () => {} }));
+
+  /* The bar talks to someone who did not ask to be talked to, so it must be
+     announced politely and say plainly that the cross means «never», not «later». */
+  it("is a polite status with both offers and an honest close", () => {
+    const html = bar("en");
+    expect(html).toContain('role="status"');
+    expect(html).toContain("Share feedback");
+    expect(html).toContain("Star on GitHub");
+    expect(html).toContain('aria-label="Don&#x27;t ask again"');
+  });
+
+  it("speaks the reader's language", () => {
+    const html = bar("ru");
+    expect(html).toContain("Написать отзыв");
+    expect(html).toContain("Больше не спрашивать");
+    expect(html).not.toContain("Share feedback");
   });
 });

@@ -150,6 +150,10 @@ export const dict: Dict = {
   fbIdea: "اقترح شيئًا",
   reportError: "أبلِغ عن الخطأ",
   fbByMail: "بالبريد",
+  askText: "هل MediaChef مفيد لك؟ أخبرنا بما ينقصه أو بما يعيقك — دقيقة واحدة ودون حساب.",
+  askFeedback: "أرسل رأيك",
+  askStar: "نجمة على GitHub",
+  askDismiss: "لا تسألني مجددًا",
 
   "cat_convert-video": "تحويل الفيديو",
   "cat_convert-audio": "تحويل الصوت",

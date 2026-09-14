@@ -13,13 +13,22 @@ import type { Updater } from "../lib/useUpdater";
  * Перезапуск не делается сам после установки: в очереди может идти часовая
  * расшифровка, и обрывать её ради новой версии — не наше решение.
  */
+/**
+ * Видна ли полоса. Отдельно от разметки, потому что это же знание нужно App:
+ * полоса отзыва уступает место этой и не должна вставать второй строкой.
+ */
+export function updateBarShown(updater: Updater): boolean {
+  const { state } = updater;
+  const shown =
+    state.kind === "found" || state.kind === "downloading" || state.kind === "ready";
+  return shown && !(updater.dismissed && state.kind === "found");
+}
+
 export function UpdateBar({ updater }: { updater: Updater }) {
   const t = useT();
   const { state } = updater;
 
-  const shown =
-    state.kind === "found" || state.kind === "downloading" || state.kind === "ready";
-  if (!shown || (updater.dismissed && state.kind === "found")) return null;
+  if (!updateBarShown(updater)) return null;
 
   const percent =
     state.kind === "downloading" && state.percent !== null

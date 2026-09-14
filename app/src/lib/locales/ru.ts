@@ -166,6 +166,10 @@ export const dict: Dict = {
   fbIdea: "Предложить",
   reportError: "Сообщить об ошибке",
   fbByMail: "письмом",
+  askText: "MediaChef пригодился? Расскажите, чего не хватает или что мешает, — минута, без регистрации.",
+  askFeedback: "Написать отзыв",
+  askStar: "Звезда на GitHub",
+  askDismiss: "Больше не спрашивать",
 
   "cat_convert-video": "Конвертация видео",
   "cat_convert-audio": "Конвертация аудио",

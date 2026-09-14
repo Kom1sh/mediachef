@@ -9,7 +9,10 @@ import { QueuePanel } from "./components/QueuePanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { DictationPanel } from "./components/DictationPanel";
 import { Sidebar, type Tab } from "./components/Sidebar";
-import { UpdateBar } from "./components/UpdateBar";
+import { UpdateBar, updateBarShown } from "./components/UpdateBar";
+import { AskBar } from "./components/AskBar";
+import { appStorage, markAnswered, recordJobDone } from "./lib/ask";
+import { openFeedbackForm, openRepo } from "./lib/feedback";
 import { useUpdater } from "./lib/useUpdater";
 import { LocaleProvider, makeT, resolveLocale, localeDir } from "./lib/i18n";
 import { getRecipes, getSettings, onJobUpdate, probeFile, setSettings as saveSettings, systemLocale } from "./lib/ipc";
@@ -179,8 +182,20 @@ export default function App() {
   // deaf. `removeFile` is useCallback-stable, so the empty dep list states that
   // intent rather than merely getting away with it — the list it reads comes from
   // `filesRef`, not from this closure.
+  // Полоса «как вам программа» (lib/ask.ts). Задача считается один раз по id:
+  // слушатель не обещает, что «done» по одной задаче придёт единожды, а счётчик
+  // успешных задач не должен расти от повторов одного и того же события.
+  const [asking, setAsking] = useState(false);
+  const countedJobs = useRef(new Set<number>());
+
   useEffect(() => {
-    const un = onJobUpdate(j => { if (j.status === "done") removeFile(j.input); });
+    const un = onJobUpdate(j => {
+      if (j.status !== "done") return;
+      removeFile(j.input);
+      if (countedJobs.current.has(j.id)) return;
+      countedJobs.current.add(j.id);
+      if (recordJobDone(appStorage)) setAsking(true);
+    });
     // .catch for the same upstream tauri bug the other unlisten cleanups guard
     // against (unguarded unlisten script + StrictMode double-mount).
     return () => { un.then(f => f()).catch(() => {}); };
@@ -267,6 +282,13 @@ export default function App() {
           очередь и раздал бы им высоту по содержимому — со сломанной прокруткой. */}
       <div className="flex h-screen flex-col bg-paper text-ink">
       <UpdateBar updater={updater} />
+      {asking && !updateBarShown(updater) ? (
+        <AskBar
+          onFeedback={() => { markAnswered(appStorage); setAsking(false); void openFeedbackForm(locale, "ask"); }}
+          onStar={() => { markAnswered(appStorage); setAsking(false); void openRepo(); }}
+          onDismiss={() => { markAnswered(appStorage); setAsking(false); }}
+        />
+      ) : null}
       <main className="grid min-h-0 flex-1 grid-cols-[88px_minmax(0,1fr)_360px] max-[800px]:grid-cols-[56px_minmax(0,1fr)_360px] grid-rows-[minmax(0,1fr)]">
         <Sidebar tab={tab} onTab={setTab} />
         {tab === "models" ? <ModelsPanel /> : tab === "dictation" ? (

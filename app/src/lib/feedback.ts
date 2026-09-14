@@ -26,6 +26,18 @@ import { platformInfo } from "./ipc";
 /** Пересылается на ящик поддержки через Cloudflare Email Routing. */
 export const FEEDBACK_EMAIL = "hello@mediachef.app";
 
+/** Репозиторий: туда ведёт «звезда на GitHub» из полосы отзыва. */
+const REPO = "https://github.com/Kom1sh/mediachef";
+
+/** Открывает страницу репозитория в браузере. Ошибку глотает — см. ниже. */
+export async function openRepo(): Promise<void> {
+  try {
+    await openUrl(REPO);
+  } catch {
+    // Не открылся браузер — сообщать об этом поверх просьбы некому и незачем.
+  }
+}
+
 /** Один стабильный адрес формы: сайт сам разложит его по языку. */
 const FEEDBACK_FORM = "https://mediachef.app/feedback/";
 

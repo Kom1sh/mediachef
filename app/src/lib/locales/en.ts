@@ -189,6 +189,13 @@ export const dict = {
   fbIdea: "Suggest something",
   reportError: "Report this error",
   fbByMail: "by email",
+  // Полоса «как вам программа», один раз после третьей успешной задачи —
+  // см. lib/ask.ts. Кнопки открывают форму и страницу на GitHub в браузере,
+  // само приложение ничего не отправляет.
+  askText: "Is MediaChef useful? Tell us what's missing or getting in the way — it takes a minute, no account.",
+  askFeedback: "Share feedback",
+  askStar: "Star on GitHub",
+  askDismiss: "Don't ask again",
 
   // ── Recipe categories ────────────────────────────────────────────────────
   // One per key of `CATEGORY_ICON` in icons.ts, reached through `categoryLabel`
