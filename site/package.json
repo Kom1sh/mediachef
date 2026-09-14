@@ -11,7 +11,8 @@
     "deploy": "astro build && npx wrangler pages deploy --branch=main && node scripts/indexnow.mjs",
     "crawlers": "node scripts/crawlers.mjs",
     "feedback": "node scripts/feedback.mjs",
-    "shots": "node scripts/shoot-app.mjs"
+    "shots": "node scripts/shoot-app.mjs",
+    "pulse": "node scripts/pulse.mjs"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.0",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "playwright": "^1.62.1",
+    "wrangler": "^4.131.2",
     "yaml": "^2.9.0"
   }
 }
