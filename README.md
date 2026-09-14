@@ -1,6 +1,71 @@
-# MediaChef (working title)
+# MediaChef
 
-FFmpeg for humans + local transcription. Open-core, GPL-3.0, fully offline.
+**A free, offline desktop app for converting video and audio and turning speech into text.**
+FFmpeg and Whisper as recipe cards: drop a file, pick a card, press start. Nothing is
+uploaded — no account, no size limit, no subscription.
+
+[**Download**](https://github.com/Kom1sh/mediachef/releases/latest) ·
+[Website](https://mediachef.app/?utm_source=github&utm_medium=readme) ·
+[All recipes](https://mediachef.app/en/recipes/?utm_source=github&utm_medium=readme) ·
+[Feedback](https://mediachef.app/feedback/?lang=en&ctx=readme)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="site/src/assets/app-main-en-dark.png">
+  <img alt="MediaChef main window: recipe cards for converting and transcribing" src="site/src/assets/app-main-en-light.png" width="860">
+</picture>
+
+## What it does
+
+- **Convert** — MP4 → MP3, MP4 → MKV, MP3 → WAV, video → GIF, resize to 720p, compress
+  with a quality preset, remove the audio track, trim without re-encoding, or run your own
+  FFmpeg command.
+- **Transcribe** — speech to plain text, SRT or WebVTT subtitles, or JSON with timings;
+  translate speech into English text or subtitles. Runs [whisper.cpp](https://github.com/ggml-org/whisper.cpp)
+  on your machine with one of four models, from `tiny` to `large-v3-turbo`, downloaded on request.
+- **Dictate** *(macOS)* — press the right ⌥ key anywhere, speak, press it again, and the
+  text is typed into whatever field your cursor is in. Off until you turn it on.
+- **In 10 languages** — English, Русский, Español, Português, Français, Deutsch, Polski,
+  Italiano, العربية, 中文.
+
+FFmpeg 9.0.1 and whisper.cpp v1.7.6 ship inside the app, so there is nothing else to install.
+
+## Download
+
+| Platform | File in the [latest release](https://github.com/Kom1sh/mediachef/releases/latest) |
+| --- | --- |
+| macOS, Apple Silicon | `MediaChef_<version>_aarch64.dmg` |
+| Windows 10/11, x64 | `MediaChef_<version>_x64-setup.exe` |
+| Linux, x64 | `.AppImage` or `.deb` |
+
+Or with a package manager:
+
+```bash
+# macOS
+brew tap kom1sh/mediachef https://github.com/Kom1sh/mediachef && brew install --cask mediachef
+
+# Windows
+scoop bucket add mediachef https://github.com/Kom1sh/mediachef && scoop install mediachef
+```
+
+MediaChef is not signed with a paid Apple or Microsoft certificate, so the first launch
+shows a system warning. The release carries a short `HOW_TO_*` file for each platform
+explaining how to open it. After that the app keeps itself up to date: it checks for a new
+version at start.
+
+## Feedback
+
+Something broken, or a recipe missing? [Tell us](https://mediachef.app/feedback/?lang=en&ctx=readme) —
+no account needed — or open an [issue](https://github.com/Kom1sh/mediachef/issues).
+If MediaChef saved you some time, a ⭐ helps other people find it.
+
+## License
+
+GPL-3.0. The bundled FFmpeg and whisper.cpp binaries, their licenses and source offers
+are listed in [NOTICE.md](NOTICE.md).
+
+---
+
+# Development
 
 ## Dev setup (macOS)
 
