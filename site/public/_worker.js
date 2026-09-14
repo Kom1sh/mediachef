@@ -126,7 +126,7 @@ function esc(x) {
  * молчаливое «спасибо» на потерянное сообщение — худшее из возможных
  * поведений для канала, который и создан затем, чтобы о поломках узнавали.
  */
-async function takeFeedback(request, env, locale) {
+async function takeFeedback(request, env, locale, ctx) {
   const t = FEEDBACK[locale] ?? FEEDBACK.en;
   const url = new URL(request.url);
 
@@ -171,25 +171,39 @@ async function takeFeedback(request, env, locale) {
     // Не смогли посчитать — не повод отказать человеку в отправке.
   }
 
+  const version = (url.searchParams.get("v") || "").slice(0, 40) || null;
+  const platform = (url.searchParams.get("os") || "").slice(0, 80) || null;
+  const context = (url.searchParams.get("ctx") || "").slice(0, 200) || null;
+
   try {
     await env.CRAWLERS.prepare(
       "INSERT INTO feedback (at, kind, message, contact, version, platform, locale, context)" +
         " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
-      .bind(
-        Date.now(),
-        kind,
-        message,
-        contact || null,
-        (url.searchParams.get("v") || "").slice(0, 40) || null,
-        (url.searchParams.get("os") || "").slice(0, 80) || null,
-        locale,
-        (url.searchParams.get("ctx") || "").slice(0, 200) || null,
-      )
+      .bind(Date.now(), kind, message, contact || null, version, platform, locale, context)
       .run();
   } catch (e) {
     console.error("feedback: не записали сообщение:", e?.message || String(e));
     return new Response("could not save the message", { status: 500 });
+  }
+
+  // Письмо о новом сообщении — отдельным воркером (у Pages нет отправки почты,
+  // см. notify/wrangler.toml). После записи и в фоне: человек получает «спасибо»
+  // не дожидаясь почты, а не ушедшее письмо ничего не теряет — сообщение уже в
+  // базе. Без этого первое сообщение от живого человека лежало, пока кто-нибудь
+  // не вспомнит запустить `npm run feedback`.
+  if (env.NOTIFY && ctx) {
+    ctx.waitUntil(
+      env.NOTIFY.fetch("https://notify/", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ kind, message, contact, version, platform, locale, context }),
+      })
+        .then((r) => {
+          if (!r.ok) console.error("feedback: письмо не ушло, статус", r.status);
+        })
+        .catch((e) => console.error("feedback: письмо не ушло:", e?.message || String(e))),
+    );
   }
 
   return thanksPage(t, locale);
@@ -441,7 +455,7 @@ export default {
     // отдаёт статическую страницу, как и любая другая.
     if (request.method === "POST") {
       const fbLocale = feedbackLocale(url.pathname);
-      if (fbLocale) return takeFeedback(request, env, fbLocale);
+      if (fbLocale) return takeFeedback(request, env, fbLocale, ctx);
     }
 
     // Один стабильный адрес формы для приложения: `/feedback/?lang=ru&v=…`.

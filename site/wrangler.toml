@@ -19,3 +19,12 @@ compatibility_date = "2026-09-07"
 binding = "CRAWLERS"
 database_name = "mediachef-crawlers"
 database_id = "256268cb-5b23-4c34-87dc-738b057cc141"
+
+# Письмо о новом сообщении из формы обратной связи. У Pages нет привязки
+# `send_email`, поэтому отправляет отдельный воркер без публичного адреса —
+# см. notify/wrangler.toml. Выкладывается сам по себе: `cd notify && npx
+# wrangler deploy`. Не выложен или без секрета NOTIFY_TO — сообщения всё
+# равно пишутся в базу, просто без письма.
+[[services]]
+binding = "NOTIFY"
+service = "mediachef-notify"
