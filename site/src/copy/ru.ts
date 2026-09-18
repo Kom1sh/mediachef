@@ -145,6 +145,13 @@ export const ui = {
   },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Медиакухня с открытым кодом.",
+  consent: {
+    label: "Согласие на cookies",
+    text: "Хотим смотреть через Яндекс Метрику и Google Analytics, как пользуются сайтом: визиты, клики, скачивания. Они ставят cookies и включатся, только если вы разрешите. Сама программа MediaChef ничего не собирает.",
+    allow: "Разрешить",
+    decline: "Отказаться",
+    settings: "Настройки cookies",
+  },
   tocLabel: "Содержание",
   breadcrumbHome: "Главная",
   alsoLabel: "Читать дальше",

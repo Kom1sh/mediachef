@@ -143,6 +143,13 @@ export const ui = {
   },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Uma cozinha de mídia de código aberto.",
+  consent: {
+    label: "Consentimento de cookies",
+    text: "Queremos usar o Yandex Metrica e o Google Analytics para ver como o site é usado — visitas, cliques e downloads. Eles usam cookies e só são ativados se você permitir. O app MediaChef em si não coleta nada.",
+    allow: "Permitir",
+    decline: "Recusar",
+    settings: "Configurar cookies",
+  },
   tocLabel: "Nesta página",
   breadcrumbHome: "Início",
   alsoLabel: "Leia a seguir",

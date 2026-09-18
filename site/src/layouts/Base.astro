@@ -97,58 +97,105 @@ const homePath = pathFor("home", locale);
     <meta name="theme-color" content="#0E1116" media="(prefers-color-scheme: dark)" />
     {jsonLd.map((ld) => <script type="application/ld+json" set:html={JSON.stringify(ld)} />)}
 
-    {/* Яндекс.Метрика, счётчик 112053786. Домен .com, а не .ru: с него отдаётся
-        тот же tag.js, но он не заблокирован там, где резолв mc.yandex.ru ломается.
+    {/* Счётчики: Яндекс.Метрика 112053786 и Google Analytics 4 G-4D2TD96BF8.
 
-        `is:inline` обязателен — иначе Astro утащит сниппет в свой бандл и
-        перепишет, а сторонний счётчик должен уехать в страницу дословно.
-        Клиентский JS на сайте — только два счётчика, этот и GA4 ниже: всё
-        остальное статика. */}
-    <script type="text/javascript" is:inline>
-        (function(m,e,t,r,i,k,a){
-            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-            m[i].l=1*new Date();
-            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-        })(window, document,'script','https://mc.yandex.com/metrika/tag.js?id=112053786', 'ym');
+        Запускаются ТОЛЬКО после согласия. Оба ставят cookies и шлют данные о
+        посетителе третьей стороне, а для этого GDPR и 152-ФЗ требуют согласия
+        заранее — не «продолжая пользоваться сайтом», а нажатием кнопки. Поэтому
+        до нажатия «Разрешить» на странице нет ни одного стороннего скрипта, а
+        не «скрипт с выключенными cookies»: для Метрики такого режима нет, а
+        для GA4 обезличенные запросы без согласия юридически спорны.
 
-        ym(112053786, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
-    </script>
+        Выбор хранится в localStorage (`mc-consent`: granted | denied). Это не
+        cookie и никуда не уходит — только чтобы не спрашивать на каждой
+        странице. Вернувшийся с согласием получает счётчики сразу, в <head>, а
+        не после отрисовки: иначе первый просмотр каждой страницы терялся бы.
 
-    {/* Google Analytics 4, поток G-4D2TD96BF8. Сниппет дословно из GA, по той же
-        причине `is:inline`, что и у Метрики.
+        Отказ после согласия («Настройки cookies» в подвале) стирает cookies и
+        локальные записи обоих счётчиков на этом домене. Уже загруженные в
+        текущей вкладке скрипты выгрузить нельзя — со следующей страницы их нет.
 
-        Своё событие `download_app` — ради скачиваний. Встроенное «скачивание
-        файла» в GA4 знает .exe и .zip, но не .dmg, .AppImage и .deb: две трети
-        скачиваний ушли бы в безликие «переходы на внешний сайт». Здесь одно
-        событие на любой файл релиза, с именем файла и системой, — его и нужно
-        отметить в GA4 ключевым. Ловим клик на уровне документа, а не на каждой
-        кнопке: ссылки на релизы живут в нескольких компонентах, и новая кнопка
-        не должна молча выпасть из счёта. */}
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4D2TD96BF8" is:inline></script>
+        Событие `download_app` — ради скачиваний: встроенное «скачивание файла»
+        GA4 знает .exe и .zip, но не .dmg, .AppImage и .deb. Одно событие на
+        любой файл релиза, с именем файла и системой; клик ловится на уровне
+        документа, чтобы новая кнопка скачивания не выпала из счёта.
+
+        `is:inline` обязателен: иначе Astro утащит скрипт в бандл и перепишет,
+        а сниппеты счётчиков должны уехать в страницу дословно. */}
     <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+      (function () {
+        var KEY = 'mc-consent';
+        function read() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+        function write(v) { try { localStorage.setItem(KEY, v); } catch (e) {} }
 
-      gtag('config', 'G-4D2TD96BF8');
+        var loaded = false;
+        function load() {
+          if (loaded) return;
+          loaded = true;
 
-      document.addEventListener('click', function (e) {
-        var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-        if (!a || !/\/releases\/(latest\/)?download\//.test(a.href)) return;
-        var file = a.href.split('?')[0].split('/').pop();
-        var os = /\.(dmg)$|macos/i.test(file) ? 'macos'
-          : /\.exe$|windows/i.test(file) ? 'windows'
-          : /\.(AppImage|deb)$/i.test(file) ? 'linux' : 'other';
-        gtag('event', 'download_app', { file_name: file, os: os, link_url: a.href });
-      });
+          // Яндекс.Метрика — сниппет из кабинета. Домен .com, а не .ru: с него
+          // отдаётся тот же tag.js, но он не заблокирован там, где резолв
+          // mc.yandex.ru ломается.
+          (function(m,e,t,r,i,k,a){
+              m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+              m[i].l=1*new Date();
+              for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+              k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+          })(window, document,'script','https://mc.yandex.com/metrika/tag.js?id=112053786', 'ym');
+          ym(112053786, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+
+          // Google Analytics 4 — сниппет из GA, только вставка тега скриптом.
+          var g = document.createElement('script');
+          g.async = true;
+          g.src = 'https://www.googletagmanager.com/gtag/js?id=G-4D2TD96BF8';
+          document.head.appendChild(g);
+          window.dataLayer = window.dataLayer || [];
+          window.gtag = function () { window.dataLayer.push(arguments); };
+          window.gtag('js', new Date());
+          window.gtag('config', 'G-4D2TD96BF8');
+        }
+
+        // Первые cookies и записи обоих счётчиков: _ga*, _gid, _gat*, _ym*.
+        function forget() {
+          var host = location.hostname;
+          var domains = ['', host, '.' + host];
+          document.cookie.split(';').forEach(function (c) {
+            var name = c.split('=')[0].trim();
+            if (!/^(_ga|_gid|_gat|_ym)/.test(name)) return;
+            domains.forEach(function (d) {
+              document.cookie = name + '=; Max-Age=0; path=/' + (d ? '; domain=' + d : '');
+            });
+          });
+          try {
+            for (var i = localStorage.length - 1; i >= 0; i--) {
+              var k = localStorage.key(i);
+              if (k && /^_ym/.test(k)) localStorage.removeItem(k);
+            }
+          } catch (e) {}
+        }
+
+        window.mcConsent = {
+          state: read,
+          allow: function () { write('granted'); load(); },
+          decline: function () { write('denied'); forget(); },
+        };
+
+        if (read() === 'granted') load();
+
+        document.addEventListener('click', function (e) {
+          if (!window.gtag) return;
+          var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+          if (!a || !/\/releases\/(latest\/)?download\//.test(a.href)) return;
+          var file = a.href.split('?')[0].split('/').pop();
+          var os = /\.(dmg)$|macos/i.test(file) ? 'macos'
+            : /\.exe$|windows/i.test(file) ? 'windows'
+            : /\.(AppImage|deb)$/i.test(file) ? 'linux' : 'other';
+          window.gtag('event', 'download_app', { file_name: file, os: os, link_url: a.href });
+        });
+      })();
     </script>
   </head>
   <body>
-    {/* Часть счётчика для отключённого JS. Живёт в body, а не в head: noscript
-        в голове документа невалиден. */}
-    <noscript><div><img src="https://mc.yandex.com/watch/112053786" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-
     <a class="skip" href="#main">{t.skipToContent}</a>
 
     <Nav locale={locale} page={page} homePath={homePath} />
@@ -156,5 +203,39 @@ const homePath = pathFor("home", locale);
     <slot />
 
     <Footer locale={locale} page={page} />
+
+    {/* Баннер согласия. Плашка в углу, а не окно поверх страницы: сайт работает
+        сразу и без ответа, баннер ничего не закрывает, кроме своего угла.
+        Кнопки одинаковые по виду и весу — отказ должен быть так же прост, как
+        согласие, иначе согласие не считается добровольным.
+
+        Скрыт в разметке: без JS счётчиков нет, спрашивать не о чем. Показ —
+        скриптом ниже, если выбора ещё не было. */}
+    <div class="consent" id="consent" role="region" aria-label={t.consent.label} hidden>
+      <p>{t.consent.text}</p>
+      <div class="consent-actions">
+        <button type="button" class="consent-btn" data-consent="allow">{t.consent.allow}</button>
+        <button type="button" class="consent-btn" data-consent="decline">{t.consent.decline}</button>
+      </div>
+    </div>
+    <script is:inline>
+      (function () {
+        var box = document.getElementById('consent');
+        if (!box || !window.mcConsent) return;
+        if (!window.mcConsent.state()) box.hidden = false;
+        box.addEventListener('click', function (e) {
+          var b = e.target.closest ? e.target.closest('[data-consent]') : null;
+          if (!b) return;
+          window.mcConsent[b.getAttribute('data-consent')]();
+          box.hidden = true;
+        });
+        // «Настройки cookies» в подвале: снова показать тот же выбор.
+        document.addEventListener('click', function (e) {
+          if (!e.target.closest || !e.target.closest('[data-consent-open]')) return;
+          box.hidden = false;
+          box.querySelector('button').focus();
+        });
+      })();
+    </script>
   </body>
 </html>

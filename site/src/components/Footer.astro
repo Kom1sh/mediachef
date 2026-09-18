@@ -70,5 +70,8 @@ const cols = footerFor(locale, page);
       <span>{t.footRights}</span>
       <span class="foot-tag">{t.footTagline}</span>
     </p>
+    {/* Отозвать согласие должно быть так же просто, как дать: кнопка на каждой
+        странице открывает тот же баннер (Base.astro). */}
+    <button type="button" class="foot-consent" data-consent-open>{t.consent.settings}</button>
   </div>
 </footer>

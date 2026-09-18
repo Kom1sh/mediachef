@@ -142,6 +142,13 @@ export const ui = {
   },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Eine quelloffene Medienküche.",
+  consent: {
+    label: "Cookie-Einwilligung",
+    text: "Wir möchten mit Yandex Metrica und Google Analytics sehen, wie die Website genutzt wird – Besuche, Klicks, Downloads. Sie setzen Cookies und laufen nur, wenn Sie zustimmen. Die App MediaChef selbst erhebt keine Daten.",
+    allow: "Zulassen",
+    decline: "Ablehnen",
+    settings: "Cookie-Einstellungen",
+  },
   tocLabel: "Auf dieser Seite",
   breadcrumbHome: "Startseite",
   alsoLabel: "Weiterlesen",

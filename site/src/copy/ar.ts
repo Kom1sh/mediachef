@@ -143,6 +143,13 @@ export const ui = {
   },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "مطبخ وسائط مفتوح المصدر.",
+  consent: {
+    label: "الموافقة على ملفات تعريف الارتباط",
+    text: "نودّ استخدام Yandex Metrica وGoogle Analytics لمعرفة كيف يُستخدم الموقع: الزيارات والنقرات والتنزيلات. تستخدم هذه الأدوات ملفات تعريف الارتباط ولا تعمل إلا إذا سمحت بذلك. أما تطبيق MediaChef نفسه فلا يجمع أي بيانات.",
+    allow: "السماح",
+    decline: "الرفض",
+    settings: "إعدادات ملفات تعريف الارتباط",
+  },
   tocLabel: "في هذه الصفحة",
   breadcrumbHome: "الرئيسية",
   alsoLabel: "اقرأ بعد ذلك",

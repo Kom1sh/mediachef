@@ -469,6 +469,10 @@ footer { background: var(--card-2); border-top: 1px solid var(--line); color: va
   border-top: 1px solid var(--line); padding-top: 20px; padding-bottom: 44px;
 }
 .foot-rights { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+/* Выглядит как ссылка подвала, но это кнопка: она ничего не открывает по
+   адресу, а показывает баннер согласия. */
+.foot-consent { background: none; border: 0; padding: 0; font: inherit; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.foot-consent:hover { color: var(--ink); }
 .foot-tag { opacity: .75; }
 .foot-lang { display: inline-flex; align-items: center; color: var(--ink-2); text-decoration: none; font-weight: 600; }
 .foot-lang:hover { color: var(--basil); }
@@ -509,3 +513,33 @@ footer { background: var(--card-2); border-top: 1px solid var(--line); color: va
 [dir="rtl"] .caret { transform: none; }
 [dir="rtl"] .crumbs span { transform: scaleX(-1); display: inline-block; }
 [dir="rtl"] .onward a::after, [dir="rtl"] .also a { unicode-bidi: plaintext; }
+
+/* ── Согласие на cookies ────────────────────────────────────────────────────
+   Плашка в нижнем углу, не окно: страница под ней работает. z-index ниже
+   выпадающих меню шапки (55–60), чтобы открытое меню ложилось поверх.
+
+   Угол — со стороны иллюстрации, а не текста: в начальном углу плашка
+   ложилась ровно на кнопки «Скачать» первого экрана главной. `inline-end`,
+   а не `right`: в арабской вёрстке колонки зеркалятся, и иллюстрация слева. */
+.consent {
+  position: fixed; inset-inline-end: 16px; bottom: 16px; z-index: 50;
+  max-width: 380px; display: grid; gap: 12px;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 14px; padding: 14px 16px;
+  box-shadow: 0 10px 30px rgba(15, 19, 25, .16);
+  font-size: 0.86rem; line-height: 1.45;
+}
+/* display: grid перебил бы атрибут hidden — возвращаем ему силу явно. */
+.consent[hidden] { display: none; }
+.consent p { margin: 0; color: var(--ink-2); }
+.consent-actions { display: flex; gap: 8px; }
+/* Обе кнопки одного вида: отказ не прячем в серую ссылку. */
+.consent-btn {
+  flex: 1; font: inherit; font-weight: 700; padding: 9px 12px; border-radius: 10px; cursor: pointer;
+  background: var(--card-2); color: var(--ink); border: 1.5px solid var(--line-strong);
+  transition: border-color .12s ease;
+}
+.consent-btn:hover { border-color: var(--basil); }
+@media (max-width: 520px) {
+  .consent { inset-inline: 12px; bottom: 12px; max-width: none; }
+}
