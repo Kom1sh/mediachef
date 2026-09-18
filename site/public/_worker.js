@@ -27,6 +27,29 @@ const SECURITY = {
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
 };
 
+// Где счётчики включаются только после согласия. Везде, где действует GDPR
+// или его прямые аналоги: ЕС (включая заморские регионы, у которых свои коды),
+// ЕЭЗ, Великобритания с коронными землями, Швейцария и карликовые государства
+// внутри ЕС. Там молчание согласием не считается, и счётчик до нажатия
+// «Разрешить» — нарушение. В остальном мире счётчики работают сразу, а баннер
+// сообщает о них и даёт отключить (Base.astro).
+//
+// Страна неизвестна (нет cf, XX, Tor) — спрашиваем: ошибиться в сторону
+// вопроса дешевле, чем в сторону нарушения.
+const ASK_FIRST = new Set([
+  // ЕС-27
+  "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE",
+  "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+  // территории ЕС со своими кодами
+  "AX", "GF", "GP", "MQ", "RE", "YT", "MF",
+  // ЕЭЗ, Швейцария, Великобритания и коронные земли, карликовые государства
+  "IS", "LI", "NO", "CH", "GB", "GG", "JE", "IM", "GI", "MC", "SM", "VA", "AD",
+]);
+
+function asksFirst(country) {
+  return !country || country === "XX" || country === "T1" || ASK_FIRST.has(country);
+}
+
 // Статусы, у которых тела быть не может: такой ответ переупаковывать нельзя.
 const NULL_BODY = new Set([101, 204, 205, 304]);
 
@@ -520,12 +543,21 @@ export default {
     // который делает HEAD или читает заголовки, разметку не парсит. Спецификация
     // llmstxt.org предлагает ровно это отношение. Только на HTML: у картинок и
     // шрифтов описания нет.
+    let res = out;
     if (out.ok && (out.headers.get("content-type") || "").startsWith("text/html")) {
       out.headers.set("link", '</llms.txt>; rel="describedby"; type="text/plain"');
+      // Пометка для скрипта согласия: `<html data-consent="ask">` — ждать
+      // «Разрешить», без пометки — счётчики сразу. Тег, а не cookie и не
+      // заголовок: скрипт в <head> читает его синхронно, до первой отрисовки.
+      if (asksFirst(request.cf?.country)) {
+        res = new HTMLRewriter()
+          .on("html", { element(el) { el.setAttribute("data-consent", "ask"); } })
+          .transform(out);
+      }
     }
     // После правки заголовков: в журнал уезжает то, что реально ушло роботу,
     // включая итоговый Content-Type.
     record?.(out.status, out.headers.get("content-type"));
-    return out;
+    return res;
   },
 };

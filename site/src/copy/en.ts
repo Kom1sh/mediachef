@@ -154,6 +154,10 @@ export const ui = {
     allow: "Allow",
     decline: "Decline",
     settings: "Cookie settings",
+    // Вне ЕС счётчики работают сразу — этот текст сообщает о них и даёт отключить.
+    noticeText: "We count visits, clicks and downloads with Yandex Metrica and Google Analytics, which use cookies. You can turn them off — the site works the same. The MediaChef app itself collects nothing.",
+    ok: "OK",
+    off: "Turn off",
   },
   tocLabel: "On this page",
   breadcrumbHome: "Home",
