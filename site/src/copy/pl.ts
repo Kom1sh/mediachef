@@ -144,9 +144,6 @@ export const ui = {
   footTagline: "Otwartoźródłowa kuchnia mediów.",
   consent: {
     label: "Zgoda na pliki cookie",
-    text: "Chcemy sprawdzać w Yandex Metrica i Google Analytics, jak używana jest strona: wizyty, kliknięcia, pobrania. Korzystają z plików cookie i włączą się tylko, jeśli się zgodzisz. Sama aplikacja MediaChef niczego nie zbiera.",
-    allow: "Zezwól",
-    decline: "Odrzuć",
     settings: "Ustawienia cookie",
     noticeText: "Liczymy wizyty, kliknięcia i pobrania przez Yandex Metrica i Google Analytics, które używają plików cookie. Możesz je wyłączyć — strona działa tak samo. Sama aplikacja MediaChef niczego nie zbiera.",
     ok: "OK",

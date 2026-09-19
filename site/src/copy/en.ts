@@ -146,15 +146,11 @@ export const ui = {
   },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "An open-source media kitchen.",
-  // Баннер согласия на cookies (Base.astro). Счётчики не запускаются, пока
-  // человек не нажал «Разрешить»; «Отказаться» такая же по весу кнопка.
+  // Баннер про cookies (Base.astro): счётчики работают сразу, баннер сообщает
+  // о них и даёт «Отключить».
   consent: {
     label: "Cookie consent",
-    text: "We'd like to use Yandex Metrica and Google Analytics to see how the site is used — visits, clicks, downloads. They set cookies and run only if you allow it. The MediaChef app itself collects nothing.",
-    allow: "Allow",
-    decline: "Decline",
     settings: "Cookie settings",
-    // Вне ЕС счётчики работают сразу — этот текст сообщает о них и даёт отключить.
     noticeText: "We count visits, clicks and downloads with Yandex Metrica and Google Analytics, which use cookies. You can turn them off — the site works the same. The MediaChef app itself collects nothing.",
     ok: "OK",
     off: "Turn off",

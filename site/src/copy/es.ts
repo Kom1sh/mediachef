@@ -145,9 +145,6 @@ export const ui = {
   footTagline: "Una cocina de medios de código abierto.",
   consent: {
     label: "Consentimiento de cookies",
-    text: "Queremos usar Yandex Metrica y Google Analytics para ver cómo se usa el sitio: visitas, clics y descargas. Usan cookies y solo se activan si lo permites. La app MediaChef en sí no recoge nada.",
-    allow: "Permitir",
-    decline: "Rechazar",
     settings: "Configurar cookies",
     noticeText: "Contamos visitas, clics y descargas con Yandex Metrica y Google Analytics, que usan cookies. Puedes desactivarlos: el sitio funciona igual. La app MediaChef en sí no recoge nada.",
     ok: "Vale",

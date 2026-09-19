@@ -99,17 +99,12 @@ const homePath = pathFor("home", locale);
 
     {/* Счётчики: Яндекс.Метрика 112053786 и Google Analytics 4 G-4D2TD96BF8.
 
-        Два режима, страну решает воркер (_worker.js, ASK_FIRST):
-        — ЕС, ЕЭЗ, Великобритания, Швейцария: страница приходит с
-          `<html data-consent="ask">`, и счётчики запускаются ТОЛЬКО после
-          «Разрешить». GDPR требует согласия заранее и нажатием; молчание
-          согласием не считается. До нажатия на странице нет ни одного
-          стороннего скрипта: «счётчика без cookies» у Метрики нет, а
-          обезличенные запросы GA4 без согласия юридически спорны.
-        — остальной мир: счётчики работают сразу, баннер сообщает о них и даёт
-          «Отключить». Сделано так, потому что на вопрос почти никто не
-          отвечает, а Европа — только около 40% визитов: спрашивать всех
-          значило остаться без данных по остальным 60%.
+        Работают сразу у всех, баннер сообщает о них и даёт «Отключить».
+        Решение Егора от 19.09.2026: сначала счётчики ждали «Разрешить» везде,
+        потом только в ЕС, и в обоих вариантах данных становилось заметно
+        меньше. Известная цена: для посетителей из ЕС (GDPR требует согласия
+        заранее) это формально нарушение. Вернуть вопрос для ЕС — коммит
+        79f6137 в истории: пометка страны в _worker.js и второй текст баннера.
 
         Выбор хранится в localStorage (`mc-consent`: granted | denied). Это не
         cookie и никуда не уходит — только чтобы не спрашивать на каждой
@@ -187,7 +182,6 @@ const homePath = pathFor("home", locale);
           window['disableYaCounter112053786'] = true;
         }
 
-        var askFirst = document.documentElement.getAttribute('data-consent') === 'ask';
         window.mcConsent = {
           state: read,
           allow: function () { write('granted'); load(); },
@@ -195,7 +189,7 @@ const homePath = pathFor("home", locale);
         };
 
         var choice = read();
-        if (choice === 'granted' || (!choice && !askFirst)) load();
+        if (choice !== 'denied') load();
 
         document.addEventListener('click', function (e) {
           if (!window.gtag) return;
@@ -224,23 +218,13 @@ const homePath = pathFor("home", locale);
         Кнопки одинаковые по виду и весу — отказ должен быть так же прост, как
         согласие, иначе согласие не считается добровольным.
 
-        Два варианта текста в разметке, виден один — по пометке воркера на
-        <html> (см. стили .consent [data-mode]): «notice» сообщает о работающих
-        счётчиках и даёт отключить, «ask» спрашивает до запуска. Выбор CSS, а
-        не скриптом: текст не мигает при загрузке.
-
         Скрыт в разметке: без JS счётчиков нет, сообщать не о чем. Показ —
         скриптом ниже, если выбора ещё не было. */}
     <div class="consent" id="consent" role="region" aria-label={t.consent.label} hidden>
-      <p data-mode="notice">{t.consent.noticeText}</p>
-      <p data-mode="ask">{t.consent.text}</p>
-      <div class="consent-actions" data-mode="notice">
+      <p>{t.consent.noticeText}</p>
+      <div class="consent-actions">
         <button type="button" class="consent-btn" data-consent="allow">{t.consent.ok}</button>
         <button type="button" class="consent-btn" data-consent="decline">{t.consent.off}</button>
-      </div>
-      <div class="consent-actions" data-mode="ask">
-        <button type="button" class="consent-btn" data-consent="allow">{t.consent.allow}</button>
-        <button type="button" class="consent-btn" data-consent="decline">{t.consent.decline}</button>
       </div>
     </div>
     <script is:inline>
@@ -258,9 +242,7 @@ const homePath = pathFor("home", locale);
         document.addEventListener('click', function (e) {
           if (!e.target.closest || !e.target.closest('[data-consent-open]')) return;
           box.hidden = false;
-          var mode = document.documentElement.getAttribute('data-consent') === 'ask' ? 'ask' : 'notice';
-          var first = box.querySelector('.consent-actions[data-mode="' + mode + '"] button');
-          if (first) first.focus();
+          box.querySelector('button').focus();
         });
       })();
     </script>

@@ -531,12 +531,6 @@ footer { background: var(--card-2); border-top: 1px solid var(--line); color: va
 }
 /* display: grid перебил бы атрибут hidden — возвращаем ему силу явно. */
 .consent[hidden] { display: none; }
-/* Виден один вариант текста и кнопок: «notice» по умолчанию, «ask» — где
-   воркер пометил страницу <html data-consent="ask"> (ЕС и соседи). */
-.consent [data-mode="ask"] { display: none; }
-html[data-consent="ask"] .consent [data-mode="notice"] { display: none; }
-html[data-consent="ask"] .consent p[data-mode="ask"] { display: block; }
-html[data-consent="ask"] .consent .consent-actions[data-mode="ask"] { display: flex; }
 .consent p { margin: 0; color: var(--ink-2); }
 .consent-actions { display: flex; gap: 8px; }
 /* Обе кнопки одного вида: отказ не прячем в серую ссылку. */

@@ -144,9 +144,6 @@ export const ui = {
   footTagline: "Eine quelloffene Medienküche.",
   consent: {
     label: "Cookie-Einwilligung",
-    text: "Wir möchten mit Yandex Metrica und Google Analytics sehen, wie die Website genutzt wird – Besuche, Klicks, Downloads. Sie setzen Cookies und laufen nur, wenn Sie zustimmen. Die App MediaChef selbst erhebt keine Daten.",
-    allow: "Zulassen",
-    decline: "Ablehnen",
     settings: "Cookie-Einstellungen",
     noticeText: "Wir zählen Besuche, Klicks und Downloads mit Yandex Metrica und Google Analytics, die Cookies setzen. Sie können sie abschalten – die Website funktioniert genauso. Die App MediaChef selbst erhebt keine Daten.",
     ok: "OK",
