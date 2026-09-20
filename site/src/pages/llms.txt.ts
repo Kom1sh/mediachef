@@ -12,6 +12,7 @@
 import type { APIRoute } from "astro";
 import {
   SITE,
+  AUTHOR,
   ROUTES,
   FACTS,
   FEEDBACK_EMAIL,
@@ -75,6 +76,7 @@ export const GET: APIRoute = () => {
     "",
     "- Nothing on this site requires JavaScript; the HTML is complete as served.",
     "- Figures in the guides are our own measurements, and the guides say what was measured.",
+    `- Made by ${AUTHOR.latin} (${AUTHOR.name}): ${AUTHOR.url}`,
     `- Source code: ${LINKS.github}`,
     `- Corrections and questions: ${FEEDBACK_EMAIL}`,
     "",

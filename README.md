@@ -58,6 +58,10 @@ Something broken, or a recipe missing? [Tell us](https://mediachef.app/feedback/
 no account needed — or open an [issue](https://github.com/Kom1sh/mediachef/issues).
 If MediaChef saved you some time, a ⭐ helps other people find it.
 
+## Author
+
+MediaChef is made by [Egor Protasov](https://egorprotasov.ru/).
+
 ## License
 
 GPL-3.0. The bundled FFmpeg and whisper.cpp binaries, their licenses and source offers

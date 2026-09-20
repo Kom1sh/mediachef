@@ -26,6 +26,8 @@
   },
   "bundle": {
     "active": true,
+    "publisher": "Egor Protasov",
+    "homepage": "https://mediachef.app",
     "targets": "all",
     "createUpdaterArtifacts": true,
     "externalBin": [

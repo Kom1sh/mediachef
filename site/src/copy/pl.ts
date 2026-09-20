@@ -142,6 +142,8 @@ export const ui = {
   },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "Otwartoźródłowa kuchnia mediów.",
+  // Подпись автора перед именем-ссылкой: подвал и блок «Открытый код».
+  footAuthor: "Autor:",
   consent: {
     label: "Zgoda na pliki cookie",
     settings: "Ustawienia cookie",

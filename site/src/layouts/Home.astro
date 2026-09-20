@@ -6,7 +6,7 @@ import Ctas from "../components/Ctas.astro";
 import Contact from "../components/Contact.astro";
 import AppWindow from "../components/AppWindow.astro";
 import Shot from "../components/Shot.astro";
-import { T, LANDINGS, LINKS, MODELS, SITE, pathFor, type Locale, HOME_TILE_PAGES } from "../content";
+import { T, LANDINGS, LINKS, MODELS, SITE, AUTHOR, authorName, pathFor, type Locale, HOME_TILE_PAGES } from "../content";
 import { homeToc } from "../nav";
 import {
   organizationLd,
@@ -239,6 +239,9 @@ const sample = LANDINGS.transcribe[locale].outSample!
         <div>
           <h2>{t.ossTitle}</h2>
           <p class="lead">{t.ossLead}</p>
+          {/* Второе место подписи — там, где страница рассказывает о самой
+              программе. Анкор тот же, что в подвале: имя, а не ключевая фраза. */}
+          <p class="oss-author">{t.footAuthor} <a rel="author" href={AUTHOR.url}>{authorName(locale)}</a></p>
           <div class="ctas">
             <a class="btn btn-ghost" href={LINKS.github}>GitHub →</a>
           </div>

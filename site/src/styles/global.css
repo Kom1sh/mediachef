@@ -474,6 +474,12 @@ footer { background: var(--card-2); border-top: 1px solid var(--line); color: va
 .foot-consent { background: none; border: 0; padding: 0; font: inherit; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .foot-consent:hover { color: var(--ink); }
 .foot-tag { opacity: .75; }
+/* Подпись автора стоит в одной строке с © и слоганом и выглядит как обычная
+   ссылка подвала: ничего не прячется и ничего не выделяется. */
+.foot-author a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+.foot-author a:hover { color: var(--basil); }
+.oss-author { margin-top: 10px; font-size: 0.9rem; color: var(--ink-2); }
+.oss-author a { color: var(--basil); font-weight: 600; }
 .foot-lang { display: inline-flex; align-items: center; color: var(--ink-2); text-decoration: none; font-weight: 600; }
 .foot-lang:hover { color: var(--basil); }
 

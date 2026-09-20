@@ -8,7 +8,7 @@ import "@fontsource/jetbrains-mono/400.css";
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
-import { T, SITE, LOCALES, LOCALE_META, NOINDEX, pathFor, type Locale, type PageId } from "../content";
+import { T, SITE, AUTHOR, authorName, LOCALES, LOCALE_META, NOINDEX, pathFor, type Locale, type PageId } from "../content";
 
 interface Props {
   locale: Locale;
@@ -46,6 +46,12 @@ const homePath = pathFor("home", locale);
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {/* Автор страницы — тот же человек, что в JSON-LD под `@id`
+        https://egorprotasov.ru/#person, и тот же, что подписан в подвале.
+        Мета и `rel="author"` — для тех, кто читает шапку документа, а не
+        разбирает JSON-LD: читалки, агрегаторы, парсеры ссылок. */}
+    <meta name="author" content={authorName(locale)} />
+    <link rel="author" href={AUTHOR.url} />
     {/* hreflang только у индексируемых страниц: у закрытой от робота набор
         переводов ни на что не влияет, а разметку засоряет. `follow` при этом
         оставлен — ссылки с формы на остальной сайт должны работать. */}

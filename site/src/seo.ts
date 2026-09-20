@@ -1,11 +1,31 @@
 // Сборщики JSON-LD. Ни одного выдуманного факта: версия, движки, лицензия и
 // вопросы приходят из content.ts, а вопросы совпадают с видимым FAQ страницы.
-import { SITE, LINKS, FACTS, FEEDBACK_EMAIL, LOCALES, T, type Locale } from "./content";
+import { SITE, LINKS, FACTS, FEEDBACK_EMAIL, AUTHOR, LOCALES, T, type Locale } from "./content";
 import { SECTIONS } from "./recipes";
 import { SHOTS } from "./shots";
 
 const ORG_ID = `${SITE}/#organization`;
 const APP_ID = `${SITE}/#app`;
+
+/**
+ * Автор — человек, а не бренд. Узел описан целиком один раз, в
+ * SoftwareApplication (эта разметка есть на каждой странице), остальные узлы
+ * ссылаются на него по `@id`. Адрес `@id` — тот же, что на самом сайте автора:
+ * совпадение строки и есть то, чем поисковик сшивает две сущности в одну.
+ *
+ * `sameAs` — профили, где этот же человек подтверждается сам: код, телеграм,
+ * ВК. Ничего выдуманного и ничего «для веса».
+ */
+function personNode() {
+  return {
+    "@type": "Person",
+    "@id": AUTHOR.id,
+    name: AUTHOR.name,
+    alternateName: AUTHOR.latin,
+    url: AUTHOR.url,
+    sameAs: AUTHOR.sameAs,
+  };
+}
 
 export function organizationLd() {
   return {
@@ -37,6 +57,7 @@ export function organizationLd() {
       availableLanguage: [...LOCALES],
     },
     sameAs: [LINKS.github],
+    founder: { "@id": AUTHOR.id },
   };
 }
 
@@ -72,6 +93,7 @@ export function softwareApplicationLd(locale: Locale, pageUrl: string) {
     // настоящие отзывы: рейтинг в разметке без отзывов — фальсификация и
     // прямое нарушение правил Google, а не «дополнение разметки».
     featureList: SECTIONS.flatMap((sec) => sec.recipes.map((r) => r.title(locale))),
+    author: personNode(),
     publisher: { "@id": ORG_ID },
   };
 }
@@ -102,6 +124,7 @@ function websiteNode() {
     name: "MediaChef",
     url: `${SITE}/`,
     inLanguage: [...LOCALES],
+    author: { "@id": AUTHOR.id },
     publisher: { "@id": ORG_ID },
   };
 }

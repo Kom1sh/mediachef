@@ -146,6 +146,8 @@ export const ui = {
   },
   footRights: "© 2026 mediachef.app · GPL-3.0",
   footTagline: "An open-source media kitchen.",
+  // Подпись автора перед именем-ссылкой: подвал и блок «Открытый код».
+  footAuthor: "Made by",
   // Баннер про cookies (Base.astro): счётчики работают сразу, баннер сообщает
   // о них и даёт «Отключить».
   consent: {
