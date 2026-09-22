@@ -25,6 +25,14 @@ const GOAL = 603461103; // цель «Скачал приложение»
 const REPO = "Kom1sh/mediachef";
 const WINGET_PR = 434688;
 
+// Сети, из которых сайт проверяли мы сами: чистый тест Claude 15.09 и
+// проверка «как видят сайт роботы» 20.09 шли через VPN (польские, немецкие,
+// нидерландские и эстонские выходы) и за одну минуту представлялись всеми
+// ботами подряд. Настоящих заходов роботов из них не было, а без этого
+// фильтра они выглядели как «первые визиты ботов Claude».
+const OWN_CHECK_NETS = [25198, 34702, 60404];
+const notOurs = `(asn IS NULL OR asn NOT IN (${OWN_CHECK_NETS.join(",")}))`;
+
 const DAY = 24 * 60 * 60 * 1000;
 const now = Date.now();
 const weekStart = now - 7 * DAY;
@@ -159,10 +167,10 @@ async function robotsAndFeedback() {
          COUNT(DISTINCT CASE WHEN at<${weekStart} AND bot='OAI-SearchBot' AND path<>'/robots.txt' THEN path END) AS oai_prev,
          COUNT(DISTINCT CASE WHEN at>=${weekStart} AND bot='GPTBot' THEN path END) AS gpt,
          COUNT(DISTINCT CASE WHEN at<${weekStart} AND bot='GPTBot' THEN path END) AS gpt_prev,
-         SUM(at>=${weekStart} AND bot='PerplexityBot') AS pplx,
-         SUM(at<${weekStart} AND bot='PerplexityBot') AS pplx_prev,
-         SUM(at>=${weekStart} AND bot LIKE 'Claude%') AS claude,
-         SUM(at<${weekStart} AND bot LIKE 'Claude%') AS claude_prev
+         SUM(at>=${weekStart} AND bot='PerplexityBot' AND ${notOurs}) AS pplx,
+         SUM(at<${weekStart} AND bot='PerplexityBot' AND ${notOurs}) AS pplx_prev,
+         SUM(at>=${weekStart} AND bot LIKE 'Claude%' AND ${notOurs}) AS claude,
+         SUM(at<${weekStart} AND bot LIKE 'Claude%' AND ${notOurs}) AS claude_prev
        FROM hits WHERE at>=${prevStart}`,
       `SELECT path, COUNT(*) AS n FROM hits
        WHERE at>=${weekStart} AND bot='ChatGPT-User' AND asn=8075 AND path NOT IN ('/','/en/','/robots.txt')

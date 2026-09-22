@@ -124,6 +124,10 @@ const KNOWN_NETS = {
   FacebookBot: [32934],
   "meta-externalagent": [32934],
   Amazonbot: [14618, 16509],
+  // Perplexity живёт в AWS: 22.09 из 14618 пришёл полный обход сайта, 90
+  // страниц за раз. Заходы под этим именем из других сетей были только нашими
+  // проверками через VPN.
+  PerplexityBot: [14618],
   AhrefsBot: [16276],
   SemrushBot: [209366],
   PetalBot: [136907],
