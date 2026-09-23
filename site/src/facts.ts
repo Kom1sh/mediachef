@@ -42,7 +42,7 @@ export const AUTHOR = {
 export const authorName = (locale: string) => (locale === "ru" ? AUTHOR.name : AUTHOR.latin);
 
 export const FACTS = {
-  version: "0.8.3",
+  version: "0.8.4",
   // Дата последней правки текстов — уезжает в <lastmod> sitemap.xml.
   // Меняется вручную вместе с содержимым, а не при каждой пересборке:
   // «сегодня» в lastmod у неизменившейся страницы Google просто перестаёт верить.
