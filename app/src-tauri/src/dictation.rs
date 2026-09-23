@@ -340,6 +340,16 @@ pub fn apply(
     // самопроверка гоняет плашку и при выключенной.
     overlay_probe_listener_once(app, &rt);
 
+    // Самопроверке плашки хоткей не нужен, и трогать разрешения ей нельзя. У
+    // пробной сборки своя подпись, macOS считает её другой программой без
+    // доступа, и лечение ниже сбросило бы запись «Универсального доступа» —
+    // общую на идентификатор, то есть заодно и у установленного MediaChef.
+    // Так и случилось 23.09.2026: проверка плашки сняла доступ у рабочей
+    // программы.
+    if std::env::var("MEDIACHEF_SELFTEST").is_ok_and(|m| m.starts_with("overlay")) {
+        return Ok(());
+    }
+
     let (enabled, wanted) = {
         let s = rt
             .settings
@@ -616,9 +626,12 @@ fn maybe_selftest(app: &AppHandle, rt: &Arc<Runtime>) {
         selftest_mic(app, rt);
         return;
     }
-    if mode != "overlay" {
+    // `overlay-exit` — то же, но выход при плашке на экране, без `hide`: так
+    // выходят по ⌘Q посреди диктовки.
+    if mode != "overlay" && mode != "overlay-exit" {
         return;
     }
+    let exit_shown = mode == "overlay-exit";
     // `apply` зовут при каждой смене настроек; проверка нужна одна.
     static STARTED: AtomicBool = AtomicBool::new(false);
     if STARTED.swap(true, Ordering::Relaxed) {
@@ -638,7 +651,17 @@ fn maybe_selftest(app: &AppHandle, rt: &Arc<Runtime>) {
             // Шесть секунд — чтобы снаружи успели вывести вперёд другое
             // приложение: иначе замер активности ничего не измеряет, MediaChef
             // при запуске активируется сам.
-            std::thread::sleep(Duration::from_secs(6));
+            //
+            // Но для замера активации шести секунд мало: только что
+            // запущенное приложение macOS вперёд не выводит, и без панели
+            // 23.09.2026 замер через 6 секунд показал «не активно», а через 30
+            // — «активно» и выдернул человека из полноэкранного Терминала.
+            // Поэтому задержка растягивается: `MEDIACHEF_SELFTEST_DELAY=30`.
+            let delay = std::env::var("MEDIACHEF_SELFTEST_DELAY")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(6);
+            std::thread::sleep(Duration::from_secs(delay));
             trace(
                 &rt,
                 &format!(
@@ -661,6 +684,12 @@ fn maybe_selftest(app: &AppHandle, rt: &Arc<Runtime>) {
                     overlay::app_is_active()
                 ),
             );
+            if exit_shown {
+                std::thread::sleep(Duration::from_millis(1500));
+                trace(&rt, "самопроверка: выходим, не убирая плашку");
+                app.exit(0);
+                return;
+            }
             for i in 0..10u32 {
                 std::thread::sleep(Duration::from_millis(200));
                 overlay::update(
