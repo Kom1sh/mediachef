@@ -23,19 +23,24 @@ OUT="app/src-tauri/binaries"
 # бинарников внутри) и NOTICE.md. Плавающих ссылок здесь быть не должно: у BtbN
 # есть релиз с тегом latest и ассеты, у которых вместо версии в имени стоят
 # «master» и «latest», — под теми же адресами лежит меняющееся содержимое.
-# Брать только versioned-релиз autobuild-ГГГГ-ММ-ДД-ЧЧ-ММ.
+# Брать только versioned-релиз autobuild-ГГГГ-ММ-ДД-ЧЧ-ММ, и только МЕСЯЧНЫЙ —
+# выпущенный в последний день месяца. Дневные BtbN удаляет недели через две:
+# 23.09.2026 так пропал autobuild-2026-09-03-13-17, и сборка 0.8.4-rc1 упала на
+# 404 под Linux и Windows (кэш CI, который это прятал, живёт только 7 дней).
+# Месячные лежат годами. Та же версия в месячном выпуске — другая сборка, поэтому
+# при переезде меняются все три sha, а не только тег.
 #
 # ffmpeg: BtbN FFmpeg-Builds, вариант linux64-gpl (статический, GPL — как и наш
 # GPL-3.0). Линия n9.0.1 — самая свежая версионная в этом релизе (там же есть
 # master-снапшот N-126217 и линия n8.1.2, они нам не нужны). Обе sha сверены с
 # checksums.sha256 из ассетов того же релиза.
-BTBN_TAG="autobuild-2026-09-03-13-17"
+BTBN_TAG="autobuild-2026-08-31-13-27"
 FFMPEG_VERSION="n9.0.1-11-ge47273f4d9"
 FFMPEG_ARCHIVE="ffmpeg-$FFMPEG_VERSION-linux64-gpl-9.0.tar.xz"
 FFMPEG_ARCHIVE_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/$BTBN_TAG/$FFMPEG_ARCHIVE"
-FFMPEG_ARCHIVE_SHA="61b26047e134db2caa32d1391a707bd260e549fb80c80bf5b26bfa2c7179b048"
-FFMPEG_BIN_SHA="1ccb9e5a3d0e8f50e93f551541fae67f04b31e679f6334b9436aeb380c66ae91"
-FFPROBE_BIN_SHA="e338afbef8729f89da3f9f593d10d723481532d450109fe26f8fdf83c56dec95"
+FFMPEG_ARCHIVE_SHA="182c1b509720e939bb47bfb47dc29cc0c298640401128e3dce8627d10707eb5a"
+FFMPEG_BIN_SHA="771831e48242e0dfb9640a73dabbf29c6d2188bcf217f65909c9e2567696e180"
+FFPROBE_BIN_SHA="59e81a320a5da37e8f12b61035bb88479cc54d7331f2f5a6f0a9db9b798e56c0"
 
 # whisper.cpp: тот же тег, что на маке, — одна версия движка на все поставки.
 # Флаги отличаются от маковых ровно платформой: Metal тут нет, зато нужны те же

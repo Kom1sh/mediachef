@@ -39,7 +39,7 @@ Windows/Linux get FFmpeg from different builders.
 ### FFmpeg n9.0.1-11-ge47273f4d9 — Windows x64, Linux x64 (builder: BtbN)
 
 - Obtained from release
-  <https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-09-03-13-17>
+  <https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-08-31-13-27>
   — assets `ffmpeg-n9.0.1-11-ge47273f4d9-win64-gpl-9.0.zip` and
   `ffmpeg-n9.0.1-11-ge47273f4d9-linux64-gpl-9.0.tar.xz`, pinned by SHA-256 in
   `scripts/fetch-sidecars-windows.ps1` and `scripts/fetch-sidecars-linux.sh`.

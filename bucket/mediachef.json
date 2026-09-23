@@ -1,12 +1,12 @@
 {
-    "version": "0.8.3",
+    "version": "0.8.4",
     "description": "Convert video and audio and transcribe speech to text on your own computer",
     "homepage": "https://mediachef.app/",
     "license": "GPL-3.0-only",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/Kom1sh/mediachef/releases/download/v0.8.3/MediaChef-0.8.3-windows-x64.zip",
-            "hash": "57adc6655cece1f5c255852df928e87a23a22cd62115fe710b93425098f66649"
+            "url": "https://github.com/Kom1sh/mediachef/releases/download/v0.8.4/MediaChef-0.8.4-windows-x64.zip",
+            "hash": "da37a5e6b258aa9fbced77b132e0e7e4e92d69ac2f240a79bb33569d78a8d2a6"
         }
     },
     "bin": "mediachef.exe",

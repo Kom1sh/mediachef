@@ -23,11 +23,11 @@ release cut right after a green CI run fetches nothing and builds nothing.
 |---|---|---|---|
 | Version | `9.0.1` | `n9.0.1-11-ge47273f4d9` | `n9.0.1-11-ge47273f4d9` |
 | Builder | ffmpeg.martin-riedl.de (release build, GPL) | BtbN/FFmpeg-Builds `linux64-gpl` | BtbN/FFmpeg-Builds `win64-gpl` |
-| Release | `download/macos/arm64/1787073674_9.0.1` | tag `autobuild-2026-09-03-13-17` | tag `autobuild-2026-09-03-13-17` |
+| Release | `download/macos/arm64/1787073674_9.0.1` | tag `autobuild-2026-08-31-13-27` | tag `autobuild-2026-08-31-13-27` |
 | Archive | `ffmpeg.zip` + `ffprobe.zip` (separate) | `ffmpeg-n9.0.1-11-ge47273f4d9-linux64-gpl-9.0.tar.xz` | `ffmpeg-n9.0.1-11-ge47273f4d9-win64-gpl-9.0.zip` |
-| Archive sha256 | `8287a1b2…07fe` / `102a26b8…741a` | `61b26047…b048` | `cf2beec3…ba0c` |
-| ffmpeg sha256 | `393e4c39…1611` | `1ccb9e5a…ae91` | `201e75ed…ef1c` |
-| ffprobe sha256 | `7abc49fb…71bc` | `e338afbe…ec95` | `20ff4fea…7809` |
+| Archive sha256 | `8287a1b2…07fe` / `102a26b8…741a` | `182c1b50…eb5a` | `ec9db2cd…ec83` |
+| ffmpeg sha256 | `393e4c39…1611` | `771831e4…e180` | `daeea959…b3fa` |
+| ffprobe sha256 | `7abc49fb…71bc` | `59e81a32…56c0` | `fe3a94d2…155f` |
 | Pins live in | `scripts/fetch-sidecars.sh:28-33` | `scripts/fetch-sidecars-linux.sh:31-37` | `scripts/fetch-sidecars-windows.ps1:34-40` |
 
 Notes:
@@ -190,7 +190,7 @@ that layout is what NSIS copies into Program Files).
 2. **NOTICE must list the ffmpeg builds separately.** macOS ships ffmpeg
    **9.0.1** from `https://ffmpeg.martin-riedl.de/download/macos/arm64/1787073674_9.0.1`;
    Linux and Windows ship **n9.0.1-11-ge47273f4d9** from
-   `https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-09-03-13-17`
+   `https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-08-31-13-27`
    (`linux64-gpl` / `win64-gpl`). Both are GPL builds, so the GPL-3.0 notice
    needs upstream sources (ffmpeg.org, tag `n9.0.1`) plus the build recipes
    (the two builder projects). whisper.cpp is MIT, tag `v1.7.6`, from
