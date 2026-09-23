@@ -36,15 +36,16 @@ $Out = Join-Path $Repo 'app/src-tauri/binaries'
 # .exe внутри) и NOTICE.md. Плавающих ссылок здесь быть не должно: у BtbN есть
 # релиз с тегом latest и ассеты, у которых вместо версии в имени стоят «master»
 # и «latest», — под теми же адресами лежит меняющееся содержимое. Брать только
-# versioned-релиз autobuild-ГГГГ-ММ-ДД-ЧЧ-ММ. Релиз и версия те же, что у
-# linux-скрипта: одна поставка ffmpeg на две платформы.
-$BtbnTag = 'autobuild-2026-09-03-13-17'
+# versioned-релиз autobuild-ГГГГ-ММ-ДД-ЧЧ-ММ, и только месячный (последний день
+# месяца): дневные BtbN удаляет недели через две — см. linux-скрипт. Релиз и
+# версия те же, что у linux-скрипта: одна поставка ffmpeg на две платформы.
+$BtbnTag = 'autobuild-2026-08-31-13-27'
 $FfmpegVersion = 'n9.0.1-11-ge47273f4d9'
 $FfmpegArchive = "ffmpeg-$FfmpegVersion-win64-gpl-9.0.zip"
 $FfmpegArchiveUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/$BtbnTag/$FfmpegArchive"
-$FfmpegArchiveSha = 'cf2beec370200044af55f6bed072bb7aa4cdf49901812e249c8a00ce2a7cba0c'
-$FfmpegBinSha = '201e75ed6372057c8c6a70bbffdb498724b1662c620e837dfae9147a4472ef1c'
-$FfprobeBinSha = '20ff4fea81502abcfc0de0fd062fed0afa5387c672a1ccaf89b6791f86d37809'
+$FfmpegArchiveSha = 'ec9db2cda1f5894ab95446076ad8bf49379db4b53c02e778ad3b49adf91fec83'
+$FfmpegBinSha = 'daeea959fd6a400eec29bf1ede560962e92546ec31fe5f60ccdc076a4c3db3fa'
+$FfprobeBinSha = 'fe3a94d2b2899191234870d95e85fd2bcc9c0cee830e7d8d78fcea8a2375155f'
 
 # whisper.cpp: тот же тег, что на маке и линуксе, — одна версия движка на все
 # поставки. Флаги:
