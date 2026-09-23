@@ -3,6 +3,17 @@
   "private": true,
   "version": "0.8.3",
   "type": "module",
+  "author": {
+    "name": "Egor Protasov",
+    "email": "hello@mediachef.app",
+    "url": "https://egorprotasov.ru/"
+  },
+  "homepage": "https://mediachef.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kom1sh/mediachef.git"
+  },
+  "license": "GPL-3.0-only",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

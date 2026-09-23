@@ -3,7 +3,7 @@
 // В колонке «Скачать» — прямые ссылки на файлы релиза с их весом.
 import Flag from "./Flag.astro";
 import { footerFor, UI } from "../nav";
-import { T, FACTS, LOCALES, LOCALE_META, pathFor, type Locale, type PageId } from "../content";
+import { T, FACTS, AUTHOR, authorName, LOCALES, LOCALE_META, pathFor, type Locale, type PageId } from "../content";
 
 interface Props { locale: Locale; page: PageId }
 const { locale, page } = Astro.props;
@@ -69,6 +69,10 @@ const cols = footerFor(locale, page);
     <p class="foot-rights">
       <span>{t.footRights}</span>
       <span class="foot-tag">{t.footTagline}</span>
+      {/* Подпись автора: обычная видимая ссылка, в анкоре — имя, одно и то же
+          на всех страницах локали, адрес без меток. Тот же человек описан в
+          JSON-LD под `@id` egorprotasov.ru/#person. */}
+      <span class="foot-author">{t.footAuthor} <a rel="author" href={AUTHOR.url}>{authorName(locale)}</a></span>
     </p>
     {/* Отозвать согласие должно быть так же просто, как дать: кнопка на каждой
         странице открывает тот же баннер (Base.astro). */}

@@ -15,7 +15,7 @@ import it from "./copy/it";
 import ar from "./copy/ar";
 import zh from "./copy/zh";
 
-export { SITE, LINKS, FACTS, FEEDBACK_EMAIL } from "./facts";
+export { SITE, LINKS, FACTS, FEEDBACK_EMAIL, AUTHOR, authorName } from "./facts";
 
 export type PageId =
   | "home"

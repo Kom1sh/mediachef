@@ -2,7 +2,9 @@
 name = "mediachef"
 version = "0.1.0"
 description = "FFmpeg for humans + local transcription"
-authors = ["MediaChef contributors"]
+authors = ["Egor Protasov <hello@mediachef.app>"]
+homepage = "https://mediachef.app"
+repository = "https://github.com/Kom1sh/mediachef"
 edition = "2021"
 license = "GPL-3.0-only"
 

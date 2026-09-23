@@ -25,6 +25,14 @@ const GOAL = 603461103; // цель «Скачал приложение»
 const REPO = "Kom1sh/mediachef";
 const WINGET_PR = 434688;
 
+// Сети, из которых сайт проверяли мы сами: чистый тест Claude 15.09 и
+// проверка «как видят сайт роботы» 20.09 шли через VPN (польские, немецкие,
+// нидерландские и эстонские выходы) и за одну минуту представлялись всеми
+// ботами подряд. Настоящих заходов роботов из них не было, а без этого
+// фильтра они выглядели как «первые визиты ботов Claude».
+const OWN_CHECK_NETS = [25198, 34702, 60404];
+const notOurs = `(asn IS NULL OR asn NOT IN (${OWN_CHECK_NETS.join(",")}))`;
+
 const DAY = 24 * 60 * 60 * 1000;
 const now = Date.now();
 const weekStart = now - 7 * DAY;
@@ -123,6 +131,25 @@ async function people() {
   line("скачивания (клик по файлу)", cur.downloads, prev.downloads);
   line("из ChatGPT — визиты", cur.chatgptVisits, prev.chatgptVisits);
   line("из ChatGPT — скачивания", cur.chatgptDownloads, prev.chatgptDownloads);
+  // Интерес и кликабельность падают по отдельности, и путать их дорого.
+  // «Разбор» — ChatGPT сам открыл страницу, чтобы ответить человеку: это
+  // журнал на сервере, согласия и блокировщики на него не влияют. Визит —
+  // человек после этого ответа пришёл. 20.09.2026 разборы держались ровно
+  // (~17 в день), а переходы упали с 6–9 до 1–3 в день: спрос был прежний,
+  // изменилась только доля тех, кто нажимает ссылку в ответе.
+  try {
+    const [reads] = await d1(
+      `SELECT SUM(at>=${weekStart}) AS week, SUM(at<${weekStart} AND at>=${prevStart}) AS prev
+         FROM hits WHERE bot='ChatGPT-User' AND asn=8075 AND status=200`,
+    );
+    const r = reads.results[0] ?? {};
+    const [week, before] = [r.week ?? 0, r.prev ?? 0];
+    line("ChatGPT разобрал страницу", week, before);
+    const per = (v, reads) => (reads ? (10 * v / reads).toFixed(1) : "—");
+    note(`на 10 разборов приходит переходов: ${per(cur.chatgptVisits, week)} (неделей раньше ${per(prev.chatgptVisits, before)})`);
+  } catch {
+    note("журнал роботов не ответил — строка про разборы пропущена");
+  }
   line("из Google", cur.google, prev.google);
   line("из Яндекса", cur.yandex, prev.yandex);
   return [r];
@@ -140,10 +167,10 @@ async function robotsAndFeedback() {
          COUNT(DISTINCT CASE WHEN at<${weekStart} AND bot='OAI-SearchBot' AND path<>'/robots.txt' THEN path END) AS oai_prev,
          COUNT(DISTINCT CASE WHEN at>=${weekStart} AND bot='GPTBot' THEN path END) AS gpt,
          COUNT(DISTINCT CASE WHEN at<${weekStart} AND bot='GPTBot' THEN path END) AS gpt_prev,
-         SUM(at>=${weekStart} AND bot='PerplexityBot') AS pplx,
-         SUM(at<${weekStart} AND bot='PerplexityBot') AS pplx_prev,
-         SUM(at>=${weekStart} AND bot LIKE 'Claude%') AS claude,
-         SUM(at<${weekStart} AND bot LIKE 'Claude%') AS claude_prev
+         SUM(at>=${weekStart} AND bot='PerplexityBot' AND ${notOurs}) AS pplx,
+         SUM(at<${weekStart} AND bot='PerplexityBot' AND ${notOurs}) AS pplx_prev,
+         SUM(at>=${weekStart} AND bot LIKE 'Claude%' AND ${notOurs}) AS claude,
+         SUM(at<${weekStart} AND bot LIKE 'Claude%' AND ${notOurs}) AS claude_prev
        FROM hits WHERE at>=${prevStart}`,
       `SELECT path, COUNT(*) AS n FROM hits
        WHERE at>=${weekStart} AND bot='ChatGPT-User' AND asn=8075 AND path NOT IN ('/','/en/','/robots.txt')
