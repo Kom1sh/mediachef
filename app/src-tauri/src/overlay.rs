@@ -6,7 +6,7 @@
 //! печатает текст в **активное** окно. Если плашка станет активной, «активным
 //! окном» окажется она сама, и текст уедет в никуда.
 //!
-//! Держится это на трёх вещах:
+//! Держится это на четырёх вещах:
 //!
 //! - `focusable(false)` — Tauri создаёт окна не голым `NSWindow`, а своим
 //!   подклассом `TaoWindow`, который переопределяет `canBecomeKeyWindow` и
@@ -18,22 +18,39 @@
 //!   `orderFront:` — см. [`show_above_menu_bar`]. Показ силами Tauri
 //!   (`show()`/`set_visible`) идёт через `makeKeyAndOrderFront`, и полагаться
 //!   на него мы не стали.
+//! - окно на время показа становится `NSPanel` со стилем `NonactivatingPanel`.
 //!
-//! ## Про `NSPanel`, которого здесь нет
+//! ## Про `NSPanel`: зачем он и почему однажды ронял программу
 //!
-//! Одна редакция этого модуля подменяла класс окна на `NSPanel` со стилем
-//! `NonactivatingPanel` — по учебнику это единственный «настоящий» запрет на
-//! активацию приложения. Она и уронила программу: KVO в Objective-C устроен
-//! подменой isa, WebKit подписывается на окно через KVO, и наш
-//! `object_setClass` затирал его обёртку. При закрытии плашки WebKit
-//! отписывался, runtime не находил подписки и бросал исключение, а Rust через
-//! чужое исключение не раскручивается — процесс глох с голым «abort() called».
+//! Первые три пункта не дают стать активным **окну**, но не **приложению**.
+//! Появление обычного окна может вывести MediaChef вперёд, и тогда текст
+//! уезжает в его главное окно вместо поля, куда диктовали. Так было в
+//! сентябре («курсор слетал с телеграма»), и так же вышло 23.09.2026 на
+//! самопроверке: через 30 секунд после запуска показ плашки сделал приложение
+//! активным и выдернул человека из полноэкранного Терминала на другой рабочий
+//! стол. Через 6 секунд после запуска этого не видно — поэтому прежний замер
+//! «без панели не активирует» и ошибся.
 //!
-//! Проверили, нужна ли подмена вообще: самопроверка (`MEDIACHEF_SELFTEST=
-//! overlay`, см. `dictation.rs`) выводит вперёд другое приложение, показывает
-//! плашку и спрашивает у `NSApp`, активны ли мы. Ответ — нет, что с подменой,
-//! что без неё. Подмену убрали; самопроверка осталась как измеритель.
-//! Стороннего `tauri-nspanel` не понадобилось, и теперь понятно, почему.
+//! Второе, что даёт только панель, — показ поверх чужого полноэкранного
+//! приложения. Обычное окно обычного приложения macOS туда не пускает даже с
+//! `FullScreenAuxiliary`: в журнале диктовки плашка в таких случаях честно
+//! докладывала `visibility: hidden` и ноль кадров, хотя «показалась».
+//!
+//! Неактивирующим бывает только `NSPanel`, поэтому класс окна подменяется.
+//! Эта подмена однажды и роняла программу на закрытии плашки: WebKit
+//! подписывается на окно через KVO, а KVO устроен подменой того же isa —
+//! класс окна к тому моменту уже `NSKVONotifying_TaoWindow`. Наш
+//! `object_setClass(…, NSPanel)` затирал обёртку, и при закрытии WebKit не
+//! мог отписаться: «Cannot remove an observer … from NSPanel because it is not
+//! registered». Rust через чужое исключение не раскручивается — процесс глох
+//! с голым «abort() called».
+//!
+//! Теперь подмена обратима: исходный класс запоминается при показе и
+//! возвращается окну перед закрытием — см. [`restore_class`]. Пока плашка
+//! на экране, она панель; закрывается она тем же окном, на которое
+//! подписывался WebKit. Проверяется самопроверкой
+//! `MEDIACHEF_SELFTEST=overlay` (см. `dictation.rs`): она показывает, скрывает
+//! и закрывает плашку и пишет, пережили ли закрытие.
 //!
 //! ## Почему окно создаётся и закрывается каждый раз
 //!
@@ -61,6 +78,8 @@
 //! сверху. Одна раскладка, все случаи выглядят правильно.
 
 use serde::Serialize;
+#[cfg(target_os = "macos")]
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindow};
 
 /// Ярлык окна. По нему же адресуются события.
@@ -186,10 +205,36 @@ pub fn update(app: &AppHandle, status: &Status) {
 }
 
 /// Убирает плашку.
+///
+/// Возврат класса и закрытие — одной задачей на главном потоке и именно в
+/// этом порядке: закрыть окно, пока оно ещё `NSPanel`, — это то самое падение
+/// из шапки модуля.
 pub fn hide(app: &AppHandle) {
-    if let Some(win) = app.get_webview_window(LABEL) {
+    let Some(win) = app.get_webview_window(LABEL) else {
+        return;
+    };
+    let _ = app.run_on_main_thread(move || {
+        #[cfg(target_os = "macos")]
+        restore_class(&win);
         let _ = win.close();
+    });
+}
+
+/// Перед выходом из приложения: если плашка ещё на экране, вернуть окну
+/// исходный класс.
+///
+/// Выход (⌘Q посреди диктовки, закрытие главного окна) сносит окна без
+/// [`hide`], и закрыть плашку, пока она `NSPanel`, — то же падение, что в
+/// шапке модуля. Зовётся из обработчика выхода в `lib.rs`; он и так на главном
+/// потоке, поэтому здесь без `run_on_main_thread` — к следующему витку цикла
+/// окна уже может не быть.
+pub fn before_exit(app: &AppHandle) {
+    #[cfg(target_os = "macos")]
+    if let Some(win) = app.get_webview_window(LABEL) {
+        restore_class(&win);
     }
+    #[cfg(not(target_os = "macos"))]
+    let _ = app;
 }
 
 /// Активно ли приложение сейчас — для самопроверки: так измеряется, крадёт ли
@@ -223,6 +268,33 @@ pub fn app_is_active() -> bool {
     false
 }
 
+/// Исходный класс окна плашки на время, пока она `NSPanel`. Ноль — подмены
+/// нет. Плашка одна, поэтому хватает одного числа.
+#[cfg(target_os = "macos")]
+static ORIGINAL_CLASS: AtomicUsize = AtomicUsize::new(0);
+
+/// Возвращает окну класс, который был у него до подмены на `NSPanel`.
+///
+/// Без этого WebKit при закрытии не находит своей подписки и роняет процесс
+/// (см. шапку модуля). Звать с главного потока и до `close()`.
+#[cfg(target_os = "macos")]
+fn restore_class(win: &WebviewWindow) {
+    use std::ffi::c_void;
+    extern "C" {
+        fn object_setClass(obj: *mut c_void, cls: *mut c_void) -> *mut c_void;
+    }
+    let original = ORIGINAL_CLASS.swap(0, Ordering::SeqCst);
+    if original == 0 {
+        return;
+    }
+    let Ok(ns) = win.ns_window() else { return };
+    // SAFETY: `ns` — живое окно плашки, `original` — его собственный класс,
+    // снятый при показе; раскладка полей у него та же, что у `NSPanel`.
+    let _ = objc2::exception::catch(|| unsafe {
+        object_setClass(ns, original as *mut c_void);
+    });
+}
+
 /// Поднимает окно выше строки меню и показывает его, никого не активируя.
 ///
 /// Здесь собрано то, чего не дают флаги Tauri, и каждая строка оплачена
@@ -244,12 +316,17 @@ fn show_above_menu_bar(win: &WebviewWindow) -> Result<(), String> {
     let ns = win.ns_window().map_err(|e| e.to_string())?;
 
     extern "C" {
+        fn objc_getClass(name: *const u8) -> *mut c_void;
+        fn object_getClass(obj: *mut c_void) -> *mut c_void;
+        fn object_setClass(obj: *mut c_void, cls: *mut c_void) -> *mut c_void;
         fn sel_registerName(name: *const u8) -> *const c_void;
         fn objc_msgSend();
     }
 
     /// Выше строки меню (24).
     const STATUS_LEVEL: i64 = 25;
+    /// `NSWindowStyleMaskNonactivatingPanel`. Действует только у `NSPanel`.
+    const NONACTIVATING_PANEL: u64 = 1 << 7;
 
     // Всё, что ниже, — под ловушкой исключений Objective-C, и это не
     // осторожность ради осторожности. Rust не умеет раскручиваться через чужое
@@ -269,6 +346,20 @@ fn show_above_menu_bar(win: &WebviewWindow) -> Result<(), String> {
         let send_void: extern "C" fn(*mut c_void, *const c_void, *const c_void) =
             std::mem::transmute(objc_msgSend as *const ());
 
+        // Панель — первой: и уровень, и поведение на полноэкранных столах
+        // должны достаться уже панели. Исходный класс запоминаем, чтобы
+        // вернуть его перед закрытием (см. шапку модуля).
+        let panel = objc_getClass(c"NSPanel".as_ptr() as *const u8);
+        let original = object_getClass(ns);
+        if !panel.is_null() && !original.is_null() && original != panel {
+            ORIGINAL_CLASS.store(original as usize, Ordering::SeqCst);
+            object_setClass(ns, panel);
+            send_u64(
+                ns,
+                sel_registerName(c"setStyleMask:".as_ptr() as *const u8),
+                NONACTIVATING_PANEL,
+            );
+        }
         send_i64(
             ns,
             sel_registerName(c"setLevel:".as_ptr() as *const u8),

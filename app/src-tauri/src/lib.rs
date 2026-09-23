@@ -898,7 +898,7 @@ pub fn run() {
         // Tauri app can see the quit coming.
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(move |_app, event| {
+        .run(move |app, event| {
             // Both arms, because neither covers every way out on its own (tauri
             // 2.11 / tauri-runtime-wry 2.11 / tao 0.35):
             //
@@ -928,6 +928,7 @@ pub fn run() {
                 event,
                 tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
             ) {
+                overlay::before_exit(app);
                 shutdown(&shutdown_q, &shutdown_dl);
             }
         });
