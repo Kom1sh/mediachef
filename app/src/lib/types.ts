@@ -1,5 +1,6 @@
 import type { Locale } from "./i18n";
 import type { Theme } from "./theme";
+import type { Os } from "./platform";
 
 export type MediaType = "video" | "audio" | "image" | "subtitle" | "any";
 /**
@@ -66,6 +67,8 @@ export interface DictationStatus {
   /** «authorized» | «denied» | «restricted» | «undetermined» | «unknown». */
   microphone: string;
   log_path: string;
+  /** Linux на Wayland: глобальных сочетаний и ввода в чужие окна там нет. */
+  wayland: boolean;
 }
 
 /**
@@ -91,6 +94,30 @@ export const DICTATION_HOTKEYS = [
   { value: "Ctrl+Option+Space", label: "⌃⌥ Space" },
   { value: "Ctrl+Option+D", label: "⌃⌥ D" },
 ] as const;
+
+/**
+ * Те же сочетания для Windows и Linux — их подписями.
+ *
+ * Одиночных модификаторов здесь нет: перехватчик для них есть только на
+ * macOS. Значения прежние — плагин хоткеев читает «Option» на ПК как Alt, —
+ * меняются только подписи: «⌃⌥ D» человеку с Windows ни о чём не говорит.
+ */
+export const DICTATION_HOTKEYS_PC = [
+  { value: "Ctrl+Option+Space", label: "Ctrl+Alt+Space" },
+  { value: "Ctrl+Option+D", label: "Ctrl+Alt+D" },
+] as const;
+
+/**
+ * Сочетание, которое на этой системе действительно слушается.
+ *
+ * На Windows и Linux Rust заменяет одиночный модификатор на Ctrl+Option+D —
+ * см. `modkey::plugin_fallback`. Экран обязан показывать выбранным именно его,
+ * а не записанный в настройках «Правый ⌥», которого на этой системе нет.
+ */
+export function effectiveHotkey(value: string, os: Os): string {
+  if (os === "macos") return value;
+  return value === "RightOption" || value === "RightCommand" ? "Ctrl+Option+D" : value;
+}
 
 export interface Param {
   key: string;

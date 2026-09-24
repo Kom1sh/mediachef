@@ -21,7 +21,8 @@ import { DICTS, LocaleProvider, type Locale } from "../lib/i18n";
 import { UpdateBar } from "./UpdateBar";
 import { AskBar } from "./AskBar";
 import type { Updater } from "../lib/useUpdater";
-import type { AppSettings, JobView } from "../lib/types";
+import type { AppSettings, DictationStatus, JobView } from "../lib/types";
+import type { Os } from "../lib/platform";
 
 /** The component under the locale the app would give it. */
 const render = (locale: Locale, node: ReactElement) =>
@@ -239,11 +240,23 @@ describe("DictationPanel", () => {
     language: "ru", theme: "dark", output_mode: "beside",
     output_dir: null, notifications: false, ffmpeg_workers: 1, dictation,
   };
-  const panel = (over: Partial<AppSettings["dictation"]> = {}) =>
+  const panel = (
+    over: Partial<AppSettings["dictation"]> = {},
+    env: { os?: Os; initialStatus?: DictationStatus | null } = {},
+  ) =>
     render("ru", createElement(DictationPanel, {
       settings: { ...settings, dictation: { ...dictation, ...over } },
       onChange: () => {}, error: "", onOpenModels: () => {},
+      os: "macos", ...env,
     }));
+  // Значение — в регулярку экранированным: в «Ctrl+Option+D» плюс — квантификатор.
+  const checked = (markup: string, name: string, value: string) => {
+    const v = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return markup.match(new RegExp(`<input[^>]*name="${name}"[^>]*value="${v}"[^>]*>`))?.[0] ?? "";
+  };
+  const status = (over: Partial<DictationStatus> = {}): DictationStatus => ({
+    accessibility: true, microphone: "authorized", log_path: "", wayland: false, ...over,
+  });
 
   /* Каждый контрол показывает то, что записано: включённость, триггер, обе
      модели. Статический рендер эффектов не гонит, поэтому списка моделей с той
@@ -282,6 +295,45 @@ describe("DictationPanel", () => {
     expect(markup).toContain('role="switch" aria-checked="false"');
     expect(markup).toContain("mc-dictation-key");
     expect(markup).toContain("mc-dictation-model");
+  });
+
+  /* Программа одна на три системы, и на Windows и Linux вкладка говорит их
+     языком: «Ctrl+Alt+D», а не «⌃⌥ D», без «Универсального доступа», которого
+     там нет, и без мак-подсказок про AirPods. Выбранным показано то, что там
+     действительно слушается: записанный «Правый ⌥» Rust на ПК заменяет на
+     Ctrl+Option+D. Так пользователь на Linux 24.09.2026 и решил, что
+     диктовка — чужая мак-фича. */
+  for (const os of ["windows", "linux"] as const) {
+    it(`speaks the language of ${os}`, () => {
+      const markup = panel({ hotkey: "RightOption" }, { os });
+      expect(checked(markup, "mc-dictation-key", "Ctrl+Option+D")).toContain('checked=""');
+      expect(markup).toContain("Ctrl+Alt+D");
+      expect(markup).toContain("Ctrl+Alt+Space");
+      for (const mac of ["⌥", "⌘", "⌃", "AirPods", "macOS", DICTS.ru.setDictationPermission]) {
+        expect(markup, mac).not.toContain(mac);
+      }
+      expect(markup).toContain(DICTS.ru.setDictationKeyHintPc);
+      expect(markup).toContain(DICTS.ru.setDictationMicHintPc);
+      // Выбор микрофона остаётся: он нужен на любой системе.
+      expect(markup).toContain("mc-dictation-mic");
+    });
+  }
+
+  it("keeps the macOS screen as it was", () => {
+    const markup = panel({ hotkey: "RightOption" }, { os: "macos" });
+    expect(checked(markup, "mc-dictation-key", "RightOption")).toContain('checked=""');
+    expect(markup).toContain(DICTS.ru.hotkeyRightOption);
+    expect(markup).toContain(DICTS.ru.setDictationPermission);
+    expect(markup).not.toContain("Ctrl+Alt+D");
+  });
+
+  /* На Wayland диктовка не работает совсем — вкладка говорит это прямо, и
+     только там: на X11 и на других системах предупреждать не о чем. */
+  it("warns on Wayland and nowhere else", () => {
+    expect(panel({}, { os: "linux", initialStatus: status({ wayland: true }) })).toContain(DICTS.ru.dictWayland);
+    expect(panel({}, { os: "linux", initialStatus: status({ wayland: false }) })).not.toContain(DICTS.ru.dictWayland);
+    expect(panel({}, { os: "windows", initialStatus: status({ wayland: true }) })).not.toContain(DICTS.ru.dictWayland);
+    expect(panel({}, { os: "linux", initialStatus: null })).not.toContain(DICTS.ru.dictWayland);
   });
 });
 
