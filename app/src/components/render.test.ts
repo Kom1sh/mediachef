@@ -306,18 +306,36 @@ describe("DictationPanel", () => {
   for (const os of ["windows", "linux"] as const) {
     it(`speaks the language of ${os}`, () => {
       const markup = panel({ hotkey: "RightOption" }, { os });
-      expect(checked(markup, "mc-dictation-key", "Ctrl+Option+D")).toContain('checked=""');
-      expect(markup).toContain("Ctrl+Alt+D");
-      expect(markup).toContain("Ctrl+Alt+Space");
       for (const mac of ["⌥", "⌘", "⌃", "AirPods", "macOS", DICTS.ru.setDictationPermission]) {
         expect(markup, mac).not.toContain(mac);
       }
-      expect(markup).toContain(DICTS.ru.setDictationKeyHintPc);
       expect(markup).toContain(DICTS.ru.setDictationMicHintPc);
       // Выбор микрофона остаётся: он нужен на любой системе.
       expect(markup).toContain("mc-dictation-mic");
     });
   }
+
+  /* Windows: одна клавиша, как на маке, а не три разом. Записанный «Правый ⌥»
+     там значит правый Ctrl — его и видно выбранным. */
+  it("offers one-key triggers on Windows", () => {
+    const markup = panel({ hotkey: "RightOption" }, { os: "windows" });
+    expect(checked(markup, "mc-dictation-key", "RightCtrl")).toContain('checked=""');
+    for (const label of [DICTS.ru.hotkeyRightCtrl, DICTS.ru.hotkeyRightAlt, "Caps Lock"]) {
+      expect(markup, label).toContain(label);
+    }
+    expect(markup).toContain(DICTS.ru.setDictationKeyHintWin);
+    expect(markup).not.toContain("Ctrl+Alt+D");
+  });
+
+  /* Linux: одиночного перехватчика пока нет — сочетания, но подписанные
+     по-человечески. */
+  it("offers Ctrl+Alt combinations on Linux", () => {
+    const markup = panel({ hotkey: "RightOption" }, { os: "linux" });
+    expect(checked(markup, "mc-dictation-key", "Ctrl+Option+D")).toContain('checked=""');
+    expect(markup).toContain("Ctrl+Alt+D");
+    expect(markup).toContain("Ctrl+Alt+Space");
+    expect(markup).toContain(DICTS.ru.setDictationKeyHintPc);
+  });
 
   it("keeps the macOS screen as it was", () => {
     const markup = panel({ hotkey: "RightOption" }, { os: "macos" });

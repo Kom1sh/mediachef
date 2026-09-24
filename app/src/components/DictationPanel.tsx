@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { LOCALES, LOCALE_FLAGS, LOCALE_NAMES, useT } from "../lib/i18n";
 import { getDictationStatus, getInputDevices, getModels, openAccessibilitySettings, openMicrophoneSettings, revealFile } from "../lib/ipc";
-import { DICTATION_HOTKEYS, DICTATION_HOTKEYS_PC, DICTIONARY_MAX_CHARS, effectiveHotkey } from "../lib/types";
+import { DICTIONARY_MAX_CHARS, effectiveHotkey, hotkeysFor } from "../lib/types";
 import { OS, type Os } from "../lib/platform";
 import type { AppSettings, Dictation, DictationStatus, ModelView } from "../lib/types";
 import { Row, Segmented, SoftButton, Switch, type Choice } from "./controls";
@@ -141,19 +141,21 @@ export function DictationPanel({
           <Switch label={t("setDictation")} on={d.enabled} onToggle={enabled => set({ enabled })} />
         </Row>
 
-        <Row icon={Keyboard} label={t("setDictationKey")} hint={t(mac ? "setDictationKeyHint" : "setDictationKeyHintPc")}>
+        <Row
+          icon={Keyboard} label={t("setDictationKey")}
+          hint={t(mac ? "setDictationKeyHint" : os === "windows" ? "setDictationKeyHintWin" : "setDictationKeyHintPc")}
+        >
           <Segmented
-            // Выбранным — то, что на этой системе действительно слушается: на ПК
-            // вместо одиночного модификатора Rust ставит Ctrl+Alt+D.
+            // Выбранным — то, что на этой системе действительно слушается: на
+            // Windows правый ⌥ — это правый Ctrl, на Linux любой триггер —
+            // Ctrl+Alt+D.
             name="mc-dictation-key" label={t("setDictationKey")} value={effectiveHotkey(d.hotkey, os)}
             // Закрытый список, а не поле ввода: триггер перехватывается до всех
             // приложений, и самые естественные комбинации — как раз самые негодные.
-            choices={mac
-              ? DICTATION_HOTKEYS.map(h => ({
-                  value: h.value,
-                  label: "labelKey" in h ? t(h.labelKey) : h.label,
-                }))
-              : DICTATION_HOTKEYS_PC.map(h => ({ value: h.value, label: h.label }))}
+            choices={hotkeysFor(os).map(h => ({
+              value: h.value,
+              label: "labelKey" in h ? t(h.labelKey) : h.label,
+            }))}
             onPick={hotkey => set({ hotkey })}
           />
         </Row>

@@ -384,9 +384,12 @@ pub fn apply(
 
     warm_up_once(&rt);
 
-    // Триггер-модификатор идёт своим путём: плагин хоткеев его не умеет.
+    // Триггер-одиночка идёт своим путём: плагин хоткеев его не умеет. Сначала
+    // — что записанное значит на этой системе (правый ⌥ на Windows — правый
+    // Ctrl), потом — есть ли здесь перехватчик для него.
+    let wanted = crate::modkey::native(&wanted);
     if let Some(trigger) = crate::modkey::Trigger::parse(&wanted) {
-        if cfg!(target_os = "macos") {
+        if trigger.supported() {
             return install_modifier_trigger(app, &rt, trigger);
         }
     }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { osFromUserAgent } from "./platform";
+import { effectiveHotkey, hotkeysFor } from "./types";
 
 /* Настоящие строки userAgent вебвью, в которых живёт программа. От ответа
    зависят подписи клавиш на вкладке диктовки — ошибка здесь показала бы
@@ -20,5 +21,28 @@ describe("osFromUserAgent", () => {
   it("falls back to macOS for anything else, tests included", () => {
     expect(osFromUserAgent("")).toBe("macos");
     expect(osFromUserAgent("Node.js/22")).toBe("macos");
+  });
+});
+
+/* Что записанный хоткей значит на каждой системе — зеркало `modkey::native` и
+   `plugin_fallback` в Rust. Разойдутся они — вкладка покажет выбранным одно,
+   а слушаться будет другое. */
+describe("effectiveHotkey", () => {
+  it("maps each trigger to what the system can listen to", () => {
+    expect(effectiveHotkey("RightOption", "macos")).toBe("RightOption");
+    expect(effectiveHotkey("CapsLock", "macos")).toBe("RightOption");
+    expect(effectiveHotkey("RightOption", "windows")).toBe("RightCtrl");
+    expect(effectiveHotkey("RightAlt", "windows")).toBe("RightAlt");
+    expect(effectiveHotkey("RightCtrl", "linux")).toBe("Ctrl+Option+D");
+    expect(effectiveHotkey("Ctrl+Option+Space", "linux")).toBe("Ctrl+Option+Space");
+  });
+
+  it("always lands on a choice the tab offers", () => {
+    for (const os of ["macos", "windows", "linux"] as const) {
+      const values: string[] = hotkeysFor(os).map(h => h.value);
+      for (const stored of ["RightOption", "RightCommand", "RightCtrl", "RightAlt", "CapsLock"]) {
+        expect(values, `${os}: ${stored}`).toContain(effectiveHotkey(stored, os));
+      }
+    }
   });
 });
