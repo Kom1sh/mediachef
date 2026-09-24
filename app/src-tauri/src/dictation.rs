@@ -390,7 +390,32 @@ pub fn apply(
     let wanted = crate::modkey::native(&wanted);
     if let Some(trigger) = crate::modkey::Trigger::parse(&wanted) {
         if trigger.supported() {
-            return install_modifier_trigger(app, &rt, trigger);
+            match install_modifier_trigger(app, &rt, trigger) {
+                Ok(()) => return Ok(()),
+                // Страховка Windows. Хук клавиатуры там новый (0.8.5), и живьём
+                // его проверить было не на чем. Не дала Windows поставить хук —
+                // диктовка не умирает, а уходит на прежнее Ctrl+Alt+D через
+                // плагин и говорит об этом. На маке ошибка значит «нет
+                // разрешения», и её честнее отдать как есть.
+                Err(e) if cfg!(target_os = "windows") => {
+                    trace(
+                        &rt,
+                        &format!(
+                            "триггер {}: {e} — страховка, переходим на Ctrl+Alt+D",
+                            trigger.describe()
+                        ),
+                    );
+                    deliver::notify(
+                        app,
+                        "Диктовка",
+                        &format!(
+                            "Не удалось включить {} — пока диктовка работает по Ctrl+Alt+D.",
+                            trigger.describe()
+                        ),
+                    );
+                }
+                Err(e) => return Err(e),
+            }
         }
     }
     let _ = crate::modkey::configure(app, None);
