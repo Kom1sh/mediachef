@@ -153,10 +153,13 @@ impl Dictation {
     /// На macOS — правый ⌥, одиночный модификатор: он ничего не печатает, и в
     /// сочетаниях его почти не используют (жмут левый). Первая редакция брала
     /// `Option+Space`, и на живых руках это провалилось — см. `modkey.rs`. На
-    /// других системах одиночный модификатор не реализован, там остаётся
-    /// комбинация для плагина хоткеев.
+    /// Windows — правый Ctrl: одна клавиша, как на маке, и в одиночку она
+    /// ничего не делает. На Linux одиночный триггер не реализован, там
+    /// остаётся комбинация для плагина хоткеев.
     pub const DEFAULT_HOTKEY: &'static str = if cfg!(target_os = "macos") {
         "RightOption"
+    } else if cfg!(target_os = "windows") {
+        "RightCtrl"
     } else {
         "Ctrl+Option+D"
     };
@@ -322,6 +325,19 @@ fn sanitize_dictation(mut d: Dictation) -> Dictation {
     // осталась в настройках, получают новый умолчательный триггер.
     if d.hotkey == "Option+Space" {
         d.hotkey = Dictation::default().hotkey;
+    }
+    // Windows до 0.8.5 умел только сочетания для плагина — Ctrl+Alt+D или
+    // Ctrl+Alt+Space, три клавиши разом. Теперь там есть одиночный триггер, и
+    // прежние значения (как и мак-триггеры, которых на Windows нет) переходят
+    // на правый Ctrl — новое умолчание. Выбрать сочетание вкладка на Windows
+    // больше не предлагает, так что задеть осознанный выбор это не может.
+    if cfg!(target_os = "windows")
+        && matches!(
+            d.hotkey.as_str(),
+            "Ctrl+Option+D" | "Ctrl+Option+Space" | "RightOption" | "RightCommand"
+        )
+    {
+        d.hotkey = "RightCtrl".into();
     }
     // Неизвестная модель — к значению по умолчанию: список тот же, что в
     // core/models.rs, и промах здесь означал бы «модель не скачана» на ровном
@@ -691,5 +707,22 @@ mod tests {
             err.contains("ejected"),
             "the error must name the folder: {err}"
         );
+    }
+
+    /// Windows: прежние сочетания в три клавиши и мак-триггеры переходят на
+    /// правый Ctrl; на других системах те же значения не трогаются.
+    #[test]
+    fn windows_moves_to_a_one_key_trigger() {
+        for old in ["Ctrl+Option+D", "Ctrl+Option+Space", "RightOption"] {
+            let d = sanitize_dictation(Dictation {
+                hotkey: old.into(),
+                ..Dictation::default()
+            });
+            if cfg!(target_os = "windows") {
+                assert_eq!(d.hotkey, "RightCtrl", "{old}");
+            } else {
+                assert_eq!(d.hotkey, old, "{old}");
+            }
+        }
     }
 }

@@ -384,9 +384,12 @@ pub fn apply(
 
     warm_up_once(&rt);
 
-    // Триггер-модификатор идёт своим путём: плагин хоткеев его не умеет.
+    // Триггер-одиночка идёт своим путём: плагин хоткеев его не умеет. Сначала
+    // — что записанное значит на этой системе (правый ⌥ на Windows — правый
+    // Ctrl), потом — есть ли здесь перехватчик для него.
+    let wanted = crate::modkey::native(&wanted);
     if let Some(trigger) = crate::modkey::Trigger::parse(&wanted) {
-        if cfg!(target_os = "macos") {
+        if trigger.supported() {
             return install_modifier_trigger(app, &rt, trigger);
         }
     }
@@ -950,6 +953,8 @@ pub struct Status {
     /// Разрешение на микрофон: `authorized` / `denied` / `restricted` /
     /// `undetermined` / `unknown`.
     pub microphone: String,
+    /// Сеанс Linux на Wayland — см. [`wayland_session`].
+    pub wayland: bool,
 }
 
 /// Снимок состояния для вкладки. Пустой путь — рантайм ещё не создан.
@@ -961,7 +966,22 @@ pub fn status() -> Status {
             .get()
             .map(|r| r.log.display().to_string())
             .unwrap_or_default(),
+        wayland: wayland_session(),
     }
+}
+
+/// Сеанс Linux на Wayland.
+///
+/// Там программе не дают ни глобальных сочетаний (плагин хоткеев ловит их
+/// через X11), ни ввода в чужие окна (`enigo` печатает тоже через X11), и
+/// диктовка молча не работает. Вкладка должна сказать это словами: так
+/// 24.09.2026 пользователь на niri решил, что фича сломана. Смотрим на тип
+/// сеанса, а не на то, как запущена сама программа: даже под XWayland чужие
+/// окна остаются Wayland-окнами.
+fn wayland_session() -> bool {
+    cfg!(target_os = "linux")
+        && (std::env::var("XDG_SESSION_TYPE").is_ok_and(|v| v.eq_ignore_ascii_case("wayland"))
+            || std::env::var_os("WAYLAND_DISPLAY").is_some_and(|v| !v.is_empty()))
 }
 
 fn lightest_model(models_dir: &std::path::Path) -> Option<PathBuf> {

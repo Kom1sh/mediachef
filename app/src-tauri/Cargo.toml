@@ -78,5 +78,15 @@ mediachef-core = { path = "../core" }
 # уже есть, так что новых зависимостей это не добавляет.
 objc2 = { version = "0.6", features = ["exception"] }
 
+[target.'cfg(target_os = "windows")'.dependencies]
+# Хук клавиатуры для триггера-одиночки на Windows (modkey.rs). Версия — та,
+# что уже есть в дереве у tao и прочих, новых загрузок это не добавляет.
+windows-sys = { version = "0.59", features = [
+  "Win32_Foundation",
+  "Win32_System_LibraryLoader",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
 [dev-dependencies]
 

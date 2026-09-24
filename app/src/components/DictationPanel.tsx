@@ -7,6 +7,13 @@
  * нужно рядом: выдано ли разрешение «Универсальный доступ» (без него не
  * работает ни триггер, ни печать) и где лежит журнал.
  *
+ * Программа одна на три системы, а клавиши, разрешения и подводные камни у
+ * систем разные. Экран говорит языком той, на которой запущен: на Windows и
+ * Linux — «Ctrl+Alt+D», а не «⌃⌥ D», без строки про «Универсальный доступ»,
+ * которого там нет, и с прямым предупреждением на Wayland. Иначе одна из
+ * главных функций выглядела на двух системах из трёх как чужая мак-фича —
+ * так её и прочитал пользователь на Linux 24.09.2026.
+ *
  * Экран не хранит настроек сам: каждое изменение уходит в `onChange`, который
  * сохраняет и принимает обратно то, что Rust действительно записал. Исключение
  * — словарь: это текстовое поле, и сохранять его на каждый символ значило бы
@@ -30,7 +37,8 @@ import {
 } from "lucide-react";
 import { LOCALES, LOCALE_FLAGS, LOCALE_NAMES, useT } from "../lib/i18n";
 import { getDictationStatus, getInputDevices, getModels, openAccessibilitySettings, openMicrophoneSettings, revealFile } from "../lib/ipc";
-import { DICTATION_HOTKEYS, DICTIONARY_MAX_CHARS } from "../lib/types";
+import { DICTIONARY_MAX_CHARS, effectiveHotkey, hotkeysFor } from "../lib/types";
+import { OS, type Os } from "../lib/platform";
 import type { AppSettings, Dictation, DictationStatus, ModelView } from "../lib/types";
 import { Row, Segmented, SoftButton, Switch, type Choice } from "./controls";
 
@@ -39,6 +47,8 @@ export function DictationPanel({
   onChange,
   error,
   onOpenModels,
+  os = OS,
+  initialStatus = null,
 }: {
   settings: AppSettings;
   onChange: (s: AppSettings) => void;
@@ -46,6 +56,10 @@ export function DictationPanel({
   error?: string;
   /** Переход к разделу моделей — скачать ту, которой нет на диске. */
   onOpenModels: () => void;
+  /** Система. В программе — своя, в тестах — любая из трёх. */
+  os?: Os;
+  /** Ответ `dictation_status` до запроса — для статического рендера в тестах. */
+  initialStatus?: DictationStatus | null;
 }) {
   const t = useT();
   const d = s.dictation;
@@ -55,7 +69,8 @@ export function DictationPanel({
   // открытии вкладки. Статический рендер (тесты) эффектов не гонит, и экран
   // обязан выглядеть честно и без них: «проверяю…» вместо выдуманного ответа.
   const [models, setModels] = useState<ModelView[]>([]);
-  const [status, setStatus] = useState<DictationStatus | null>(null);
+  const [status, setStatus] = useState<DictationStatus | null>(initialStatus);
+  const mac = os === "macos";
   const [devices, setDevices] = useState<string[]>([]);
   useEffect(() => {
     getModels().then(setModels).catch(() => {});
@@ -108,6 +123,14 @@ export function DictationPanel({
           <p className="mt-1 text-xs text-ink-2">{t("dictBlurb")}</p>
         </div>
 
+        {/* На Wayland диктовка не работает совсем, и молчать об этом значит
+            отправить человека искать поломку. Говорим до настроек, а не под ними. */}
+        {os === "linux" && status?.wayland ? (
+          <p role="note" className="rounded-lg border border-line bg-card-2 px-3 py-2 text-xs text-ink">
+            {t("dictWayland")}
+          </p>
+        ) : null}
+
         {error ? (
           <p role="alert" className="rounded-lg border border-danger bg-danger-soft px-3 py-2 text-xs text-danger-ink">
             {error}
@@ -118,12 +141,18 @@ export function DictationPanel({
           <Switch label={t("setDictation")} on={d.enabled} onToggle={enabled => set({ enabled })} />
         </Row>
 
-        <Row icon={Keyboard} label={t("setDictationKey")} hint={t("setDictationKeyHint")}>
+        <Row
+          icon={Keyboard} label={t("setDictationKey")}
+          hint={t(mac ? "setDictationKeyHint" : os === "windows" ? "setDictationKeyHintWin" : "setDictationKeyHintPc")}
+        >
           <Segmented
-            name="mc-dictation-key" label={t("setDictationKey")} value={d.hotkey}
+            // Выбранным — то, что на этой системе действительно слушается: на
+            // Windows правый ⌥ — это правый Ctrl, на Linux любой триггер —
+            // Ctrl+Alt+D.
+            name="mc-dictation-key" label={t("setDictationKey")} value={effectiveHotkey(d.hotkey, os)}
             // Закрытый список, а не поле ввода: триггер перехватывается до всех
             // приложений, и самые естественные комбинации — как раз самые негодные.
-            choices={DICTATION_HOTKEYS.map(h => ({
+            choices={hotkeysFor(os).map(h => ({
               value: h.value,
               label: "labelKey" in h ? t(h.labelKey) : h.label,
             }))}
@@ -176,7 +205,7 @@ export function DictationPanel({
           }
         />
 
-        <Row icon={ClipboardPaste} label={t("setDictationDelivery")} hint={t("setDictationDeliveryHint")}>
+        <Row icon={ClipboardPaste} label={t("setDictationDelivery")} hint={t(mac ? "setDictationDeliveryHint" : "setDictationDeliveryHintPc")}>
           <Segmented
             name="mc-dictation-delivery" label={t("setDictationDelivery")} value={d.delivery}
             // Два способа. Третьим была вставка через Cmd+V — она роняла
@@ -189,6 +218,9 @@ export function DictationPanel({
           />
         </Row>
 
+        {/* «Универсальный доступ» есть только на macOS; на ПК Rust отвечает
+            заглушкой «выдан», и строка с ней была бы и чужой, и пустой. */}
+        {mac ? (
         <Row icon={ShieldCheck} label={t("setDictationPermission")} hint={t("setDictationPermissionHint")}>
           <div className="flex flex-wrap items-center gap-2">
             {/* Состояние — словом, а не цветом: цвет вспомогательный, слово читается
@@ -205,13 +237,14 @@ export function DictationPanel({
             )}
           </div>
         </Row>
+        ) : null}
 
         {/* Микрофон — рядом с «Универсальным доступом», потому что слетают они
             вместе и одинаково: после обновления переключатель горит, а звука нет.
             Без разрешения macOS отдаёт тишину, а не ошибку, и по одной записи
             этого не понять — поэтому спрашиваем систему. */}
         <Row
-          icon={MicVocal} label={t("setDictationMic")} hint={t("setDictationMicHint")}
+          icon={MicVocal} label={t("setDictationMic")} hint={t(mac ? "setDictationMicHint" : "setDictationMicHintPc")}
           footer={
             <div className="w-full border-t border-line pt-3">
               <Segmented
@@ -221,6 +254,9 @@ export function DictationPanel({
             </div>
           }
         >
+          {/* Состояние разрешения — только там, где система его знает. На ПК
+              Rust отвечает заглушкой «разрешён», показывать её значит врать. */}
+          {mac ? (
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`rounded-md px-2 py-1 text-xs font-semibold ${
@@ -239,6 +275,7 @@ export function DictationPanel({
               <SoftButton onClick={() => void openMicrophoneSettings()}>{t("openSystemSettings")}</SoftButton>
             ) : null}
           </div>
+          ) : null}
         </Row>
 
         <Row icon={ScrollText} label={t("setDictationLog")} hint={t("setDictationLogHint")}>

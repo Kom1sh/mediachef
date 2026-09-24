@@ -1,5 +1,6 @@
 import type { Locale } from "./i18n";
 import type { Theme } from "./theme";
+import type { Os } from "./platform";
 
 export type MediaType = "video" | "audio" | "image" | "subtitle" | "any";
 /**
@@ -66,6 +67,8 @@ export interface DictationStatus {
   /** «authorized» | «denied» | «restricted» | «undetermined» | «unknown». */
   microphone: string;
   log_path: string;
+  /** Linux на Wayland: глобальных сочетаний и ввода в чужие окна там нет. */
+  wayland: boolean;
 }
 
 /**
@@ -91,6 +94,50 @@ export const DICTATION_HOTKEYS = [
   { value: "Ctrl+Option+Space", label: "⌃⌥ Space" },
   { value: "Ctrl+Option+D", label: "⌃⌥ D" },
 ] as const;
+
+/**
+ * Windows: одна клавиша, как правый ⌥ на маке. До 0.8.5 здесь было только
+ * Ctrl+Alt+D — три клавиши разом. Перехватчик и его оговорки (меню после
+ * одиночного Alt, проглоченный Caps Lock) — в `modkey.rs`, раздел «Windows».
+ */
+export const DICTATION_HOTKEYS_WINDOWS = [
+  { value: "RightCtrl", labelKey: "hotkeyRightCtrl" },
+  { value: "RightAlt", labelKey: "hotkeyRightAlt" },
+  { value: "CapsLock", label: "Caps Lock" },
+] as const;
+
+/**
+ * Linux: одиночного перехватчика пока нет (на X11 нужен свой слушатель, на
+ * Wayland клавиатуру не дают вовсе), поэтому сочетания для плагина — их
+ * подписями. Значения прежние: плагин читает «Option» на ПК как Alt.
+ */
+export const DICTATION_HOTKEYS_LINUX = [
+  { value: "Ctrl+Option+Space", label: "Ctrl+Alt+Space" },
+  { value: "Ctrl+Option+D", label: "Ctrl+Alt+D" },
+] as const;
+
+/** Варианты хоткея для системы — тот список, что показывает вкладка. */
+export function hotkeysFor(os: Os) {
+  return os === "macos" ? DICTATION_HOTKEYS : os === "windows" ? DICTATION_HOTKEYS_WINDOWS : DICTATION_HOTKEYS_LINUX;
+}
+
+/** Все триггеры-одиночки, какой бы системе они ни принадлежали. */
+const TRIGGERS = ["RightOption", "RightCommand", "RightCtrl", "RightAlt", "CapsLock"];
+
+/**
+ * Что на этой системе действительно слушается.
+ *
+ * Зеркало `modkey::native` и `modkey::plugin_fallback`: на Windows правый ⌥ —
+ * это правый Ctrl, на маке триггеры Windows — правый ⌥, на Linux любой
+ * триггер — Ctrl+Option+D. Экран обязан показывать выбранным именно это, а не
+ * записанное значение, которого на этой системе нет.
+ */
+export function effectiveHotkey(value: string, os: Os): string {
+  if (!TRIGGERS.includes(value)) return value;
+  if (os === "macos") return value === "RightOption" || value === "RightCommand" ? value : "RightOption";
+  if (os === "windows") return value === "RightOption" || value === "RightCommand" ? "RightCtrl" : value;
+  return "Ctrl+Option+D";
+}
 
 export interface Param {
   key: string;
