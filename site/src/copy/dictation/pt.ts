@@ -3,21 +3,21 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Ditado por voz no Mac — offline, grátis, sem cobrança por minuto",
+  title: "Ditado por voz no Mac e no Windows — offline, grátis, sem cobrança por minuto",
   description:
     "Aperte um atalho em qualquer lugar, fale e as palavras aparecem onde está o cursor. O reconhecimento roda na sua própria máquina com o Whisper: nada é enviado, nada é tarifado. Dentro: latência medida, tamanhos dos modelos e a única permissão necessária.",
   h1: "Escrever falando sem que nada saia do computador",
   crumb: "Ditado por voz",
 
   answer:
-    "Aperte a tecla ⌥ direita em qualquer lugar do Mac, fale uma frase e aperte de novo: o texto é digitado direto no campo onde está o cursor, seja um terminal, um chat ou um formulário do navegador. Quem reconhece é o mesmo Whisper que o MediaChef já carrega, então o áudio não sai do seu disco e ninguém conta os minutos. Na nossa medição uma frase de cinco segundos voltou em 780 milissegundos.",
+    "Aperte a tecla ⌥ direita no Mac — ou a Ctrl direita no Windows — em qualquer lugar, fale uma frase e aperte de novo: o texto é digitado direto no campo onde está o cursor, seja um terminal, um chat ou um formulário do navegador. Quem reconhece é o mesmo Whisper que o MediaChef já carrega, então o áudio não sai do seu disco e ninguém conta os minutos. Na nossa medição uma frase de cinco segundos voltou em 780 milissegundos.",
 
   facts: [
-    { k: "Situação", v: "Publicado desde a versão 0.8.0, por enquanto só macOS" },
+    { k: "Situação", v: "No macOS desde a versão 0.8.0; no Windows e no Linux, desde a 0.8.5" },
     { k: "Onde roda", v: "Inteiramente na sua máquina, sem conta e sem upload" },
     { k: "Velocidade", v: "780 ms da tecla ao texto numa frase de cinco segundos (medido)" },
     { k: "Quanto custa", v: "Nada. Nem assinatura nem cobrança por minuto" },
-    { k: "Plataforma", v: "macOS primeiro; Windows e Linux depois" },
+    { k: "Plataforma", v: "macOS, Windows 10/11, Linux numa sessão X11" },
     { k: "Download único", v: "Um modelo de fala, 488 MB no padrão" },
   ],
 
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Ligar uma vez",
-      p: "Na aba Ditado há um interruptor e um acionador para escolher: a ⌥ direita, a ⌘ direita ou uma de duas combinações. Até você ligar, o MediaChef não registra atalho global nenhum: um aplicativo que toma uma combinação do sistema em silêncio é um aplicativo que quebra os outros.",
+      p: "Na aba Ditado há um interruptor e um acionador para escolher: no Mac a ⌥ direita ou a ⌘ direita; no Windows a Ctrl direita, a Alt direita ou Caps Lock; e em todo lugar, duas combinações. Até você ligar, o MediaChef não registra atalho global nenhum: um aplicativo que toma uma combinação do sistema em silêncio é um aplicativo que quebra os outros.",
     },
     {
       h: "Apertar o atalho em qualquer lugar",
@@ -145,8 +145,8 @@ export default {
     "Dito na lata, porque descobrir depois é pior do que ler agora.",
   notFor: [
     {
-      h: "Você não usa Mac.",
-      p: "macOS vem primeiro porque foi ali que se construiu e testou. Windows e Linux vêm depois: o motor de reconhecimento já é multiplataforma, quem precisa de trabalho por plataforma é o atalho e a digitação do texto.",
+      h: "Você usa Linux com Wayland.",
+      p: "Uma sessão Wayland não deixa nenhum aplicativo captar uma tecla global nem digitar em outra janela, então ali o ditado ainda não funciona — a aba Ditado avisa. Numa sessão X11 funciona, com Ctrl+Alt+D ou Ctrl+Alt+Space: no Linux ainda não há acionador de uma tecla só.",
     },
     {
       h: "Você precisa que digite enquanto fala.",
@@ -174,7 +174,11 @@ export default {
     },
     {
       q: "Qual combinação ele usa?",
-      a: "Por padrão, a tecla ⌥ direita — um modificador sozinho: segure e fale, ou toque uma vez para começar e outra para terminar; com Shift o texto é enviado com Enter. Um modificador sozinho não digita nada e não conflita com nada. Combinações como ⌥ Space digitavam um espaço no modo de segurar se ⌥ fosse solto primeiro, por isso foram retiradas; ⌃⌥ Space e ⌃⌥ D ficam como alternativas.",
+      a: "Por padrão, a tecla ⌥ direita — um modificador sozinho: segure e fale, ou toque uma vez para começar e outra para terminar; com Shift o texto é enviado com Enter. Um modificador sozinho não digita nada e não conflita com nada. Combinações como ⌥ Space digitavam um espaço no modo de segurar se ⌥ fosse solto primeiro, por isso foram retiradas; ⌃⌥ Space e ⌃⌥ D ficam como alternativas. No Windows, o padrão é a Ctrl direita, com a Alt direita e Caps Lock como alternativas; no Linux, Ctrl+Alt+D.",
+    },
+    {
+      q: "Funciona no Windows e no Linux?",
+      a: "Sim, desde a versão 0.8.5. No Windows é uma tecla só, como no Mac — a Ctrl direita por padrão — e não precisa de permissão além do microfone. Se o gancho de teclado não iniciar, Ctrl+Alt+D continua funcionando. No Linux funciona numa sessão X11 com Ctrl+Alt+D; com Wayland o sistema ainda não permite.",
     },
     {
       q: "Por que precisa da permissão de Acessibilidade?",

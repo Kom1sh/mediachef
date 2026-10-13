@@ -3,21 +3,21 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Dyktowanie głosem na Macu — offline, darmowo, bez opłat za minutę",
+  title: "Dyktowanie głosem na Macu i Windowsie — offline, darmowo, bez opłat za minutę",
   description:
     "Naciśnij skrót gdziekolwiek, powiedz — i słowa pojawiają się tam, gdzie stoi kursor. Rozpoznawanie idzie na twoim własnym komputerze przez Whisper: nic się nie wysyła, nic się nie tarafikuje. W środku: zmierzone opóźnienie, rozmiary modeli i jedno uprawnienie, które będzie potrzebne.",
   h1: "Pisanie głosem, które nie opuszcza komputera",
   crumb: "Dyktowanie głosem",
 
   answer:
-    "Naciśnij prawy ⌥ gdziekolwiek na Macu, powiedz zdanie, naciśnij ponownie — a tekst wpisze się prosto w to pole, w którym stoi kursor: w terminalu, w czacie, w formularzu przeglądarki. Rozpoznaje ten sam Whisper, który MediaChef już ze sobą nosi, więc dźwięk nie opuszcza twojego dysku i nikt nie liczy minut. W naszym pomiarze pięciosekundowe zdanie wróciło w 780 milisekund.",
+    "Naciśnij gdziekolwiek prawy ⌥ na Macu albo prawy Ctrl na Windowsie, powiedz zdanie, naciśnij ponownie — a tekst wpisze się prosto w to pole, w którym stoi kursor: w terminalu, w czacie, w formularzu przeglądarki. Rozpoznaje ten sam Whisper, który MediaChef już ze sobą nosi, więc dźwięk nie opuszcza twojego dysku i nikt nie liczy minut. W naszym pomiarze pięciosekundowe zdanie wróciło w 780 milisekund.",
 
   facts: [
-    { k: "Stan", v: "W wydaniu od wersji 0.8.0, na razie tylko macOS" },
+    { k: "Stan", v: "Na macOS od wersji 0.8.0, na Windowsie i Linuksie od 0.8.5" },
     { k: "Gdzie działa", v: "Całkowicie na twoim komputerze, bez konta i bez wysyłki" },
     { k: "Szybkość", v: "780 ms od klawisza do tekstu na pięciosekundowym zdaniu (pomiar)" },
     { k: "Ile kosztuje", v: "Nic. Ani subskrypcji, ani opłat za minutę" },
-    { k: "Platforma", v: "Najpierw macOS; Windows i Linux potem" },
+    { k: "Platforma", v: "macOS, Windows 10/11, Linux w sesji X11" },
     { k: "Jednorazowe pobranie", v: "Model mowy, 488 MB w domyślnym" },
   ],
 
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Włączyć raz",
-      p: "Na karcie Dyktowanie jest przełącznik i wyzwalacz do wyboru: prawy ⌥, prawy ⌘ albo jedna z dwu kombinacji. Dopóki nie włączysz, MediaChef nie rejestruje żadnego skrótu globalnego: program, który po cichu zabiera systemowe skróty, to program, który psuje inne programy.",
+      p: "Na karcie Dyktowanie jest przełącznik i wyzwalacz do wyboru: na Macu prawy ⌥ lub prawy ⌘, na Windowsie prawy Ctrl, prawy Alt albo Caps Lock, a wszędzie dwie kombinacje. Dopóki nie włączysz, MediaChef nie rejestruje żadnego skrótu globalnego: program, który po cichu zabiera systemowe skróty, to program, który psuje inne programy.",
     },
     {
       h: "Nacisnąć skrót gdziekolwiek",
@@ -145,8 +145,8 @@ export default {
     "Mówimy wprost, bo dowiedzieć się później jest gorzej niż przeczytać teraz.",
   notFor: [
     {
-      h: "Nie masz Maca.",
-      p: "macOS jest pierwszy, bo tam wszystko powstało i było sprawdzane. Windows i Linux idą dalej: silnik rozpoznawania jest już wieloplatformowy, roboty na platformę wymagają skrót i samo wpisywanie tekstu.",
+      h: "Masz Linuksa z Waylandem.",
+      p: "Sesja Wayland nie pozwala żadnemu programowi przechwycić globalnego klawisza ani pisać w cudzym oknie, więc dyktowanie jeszcze tam nie działa — karta Dyktowanie mówi o tym wprost. W sesji X11 działa, na Ctrl+Alt+D lub Ctrl+Alt+Space: wyzwalacza jednym klawiszem na Linuksie jeszcze nie ma.",
     },
     {
       h: "Potrzebujesz pisania na bieżąco.",
@@ -174,7 +174,11 @@ export default {
     },
     {
       q: "Jakiej kombinacji używa?",
-      a: "Domyślnie prawy ⌥ — sam modyfikator: trzymaj i mów albo naciśnij raz, by zacząć, i jeszcze raz, by skończyć; z Shiftem tekst zostanie wysłany Enterem. Sam modyfikator nic nie wpisuje i z niczym nie koliduje. Kombinacje takie jak ⌥ Space w trybie trzymania wpisywały spację, gdy ⌥ puszczano wcześniej — dlatego zniknęły; ⌃⌥ Space i ⌃⌥ D zostają jako zapasowe.",
+      a: "Domyślnie prawy ⌥ — sam modyfikator: trzymaj i mów albo naciśnij raz, by zacząć, i jeszcze raz, by skończyć; z Shiftem tekst zostanie wysłany Enterem. Sam modyfikator nic nie wpisuje i z niczym nie koliduje. Kombinacje takie jak ⌥ Space w trybie trzymania wpisywały spację, gdy ⌥ puszczano wcześniej — dlatego zniknęły; ⌃⌥ Space i ⌃⌥ D zostają jako zapasowe. Na Windowsie domyślnie prawy Ctrl, do wyboru prawy Alt i Caps Lock (na polskim układzie prawy Alt to AltGr i wpisuje litery — tam zostań przy prawym Ctrl); na Linuksie Ctrl+Alt+D.",
+    },
+    {
+      q: "Czy działa na Windowsie i Linuksie?",
+      a: "Tak, od wersji 0.8.5. Na Windowsie to jeden klawisz, jak na Macu — domyślnie prawy Ctrl — i poza dostępem do mikrofonu nie trzeba żadnych uprawnień. Jeśli przechwytywanie klawiatury się nie uruchomi, działa Ctrl+Alt+D. Na Linuksie dyktowanie działa w sesji X11 na Ctrl+Alt+D; pod Waylandem system jeszcze na to nie pozwala.",
     },
     {
       q: "Po co mu uprawnienie Dostępność?",

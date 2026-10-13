@@ -1,26 +1,27 @@
 // Гайд «голосовой ввод», английский. Реальные запросы: «voice to text mac»,
 // «dictation app», «offline speech to text».
 //
-// Фича в релизе с 0.8.0; статус и цифры на странице — из живой сборки.
+// Фича в релизе на маке с 0.8.0, на Windows и Linux — с 0.8.5; статус и цифры
+// на странице — из живой сборки (замеры — на маке).
 // измерены на живой сборке 2026-09-05, синтетики нет.
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Voice to text on your Mac — offline, free, no per-minute billing",
+  title: "Voice to text on Mac and Windows — offline, free, no per-minute billing",
   description:
     "Press a hotkey anywhere, speak, and the words appear where your cursor is. Recognition runs on your own machine with Whisper — nothing is uploaded, nothing is metered. Measured latency, model sizes and the one permission it needs, all inside.",
   h1: "Voice typing that never leaves your computer",
   crumb: "Voice to text",
 
   answer:
-    "Press the right ⌥ key anywhere on your Mac, say a sentence, press it again — and the text is typed straight into whatever field your cursor sits in: a terminal, a chat, a browser form. Recognition happens on your own machine with the same Whisper engine MediaChef already carries, so the audio never leaves your disk and there is no per-minute charge. In our measurement a five-second phrase came back in 780 milliseconds.",
+    "Press the right ⌥ key on a Mac — or the right Ctrl on Windows — anywhere, say a sentence, press it again, and the text is typed straight into whatever field your cursor sits in: a terminal, a chat, a browser form. Recognition happens on your own machine with the same Whisper engine MediaChef already carries, so the audio never leaves your disk and there is no per-minute charge. In our measurement a five-second phrase came back in 780 milliseconds.",
 
   facts: [
-    { k: "Status", v: "In the release since version 0.8.0, macOS only for now" },
+    { k: "Status", v: "On macOS since version 0.8.0, on Windows and Linux since 0.8.5" },
     { k: "Where it runs", v: "Entirely on your machine, no account, no upload" },
     { k: "Speed", v: "780 ms from key to text on a five-second phrase (measured)" },
     { k: "Cost", v: "None. No subscription, no per-minute billing" },
-    { k: "Platform", v: "macOS first; Windows and Linux after" },
+    { k: "Platform", v: "macOS, Windows 10/11, Linux in an X11 session" },
     { k: "One-time download", v: "A speech model, 488 MB for the default one" },
   ],
 
@@ -39,7 +40,7 @@ export default {
   steps: [
     {
       h: "Turn it on once",
-      p: "The Dictation tab has a switch and a choice of trigger: the right ⌥, the right ⌘, or one of two combinations. It is off until you turn it on, and until then MediaChef registers no global shortcut at all — an app that quietly claims a system-wide key combination is an app that breaks other apps.",
+      p: "The Dictation tab has a switch and a choice of trigger: on a Mac the right ⌥ or the right ⌘, on Windows the right Ctrl, the right Alt or Caps Lock, and two combinations everywhere. It is off until you turn it on, and until then MediaChef registers no global shortcut at all — an app that quietly claims a system-wide key combination is an app that breaks other apps.",
     },
     {
       h: "Press the hotkey anywhere",
@@ -148,8 +149,8 @@ export default {
     "Said plainly, because finding out later is worse than reading it now.",
   notFor: [
     {
-      h: "You are not on a Mac.",
-      p: "macOS comes first because that is where it was built and tested. Windows and Linux follow; the recognition engine is already cross-platform, it is the hotkey and the typing that need per-platform work.",
+      h: "You are on Linux under Wayland.",
+      p: "A Wayland session lets no app catch a global key or type into another window, so dictation cannot work there yet — the Dictation tab says so. In an X11 session it works, on Ctrl+Alt+D or Ctrl+Alt+Space: Linux has no one-key trigger yet.",
     },
     {
       h: "You need it to type as you speak.",
@@ -177,7 +178,11 @@ export default {
     },
     {
       q: "Which hotkey does it use?",
-      a: "The right ⌥ key by default — a lone modifier: hold it and speak, or tap once to start and again to stop; with Shift the text is sent with Enter. A modifier on its own types nothing and clashes with nothing. Combos like ⌥ Space typed a space in hold mode when ⌥ was released first, so they were dropped; ⌃⌥ Space and ⌃⌥ D remain as fallbacks.",
+      a: "The right ⌥ key by default — a lone modifier: hold it and speak, or tap once to start and again to stop; with Shift the text is sent with Enter. A modifier on its own types nothing and clashes with nothing. Combos like ⌥ Space typed a space in hold mode when ⌥ was released first, so they were dropped; ⌃⌥ Space and ⌃⌥ D remain as fallbacks. On Windows the default is the right Ctrl, with the right Alt and Caps Lock as alternatives; on Linux, Ctrl+Alt+D.",
+    },
+    {
+      q: "Does it work on Windows and Linux?",
+      a: "Yes, since version 0.8.5. On Windows it is one key, like on a Mac — the right Ctrl by default — and it needs no permission beyond the microphone. If the keyboard hook cannot start, Ctrl+Alt+D keeps working. On Linux it runs in an X11 session on Ctrl+Alt+D; under Wayland the system does not allow it yet.",
     },
     {
       q: "Why does it need the Accessibility permission?",
