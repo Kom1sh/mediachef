@@ -220,6 +220,21 @@ pub struct WhisperOpts {
     /// English. The `language` param still names the *source* language.
     #[serde(default)]
     pub translate: bool,
+    /// `true` — расшифровка не кладётся рядом файлом, а вшивается в само видео:
+    /// whisper пишет SRT во временную папку, и ffmpeg рисует его поверх кадра
+    /// (`crate::burn`). `output.ext` тогда — видео, а не формат расшифровки.
+    #[serde(default)]
+    pub burn: bool,
+}
+
+/// `fit_size:` рецепта «сжать до N МБ»: какой параметр задаёт цель в мегабайтах
+/// и сколько кбит/с отдать звуку. Сам битрейт считает `crate::fit` из длительности
+/// ролика и подставляет в `args:` ключами `crate::fit::KEYS`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FitSize {
+    pub param: String,
+    pub audio_kbps: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -246,6 +261,8 @@ pub struct Recipe {
     pub args: Vec<String>,
     #[serde(default)]
     pub whisper: Option<WhisperOpts>,
+    #[serde(default)]
+    pub fit_size: Option<FitSize>,
     pub output: OutputSpec,
     #[serde(default)]
     pub seo: Option<Seo>,
@@ -432,6 +449,13 @@ seo: {slug: video-to-mp3, priority: high}
         assert!(!empty.whisper.unwrap().translate);
         assert!(Recipe::from_yaml(SAMPLE).unwrap().whisper.is_none());
 
+        // `burn` is the other knob: the transcript drawn into the video.
+        let y = SAMPLE.replace("engine: ffmpeg", "engine: whisper\nwhisper: {burn: true}");
+        let burn = Recipe::from_yaml(&y).unwrap().whisper.unwrap();
+        assert!(burn.burn && !burn.translate);
+        let y = SAMPLE.replace("engine: ffmpeg", "engine: whisper\nwhisper: {}");
+        assert!(!Recipe::from_yaml(&y).unwrap().whisper.unwrap().burn);
+
         // A hopeful key inside `whisper:` (a knob someone expects to exist) must
         // fail the load like every other unknown field, not be dropped.
         let bogus = SAMPLE.replace(
@@ -439,6 +463,25 @@ seo: {slug: video-to-mp3, priority: high}
             "engine: whisper\nwhisper: {translate: true, beam_size: 5}",
         );
         let e = Recipe::from_yaml(&bogus).expect_err("unknown whisper key must be rejected");
+        assert!(e.to_string().contains("unknown field"), "unexpected: {e}");
+    }
+
+    // `fit_size:` names the param that holds the target size and the audio share;
+    // a typo inside it must fail the load like everywhere else.
+    #[test]
+    fn fit_size_parses_and_rejects_unknown_keys() {
+        let y = SAMPLE.replace(
+            "engine: ffmpeg",
+            "engine: ffmpeg\nfit_size: {param: bitrate, audio_kbps: 128}",
+        );
+        let fit = Recipe::from_yaml(&y).unwrap().fit_size.unwrap();
+        assert_eq!((fit.param.as_str(), fit.audio_kbps), ("bitrate", 128));
+        assert!(Recipe::from_yaml(SAMPLE).unwrap().fit_size.is_none());
+        let bogus = SAMPLE.replace(
+            "engine: ffmpeg",
+            "engine: ffmpeg\nfit_size: {param: bitrate, audio_kbps: 128, passes: 2}",
+        );
+        let e = Recipe::from_yaml(&bogus).expect_err("unknown fit_size key must be rejected");
         assert!(e.to_string().contains("unknown field"), "unexpected: {e}");
     }
 

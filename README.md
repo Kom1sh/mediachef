@@ -17,13 +17,17 @@ uploaded — no account, no size limit, no subscription.
 ## What it does
 
 - **Convert** — MP4 → MP3, MP4 → MKV, MP3 → WAV, video → GIF, resize to 720p, compress
-  with a quality preset, remove the audio track, trim without re-encoding, or run your own
-  FFmpeg command.
+  with a quality preset or down to a file size (10 MB for Discord, 25 MB for an email —
+  the bitrate is worked out from the clip's length), remove the audio track, trim without
+  re-encoding, or run your own FFmpeg command.
 - **Transcribe** — speech to plain text, SRT or WebVTT subtitles, or JSON with timings;
-  translate speech into English text or subtitles. Runs [whisper.cpp](https://github.com/ggml-org/whisper.cpp)
+  translate speech into English text or subtitles; or burn the subtitles into the video
+  itself, so they show in chats and social feeds that ignore a separate subtitle track. Runs [whisper.cpp](https://github.com/ggml-org/whisper.cpp)
   on your machine with one of four models, from `tiny` to `large-v3-turbo`, downloaded on request.
-- **Dictate** *(macOS)* — press the right ⌥ key anywhere, speak, press it again, and the
-  text is typed into whatever field your cursor is in. Off until you turn it on.
+- **Dictate** — press one key anywhere (the right ⌥ on a Mac, the right Ctrl on Windows,
+  Ctrl+Alt+D on Linux), speak, press it again, and the text is typed into whatever field
+  your cursor is in. Off until you turn it on. On Linux it needs an X11 session: Wayland
+  lets no app catch a global key or type into another window.
 - **In 10 languages** — English, Русский, Español, Português, Français, Deutsch, Polski,
   Italiano, العربية, 中文.
 
@@ -185,7 +189,7 @@ The file is sanitized on the way in as well as on the way out, so a hand-edited
 `ffmpeg_workers: 99` is read as `3` rather than honoured, and an unparseable file
 or an unknown key falls back to the defaults above instead of stopping the app.
 
-## Dictation (wave 5.1 — internal, macOS only)
+## Dictation
 
 Press a global hotkey anywhere, speak, press it again, and the text appears
 where your cursor is. Recognition is the same local whisper.cpp the recipes use,
@@ -215,7 +219,7 @@ restart:
 | Key | Values | Notes |
 | --- | --- | --- |
 | `enabled` | `true` \| `false` | off by default; the hotkey is not registered at all until you turn it on |
-| `hotkey` | `RightOption` by default; also `RightCommand`, `Ctrl+Option+Space`, `Ctrl+Option+D` | see below; the two lone modifiers are macOS-only and need the Accessibility permission |
+| `hotkey` | macOS: `RightOption` by default, also `RightCommand`; Windows: `RightCtrl` by default, also `RightAlt`, `CapsLock`; everywhere: `Ctrl+Option+Space`, `Ctrl+Option+D` (the Linux default) | see below; on macOS the lone modifiers need the Accessibility permission, on Windows nothing |
 | `model` | `tiny` \| `base` \| `small` \| `large-v3-turbo` | `small` by default: the recipes use it too, so it is usually already on disk |
 | `preview_model` | same list | `tiny` by default: the live preview in the overlay re-transcribes the whole buffer every 1.5 s and has to keep up with speech; it does not affect the result |
 | `language` | `""` \| `auto` \| a language code | empty means "same as the interface language" |
@@ -242,7 +246,16 @@ holding it, that is a shortcut, not dictation — the recording is cancelled.
 The plugin's global shortcuts cannot express a lone modifier, so this is a
 listen-only `CGEventTap` of our own, which is why it needs the same
 Accessibility permission as typing. `Ctrl+Option+Space` and `Ctrl+Option+D`
-remain as plain-combination fallbacks (and as the defaults outside macOS).
+remain as plain-combination fallbacks.
+
+On Windows the same idea is a `WH_KEYBOARD_LL` hook: the right `Ctrl` by default
+(it does nothing on its own), the right `Alt` or `Caps Lock` as alternatives. A lone
+right `Alt` would open the window menu on release, so the hook swallows that release;
+on layouts with AltGr the right `Alt` types letters, and the Dictation tab says to use
+the right `Ctrl` there. If the hook cannot be installed, `Ctrl+Alt+D` keeps working.
+Linux has no lone-key listener yet and stays on the two combinations — and only in an
+X11 session: under Wayland the system lets no app catch a global key or type into
+another window, and the Dictation tab says so.
 `Cmd`+letter was never an option: a global shortcut is grabbed before any
 application sees it, so claiming `Cmd+D` would break "duplicate" everywhere.
 

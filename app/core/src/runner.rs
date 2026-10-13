@@ -1,7 +1,7 @@
 //! ffmpeg-specific layer over [`crate::process`]: the fixed argv prefix, the
 //! progress parse, the stderr tail and the partial-output cleanup.
 
-use crate::process::{run_streaming, Pipe, StreamError};
+use crate::process::{run_streaming_in, Pipe, StreamError};
 use crate::progress::ProgressParser;
 use std::path::Path;
 
@@ -27,6 +27,21 @@ pub fn run_ffmpeg(
     argv: &[String],
     total_s: Option<f64>,
     cancel: &CancelToken,
+    on_progress: impl FnMut(f32),
+) -> Result<Outcome, RunError> {
+    run_ffmpeg_in(bin, argv, None, total_s, cancel, on_progress)
+}
+
+/// [`run_ffmpeg`] from the working directory `cwd` — see
+/// [`crate::process::run_streaming_in`] for why that is ever wanted. The last
+/// argv token is still the output path and is still cleaned up on failure, so it
+/// must be absolute when `cwd` is set.
+pub fn run_ffmpeg_in(
+    bin: &Path,
+    argv: &[String],
+    cwd: Option<&Path>,
+    total_s: Option<f64>,
+    cancel: &CancelToken,
     mut on_progress: impl FnMut(f32),
 ) -> Result<Outcome, RunError> {
     let output_path = argv.last().cloned();
@@ -46,7 +61,7 @@ pub fn run_ffmpeg(
 
     let parser = ProgressParser::new(total_s);
     let mut tail: Vec<String> = Vec::new();
-    let exit = run_streaming(bin, &full, cancel, |pipe, line| match pipe {
+    let exit = run_streaming_in(bin, &full, cwd, cancel, |pipe, line| match pipe {
         Pipe::Stdout => {
             if let Some(p) = parser.parse_line(line) {
                 on_progress(p);

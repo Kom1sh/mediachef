@@ -163,8 +163,12 @@ export interface Recipe {
   params: Param[];
   engine: "ffmpeg" | "whisper" | "pipeline";
   args: string[];
-  // Only present for engine "whisper"; `null` on every ffmpeg recipe.
-  whisper?: { translate: boolean } | null;
+  // Only present for engine "whisper"; `null` on every ffmpeg recipe. `burn` draws
+  // the transcript into the video (output is an mp4, not a transcript file).
+  whisper?: { translate: boolean; burn?: boolean } | null;
+  // "Compress to N MB": which param holds the target, and the audio share. The
+  // bitrate itself is derived by the queue from the clip's length (core/src/fit.rs).
+  fit_size?: { param: string; audio_kbps: number } | null;
   output: { ext: string; suffix?: string | null };
   seo?: { slug: string; priority?: string | null } | null;
 }

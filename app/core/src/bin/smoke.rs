@@ -4,10 +4,11 @@
 //! fixture and legitimately skip where those are absent (ubuntu CI has no TTS,
 //! so `fixtures/speech.wav` is never built there).
 
+use mediachef_core::burn::{self, BurnJob};
 use mediachef_core::recipe::{Engine, MediaType, Recipe};
 use mediachef_core::runner::{CancelToken, Outcome};
 use mediachef_core::transcribe::{run_whisper, WhisperFormat, WhisperJob};
-use mediachef_core::{catalog, locate, models, naming, probe, runner, template};
+use mediachef_core::{catalog, fit, locate, models, naming, probe, runner, template};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -97,7 +98,22 @@ fn ffmpeg_recipe(
     };
     let staged = stage(&input, out_dir);
     let output = naming::plan_output(r, &staged);
-    let params = template::resolve_params(r, &HashMap::new()).unwrap();
+    let mut params = template::resolve_params(r, &HashMap::new()).unwrap();
+    // A `fit_size` recipe needs the clip's length for its bitrate, exactly as in
+    // the app. No size check (`None`): the fixture is far below any target.
+    if r.fit_size.is_some() {
+        let info = probe::probe(ffprobe, &staged).unwrap();
+        if let Err(e) = fit::derive(
+            r,
+            &mut params,
+            info.duration_s,
+            None,
+            probe::has_audio(&info.raw),
+        ) {
+            println!("FAIL {:<24} (fit: {e})", r.id);
+            return Verdict::Fail;
+        }
+    }
     let argv = template::build_argv(
         r,
         &staged.display().to_string(),
@@ -107,6 +123,94 @@ fn ffmpeg_recipe(
     .unwrap();
     let res = runner::run_ffmpeg(ffmpeg, &argv, Some(2.0), &CancelToken::new(), |_| {});
     let ok = res.is_ok() && output.exists() && probe::probe(ffprobe, &output).is_ok();
+    let verdict = row(ok, &r.id, &output);
+    if let Err(e) = &res {
+        eprintln!("  {}\n  {}", e.message, e.stderr_tail);
+    }
+    verdict
+}
+
+/// The burn recipe's second half on its own: a hand-written SRT drawn into the
+/// video fixture. Needs nothing but ffmpeg, so it runs on every host — this is
+/// what tells a CI image whose ffmpeg lacks libass (or fonts) from a working one.
+fn burn_step(
+    r: &Recipe,
+    fixtures: &Path,
+    out_dir: &Path,
+    ffmpeg: &Path,
+    ffprobe: &Path,
+) -> Verdict {
+    let staged = stage(&fixtures.join("tiny.mp4"), out_dir);
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::write(
+        tmp.path().join(burn::SUBS_FILE),
+        "1\n00:00:00,000 --> 00:00:02,000\nMediaChef smoke\n",
+    )
+    .unwrap();
+    let output = out_dir.join("tiny.burn-step.mp4");
+    let res = burn::burn_into(
+        ffmpeg,
+        tmp.path(),
+        &staged,
+        &output,
+        Some(2.0),
+        &CancelToken::new(),
+        |_| {},
+    );
+    let ok = res.is_ok() && probe::probe(ffprobe, &output).is_ok();
+    let verdict = row(ok, &format!("{} (step)", r.id), &output);
+    if let Err(e) = &res {
+        eprintln!("  {}\n  {}", e.message, e.stderr_tail);
+    }
+    verdict
+}
+
+/// The whole burn job: the voice fixture as a video, transcribed and drawn in.
+fn burn_recipe(
+    r: &Recipe,
+    out_dir: &Path,
+    ffmpeg: &Path,
+    ffprobe: &Path,
+    env: &WhisperEnv,
+) -> Verdict {
+    let video = out_dir.join("speech.mp4");
+    let made = std::process::Command::new(ffmpeg)
+        .args(["-v", "error", "-y", "-f", "lavfi", "-i"])
+        .arg("color=c=black:s=320x240:r=10")
+        .arg("-i")
+        .arg(&env.speech)
+        .args([
+            "-shortest",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+        ])
+        .arg(&video)
+        .status()
+        .is_ok_and(|s| s.success());
+    if !made {
+        println!("FAIL {:<24} (could not build speech.mp4)", r.id);
+        return Verdict::Fail;
+    }
+    let output = naming::plan_output(r, &video);
+    let job = BurnJob {
+        transcript: WhisperJob {
+            input: video,
+            output: PathBuf::new(),
+            model: env.model.clone(),
+            language: "auto".into(),
+            translate: false,
+            format: WhisperFormat::Srt,
+            prompt: String::new(),
+        },
+        output: output.clone(),
+        duration_s: None,
+    };
+    let res = burn::run_burn(ffmpeg, &env.bin, &job, &CancelToken::new(), |_| {});
+    let ok = matches!(res, Ok(Outcome::Done)) && probe::probe(ffprobe, &output).is_ok();
     let verdict = row(ok, &r.id, &output);
     if let Err(e) = &res {
         eprintln!("  {}\n  {}", e.message, e.stderr_tail);
@@ -170,9 +274,19 @@ fn main() {
     // satisfy the ffmpeg guard below with skips.
     let mut whisper_ran = 0;
     for r in catalog::bundled() {
+        let is_burn = r.whisper.as_ref().is_some_and(|w| w.burn);
+        if is_burn {
+            // Counted in the ffmpeg lane: it needs no whisper and must pass anywhere.
+            match burn_step(&r, &fixtures, &out_dir, &ffmpeg, &ffprobe) {
+                Verdict::Fail => failed += 1,
+                Verdict::Pass => ran += 1,
+                Verdict::Skip => {}
+            }
+        }
         let verdict = match r.engine {
             Engine::Ffmpeg => ffmpeg_recipe(&r, &fixtures, &out_dir, &ffmpeg, &ffprobe),
             Engine::Whisper => match &whisper {
+                Ok(env) if is_burn => burn_recipe(&r, &out_dir, &ffmpeg, &ffprobe, env),
                 Ok(env) => whisper_recipe(&r, &out_dir, &ffmpeg, env),
                 Err(reason) => {
                     println!("SKIP {:<24} ({reason})", r.id);

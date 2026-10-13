@@ -1,0 +1,45 @@
+id: video-burn-subtitles
+category: transcribe
+title:
+  en: "Burn subtitles into a video"
+  ru: "Вшить субтитры в видео"
+  es: "Incrustar subtítulos en un vídeo"
+  pt: "Embutir legendas no vídeo"
+  fr: "Incruster des sous-titres dans une vidéo"
+  de: "Untertitel ins Video einbrennen"
+  pl: "Wtop napisy w wideo"
+  it: "Imprimi i sottotitoli nel video"
+  ar: "دمج الترجمة داخل الفيديو"
+  zh: "把字幕烧录进视频"
+aliases:
+  en: [burn subtitles, hardcode subtitles, add subtitles to video, auto subtitles, captions on video, subtitles for instagram]
+  ru: [вшить субтитры, прожечь субтитры, наложить субтитры на видео, автосубтитры, субтитры в кадре, добавить субтитры в видео]
+  es: ["incrustar subtítulos", "subtítulos quemados", "añadir subtítulos al vídeo", "subtítulos automáticos", "subtítulos en el vídeo"]
+  pt: ["embutir legendas", "legendas fixas", "adicionar legendas ao vídeo", "legendas automáticas", "legenda no vídeo"]
+  fr: ["incruster des sous-titres", "sous-titres incrustés", "ajouter des sous-titres à une vidéo", "sous-titres automatiques"]
+  de: ["untertitel einbrennen", "hardsub", "untertitel ins video einfügen", "automatische untertitel"]
+  pl: ["wtopić napisy", "napisy na stałe", "dodać napisy do filmu", "automatyczne napisy"]
+  it: ["imprimere i sottotitoli", "sottotitoli incorporati", "aggiungere sottotitoli al video", "sottotitoli automatici"]
+  ar: ["دمج الترجمة", "ترجمة مدمجة", "إضافة ترجمة إلى فيديو", "ترجمة تلقائية"]
+  zh: ["烧录字幕", "硬字幕", "给视频加字幕并合成", "自动字幕"]
+description:
+  en: "Listens to the video, writes subtitles with Whisper and draws them into the picture — they show everywhere the video goes, chats and social feeds included."
+  ru: "Слушает видео, пишет субтитры через Whisper и рисует их прямо в кадре — они видны везде, куда уйдёт ролик, в чатах и соцсетях тоже."
+  es: "Escucha el vídeo, escribe los subtítulos con Whisper y los dibuja en la imagen: se ven allí donde vaya el vídeo, chats y redes incluidos."
+  pt: "Escuta o vídeo, escreve as legendas com o Whisper e as desenha na imagem — aparecem onde quer que o vídeo vá, inclusive em chats e redes sociais."
+  fr: "Écoute la vidéo, écrit les sous-titres avec Whisper et les dessine dans l'image : ils s'affichent partout où va la vidéo, messageries et réseaux compris."
+  de: "Hört das Video ab, schreibt Untertitel mit Whisper und zeichnet sie ins Bild — sie sind überall zu sehen, wohin das Video geht, auch in Chats und sozialen Netzen."
+  pl: "Słucha wideo, pisze napisy przez Whisper i rysuje je w obrazie — widać je wszędzie, dokąd trafi film, także w czatach i mediach społecznościowych."
+  it: "Ascolta il video, scrive i sottotitoli con Whisper e li disegna nell'immagine: si vedono ovunque vada il video, chat e social compresi."
+  ar: "يستمع إلى الفيديو ويكتب الترجمة بـ Whisper ثم يرسمها داخل الصورة — فتظهر أينما ذهب الفيديو، في المحادثات ومواقع التواصل أيضًا."
+  zh: "听取视频声音，用 Whisper 写出字幕并直接画进画面——视频发到哪里都能看到，聊天软件和社交平台也一样。"
+input: {types: [video]}
+params:
+  - {key: model, type: model, default: "small", label: {en: Model, ru: Модель, es: "Modelo", pt: "Modelo", fr: "Modèle", de: "Modell", pl: "Model", it: "Modello", ar: "النموذج", zh: "模型"}}
+  - {key: language, type: language, default: "auto", label: {en: Language, ru: Язык, es: "Idioma", pt: "Idioma", fr: "Langue", de: "Sprache", pl: "Język", it: "Lingua", ar: "اللغة", zh: "语言"}}
+engine: whisper
+# Сначала SRT во временную папку, затем ffmpeg -vf subtitles= (core/src/burn.rs).
+whisper: {burn: true}
+args: []
+output: {ext: mp4, suffix: subtitled}
+seo: {slug: burn-subtitles-into-video, priority: high}
