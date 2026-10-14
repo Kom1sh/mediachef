@@ -3,21 +3,21 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Dictée vocale sur Mac — hors ligne, gratuite, sans facturation à la minute",
+  title: "Dictée vocale sur Mac et Windows — hors ligne, gratuite, sans facturation à la minute",
   description:
     "Appuyez sur un raccourci n'importe où, parlez, et les mots apparaissent là où se trouve le curseur. La reconnaissance tourne sur votre propre machine avec Whisper : rien n'est envoyé, rien n'est facturé. Dedans : latence mesurée, taille des modèles et la seule autorisation nécessaire.",
   h1: "Écrire à la voix sans que rien ne quitte l'ordinateur",
   crumb: "Dictée vocale",
 
   answer:
-    "Appuyez sur la touche ⌥ droite n'importe où sur le Mac, dites une phrase, appuyez encore : le texte s'écrit directement dans le champ où se trouve le curseur — un terminal, une conversation, un formulaire de navigateur. C'est le même Whisper que MediaChef transporte déjà qui reconnaît, donc l'audio ne quitte pas votre disque et personne ne compte les minutes. Dans notre mesure, une phrase de cinq secondes est revenue en 780 millisecondes.",
+    "Appuyez n'importe où sur la touche ⌥ droite sur Mac — ou sur la touche Ctrl droite sous Windows —, dites une phrase, appuyez encore : le texte s'écrit directement dans le champ où se trouve le curseur — un terminal, une conversation, un formulaire de navigateur. C'est le même Whisper que MediaChef transporte déjà qui reconnaît, donc l'audio ne quitte pas votre disque et personne ne compte les minutes. Dans notre mesure, une phrase de cinq secondes est revenue en 780 millisecondes.",
 
   facts: [
-    { k: "État", v: "Publiée depuis la version 0.8.0, macOS seulement pour l'instant" },
+    { k: "État", v: "Sur macOS depuis la version 0.8.0, sur Windows et Linux depuis la 0.8.5" },
     { k: "Où ça tourne", v: "Entièrement sur votre machine, sans compte ni envoi" },
     { k: "Vitesse", v: "780 ms de la touche au texte sur une phrase de cinq secondes (mesuré)" },
     { k: "Combien ça coûte", v: "Rien. Ni abonnement ni facturation à la minute" },
-    { k: "Plateforme", v: "macOS d'abord ; Windows et Linux ensuite" },
+    { k: "Plateforme", v: "macOS, Windows 10/11, Linux en session X11" },
     { k: "Téléchargement unique", v: "Un modèle de parole, 488 Mo pour celui par défaut" },
   ],
 
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "L'activer une fois",
-      p: "L'onglet Dictée propose un interrupteur et un déclencheur au choix : la touche ⌥ droite, la touche ⌘ droite ou l'une de deux combinaisons. Tant que vous ne l'avez pas activée, MediaChef n'enregistre aucun raccourci global : une application qui s'approprie discrètement une combinaison système est une application qui casse les autres.",
+      p: "L'onglet Dictée propose un interrupteur et un déclencheur au choix : sur Mac la touche ⌥ droite ou ⌘ droite, sous Windows la touche Ctrl droite, Alt droite ou Verr. Maj, et partout deux combinaisons. Tant que vous ne l'avez pas activée, MediaChef n'enregistre aucun raccourci global : une application qui s'approprie discrètement une combinaison système est une application qui casse les autres.",
     },
     {
       h: "Appuyer sur le raccourci n'importe où",
@@ -145,8 +145,8 @@ export default {
     "Dit franchement, parce que l'apprendre plus tard est pire que de le lire maintenant.",
   notFor: [
     {
-      h: "Vous n'êtes pas sur Mac.",
-      p: "macOS passe en premier parce que c'est là que tout a été construit et éprouvé. Windows et Linux suivent : le moteur de reconnaissance est déjà multiplateforme, ce qui demande du travail par plateforme, c'est le raccourci et l'écriture du texte.",
+      h: "Vous êtes sous Linux avec Wayland.",
+      p: "Une session Wayland ne laisse aucune application capter une touche globale ni écrire dans une autre fenêtre : la dictée n'y fonctionne donc pas encore, et l'onglet Dictée le dit. En session X11 elle fonctionne, avec Ctrl+Alt+D ou Ctrl+Alt+Space : Linux n'a pas encore de déclencheur à une seule touche.",
     },
     {
       h: "Il vous faut une écriture au fil de la parole.",
@@ -174,7 +174,11 @@ export default {
     },
     {
       q: "Quelle combinaison utilise-t-elle ?",
-      a: "Par défaut, la touche ⌥ droite — un modificateur seul : maintenez-la et parlez, ou appuyez une fois pour démarrer et une autre pour arrêter ; avec Shift, le texte est envoyé par Entrée. Un modificateur seul ne tape rien et n'entre en conflit avec rien. Des combinaisons comme ⌥ Space tapaient une espace en mode maintien si ⌥ était relâché en premier — elles ont donc été retirées ; ⌃⌥ Space et ⌃⌥ D restent en solutions de repli.",
+      a: "Par défaut, la touche ⌥ droite — un modificateur seul : maintenez-la et parlez, ou appuyez une fois pour démarrer et une autre pour arrêter ; avec Shift, le texte est envoyé par Entrée. Un modificateur seul ne tape rien et n'entre en conflit avec rien. Des combinaisons comme ⌥ Space tapaient une espace en mode maintien si ⌥ était relâché en premier — elles ont donc été retirées ; ⌃⌥ Space et ⌃⌥ D restent en solutions de repli. Sous Windows, c'est la touche Ctrl droite par défaut, avec Alt droite et Verr. Maj en alternatives ; sous Linux, Ctrl+Alt+D.",
+    },
+    {
+      q: "Est-ce que ça marche sous Windows et Linux ?",
+      a: "Oui, depuis la version 0.8.5. Sous Windows, c'est une seule touche, comme sur Mac — Ctrl droite par défaut — et aucune autorisation n'est nécessaire en dehors du micro. Si le crochet clavier ne démarre pas, Ctrl+Alt+D continue de fonctionner. Sous Linux, la dictée marche en session X11 avec Ctrl+Alt+D ; avec Wayland, le système ne le permet pas encore.",
     },
     {
       q: "Pourquoi a-t-elle besoin de l'autorisation d'Accessibilité ?",

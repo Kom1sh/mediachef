@@ -83,6 +83,7 @@
     "zh": "以选定的质量等级重新编码为 H.264。"
   },
   "engine": "ffmpeg",
+  "fit_size": null,
   "id": "compress-video-crf",
   "input": {
     "types": [

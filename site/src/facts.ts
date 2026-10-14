@@ -47,7 +47,7 @@ export const FACTS = {
   // Меняется вручную вместе с содержимым, а не при каждой пересборке:
   // «сегодня» в lastmod у неизменившейся страницы Google просто перестаёт верить.
   updated: "2026-09-06",
-  recipeCount: 17,
+  recipeCount: 19,
   modelCount: 4,
   platformCount: 3,
   ffmpeg: "9.0.1",

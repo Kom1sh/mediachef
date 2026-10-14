@@ -105,6 +105,16 @@ mod tests {
                 "{}: `whisper:` on a non-whisper recipe would be ignored",
                 r.id
             );
+            // Same class of bug for `fit_size:` — only the ffmpeg lane derives the
+            // bitrate, and the param it names has to be a real number field.
+            if r.fit_size.is_some() {
+                assert!(
+                    matches!(r.engine, Engine::Ffmpeg),
+                    "{}: `fit_size:` works only on ffmpeg recipes",
+                    r.id
+                );
+            }
+            crate::fit::check_recipe(r).unwrap_or_else(|e| panic!("{e}"));
         }
     }
 
@@ -125,6 +135,11 @@ mod tests {
                 .unwrap_or_else(|e| panic!("{}: resolve_params failed: {e}", r.id));
             match r.engine {
                 Engine::Ffmpeg => {
+                    // A `fit_size` recipe's args name derived keys (`{fit_video_bitrate}`
+                    // …) that only exist once the queue has a duration — a minute here.
+                    let mut resolved = resolved;
+                    crate::fit::derive(&r, &mut resolved, Some(60.0), None, true)
+                        .unwrap_or_else(|e| panic!("{}: fit::derive failed: {e}", r.id));
                     let argv = build_argv(&r, "/tmp/in file.mp4", "/tmp/out.mp4", &resolved)
                         .unwrap_or_else(|e| panic!("{}: build_argv failed: {e}", r.id));
                     assert!(!argv.is_empty(), "{}: built an empty argv", r.id);
@@ -137,12 +152,22 @@ mod tests {
                         "{}: whisper builds its own command — `args:` is ignored",
                         r.id
                     );
-                    assert!(
-                        WhisperFormat::from_ext(&r.output.ext).is_some(),
-                        "{}: whisper cannot write .{} — output.ext must be txt/srt/vtt/json",
-                        r.id,
-                        r.output.ext
-                    );
+                    // A burn recipe's output is the video with the transcript drawn
+                    // in; the transcript itself is an SRT in a tempdir (`burn`).
+                    if r.whisper.as_ref().is_some_and(|w| w.burn) {
+                        assert_eq!(
+                            r.output.ext, "mp4",
+                            "{}: `burn` writes an H.264/AAC video — output.ext must be mp4",
+                            r.id
+                        );
+                    } else {
+                        assert!(
+                            WhisperFormat::from_ext(&r.output.ext).is_some(),
+                            "{}: whisper cannot write .{} — output.ext must be txt/srt/vtt/json",
+                            r.id,
+                            r.output.ext
+                        );
+                    }
                     // The type matters as much as the key: `type: string` would
                     // resolve fine here and then render as a free-text box instead of
                     // the model picker / language list, so pin both.

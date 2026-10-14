@@ -3,21 +3,21 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Dettatura vocale sul Mac — offline, gratis, senza addebito al minuto",
+  title: "Dettatura vocale su Mac e Windows — offline, gratis, senza addebito al minuto",
   description:
     "Premi una scorciatoia dove vuoi, parla, e le parole compaiono dove sta il cursore. Il riconoscimento gira sulla tua macchina con Whisper: niente viene caricato, niente viene tariffato. Dentro: latenza misurata, dimensioni dei modelli e l'unico permesso che serve.",
   h1: "Scrivere con la voce senza che nulla lasci il computer",
   crumb: "Dettatura vocale",
 
   answer:
-    "Premi il tasto ⌥ destro in qualsiasi punto del Mac, di' una frase, premi di nuovo: il testo viene scritto direttamente nel campo dove sta il cursore — un terminale, una chat, un modulo del browser. Riconosce lo stesso Whisper che MediaChef porta già con sé, quindi l'audio non esce dal tuo disco e nessuno conta i minuti. Nella nostra misura una frase di cinque secondi è tornata in 780 millisecondi.",
+    "Premi il tasto ⌥ destro sul Mac — o il Ctrl destro su Windows — in qualsiasi punto, di' una frase, premi di nuovo: il testo viene scritto direttamente nel campo dove sta il cursore — un terminale, una chat, un modulo del browser. Riconosce lo stesso Whisper che MediaChef porta già con sé, quindi l'audio non esce dal tuo disco e nessuno conta i minuti. Nella nostra misura una frase di cinque secondi è tornata in 780 millisecondi.",
 
   facts: [
-    { k: "Stato", v: "Pubblicata dalla versione 0.8.0, per ora solo macOS" },
+    { k: "Stato", v: "Su macOS dalla versione 0.8.0, su Windows e Linux dalla 0.8.5" },
     { k: "Dove gira", v: "Interamente sulla tua macchina, senza account e senza caricamenti" },
     { k: "Velocità", v: "780 ms dal tasto al testo su una frase di cinque secondi (misurato)" },
     { k: "Quanto costa", v: "Niente. Né abbonamento né addebito al minuto" },
-    { k: "Piattaforma", v: "macOS per primo; Windows e Linux dopo" },
+    { k: "Piattaforma", v: "macOS, Windows 10/11, Linux in una sessione X11" },
     { k: "Scaricamento unico", v: "Un modello vocale, 488 MB quello predefinito" },
   ],
 
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Accenderla una volta",
-      p: "Nella scheda Dettatura c'è un interruttore e un attivatore a scelta: il tasto ⌥ destro, il tasto ⌘ destro o una di due combinazioni. Finché non l'accendi, MediaChef non registra nessuna scorciatoia globale: un'applicazione che si prende in silenzio una combinazione di sistema è un'applicazione che rompe le altre.",
+      p: "Nella scheda Dettatura c'è un interruttore e un attivatore a scelta: sul Mac il tasto ⌥ destro o ⌘ destro, su Windows il Ctrl destro, l'Alt destro o il Blocco maiuscole, e ovunque due combinazioni. Finché non l'accendi, MediaChef non registra nessuna scorciatoia globale: un'applicazione che si prende in silenzio una combinazione di sistema è un'applicazione che rompe le altre.",
     },
     {
       h: "Premere la scorciatoia dove vuoi",
@@ -145,8 +145,8 @@ export default {
     "Detto chiaro, perché scoprirlo dopo è peggio che leggerlo adesso.",
   notFor: [
     {
-      h: "Non sei su un Mac.",
-      p: "macOS viene per primo perché è lì che è stata costruita e provata. Windows e Linux seguono: il motore di riconoscimento è già multipiattaforma, il lavoro per piattaforma serve alla scorciatoia e alla scrittura del testo.",
+      h: "Usi Linux con Wayland.",
+      p: "Una sessione Wayland non lascia a nessuna applicazione intercettare un tasto globale né scrivere in un'altra finestra, quindi lì la dettatura non funziona ancora — la scheda Dettatura lo dice. In una sessione X11 funziona, con Ctrl+Alt+D o Ctrl+Alt+Space: su Linux un attivatore a tasto singolo non c'è ancora.",
     },
     {
       h: "Ti serve che scriva mentre parli.",
@@ -174,7 +174,11 @@ export default {
     },
     {
       q: "Quale combinazione usa?",
-      a: "Di default il tasto ⌥ destro — un modificatore da solo: tienilo premuto e parla, oppure premilo una volta per iniziare e di nuovo per finire; con Shift il testo viene inviato con Invio. Un modificatore da solo non scrive nulla e non entra in conflitto con nulla. Combinazioni come ⌥ Space scrivevano uno spazio in modalità pressione prolungata se ⌥ veniva rilasciato prima, quindi sono state tolte; ⌃⌥ Space e ⌃⌥ D restano come alternative.",
+      a: "Di default il tasto ⌥ destro — un modificatore da solo: tienilo premuto e parla, oppure premilo una volta per iniziare e di nuovo per finire; con Shift il testo viene inviato con Invio. Un modificatore da solo non scrive nulla e non entra in conflitto con nulla. Combinazioni come ⌥ Space scrivevano uno spazio in modalità pressione prolungata se ⌥ veniva rilasciato prima, quindi sono state tolte; ⌃⌥ Space e ⌃⌥ D restano come alternative. Su Windows di default il Ctrl destro, in alternativa l'Alt destro e il Blocco maiuscole; su Linux Ctrl+Alt+D.",
+    },
+    {
+      q: "Funziona su Windows e Linux?",
+      a: "Sì, dalla versione 0.8.5. Su Windows è un tasto solo, come sul Mac — il Ctrl destro di default — e oltre al microfono non servono permessi. Se l'aggancio della tastiera non parte, Ctrl+Alt+D continua a funzionare. Su Linux la dettatura funziona in una sessione X11 con Ctrl+Alt+D; con Wayland il sistema non lo permette ancora.",
     },
     {
       q: "Perché serve il permesso Accessibilità?",

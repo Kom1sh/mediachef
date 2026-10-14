@@ -28,6 +28,14 @@ pub struct ProbeInfo {
     pub raw: serde_json::Value,
 }
 
+/// Есть ли в файле звуковая дорожка. Нужно `fit`: бюджет «сжать до N МБ» не
+/// тратится на звук, которого нет.
+pub fn has_audio(raw: &serde_json::Value) -> bool {
+    raw["streams"]
+        .as_array()
+        .is_some_and(|s| s.iter().any(|s| s["codec_type"] == "audio"))
+}
+
 pub fn detect_media_type(raw: &serde_json::Value) -> MediaType {
     let streams = raw["streams"].as_array().cloned().unwrap_or_default();
     let has_real_video = streams.iter().any(|s| {

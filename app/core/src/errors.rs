@@ -28,6 +28,13 @@ pub fn humanize(stderr_tail: &str) -> Option<String> {
         "The file has no audio/video streams FFmpeg can read."
     } else if s.contains("unknown encoder") {
         "This FFmpeg build lacks the required encoder."
+    // The burn recipe's filter, missing from an ffmpeg built without libass. The
+    // two needles are the two ways ffmpeg says so: older builds name the filter,
+    // 9.x trips over its argument (`burn::SUBS_FILE`) first.
+    } else if s.contains("no such filter: 'subtitles'")
+        || s.contains("no option name near 'subs.srt'")
+    {
+        "This FFmpeg build cannot draw subtitles onto video (it lacks libass)."
     // The three engine arms below say "reinstall MediaChef", not "install ffmpeg":
     // since wave 4 every distribution carries its own ffmpeg/ffprobe/whisper-cli
     // next to the app executable (`locate`), so a lookup that comes back empty
@@ -108,6 +115,14 @@ mod tests {
         assert!(humanize("does not contain any stream")
             .unwrap()
             .contains("streams"));
+        // Both spellings of "this ffmpeg has no libass" — the second is the
+        // measured stderr of Homebrew's ffmpeg 9.0.1 on the burn argv.
+        for tail in [
+            "No such filter: 'subtitles'",
+            "[AVFilterGraph @ 0x8dac24180] No option name near 'subs.srt'",
+        ] {
+            assert!(humanize(tail).unwrap().contains("libass"), "{tail}");
+        }
         assert!(humanize("something totally else").is_none());
         // Ruling 21: a missing binary must read as a broken engine, never as a
         // moved input file. The spawn case pins the arm order — it contains

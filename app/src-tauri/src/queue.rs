@@ -4,6 +4,7 @@
 //! `Sender<JobView>` and a runner closure, so the whole state machine is
 //! unit-testable without a running app. `lib.rs` owns the wiring.
 
+use mediachef_core::burn::BurnJob;
 use mediachef_core::naming;
 use mediachef_core::recipe::{MediaType, Recipe};
 use mediachef_core::runner::CancelToken;
@@ -42,6 +43,11 @@ pub enum JobSpec {
     Whisper {
         job: WhisperJob,
     },
+    /// A transcription drawn into the video (`burn::run_burn`). Whisper-lane work —
+    /// most of its time is the transcription — and a whisper job to the frontend.
+    Burn {
+        job: BurnJob,
+    },
 }
 
 impl JobSpec {
@@ -49,14 +55,14 @@ impl JobSpec {
     pub fn kind(&self) -> &'static str {
         match self {
             JobSpec::Ffmpeg { .. } => "ffmpeg",
-            JobSpec::Whisper { .. } => "whisper",
+            JobSpec::Whisper { .. } | JobSpec::Burn { .. } => "whisper",
         }
     }
 
     pub fn lane(&self) -> Lane {
         match self {
             JobSpec::Ffmpeg { .. } => Lane::Ffmpeg,
-            JobSpec::Whisper { .. } => Lane::Whisper,
+            JobSpec::Whisper { .. } | JobSpec::Burn { .. } => Lane::Whisper,
         }
     }
 }

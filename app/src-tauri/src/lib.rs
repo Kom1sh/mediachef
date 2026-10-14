@@ -6,10 +6,11 @@ pub mod overlay;
 pub mod queue;
 pub mod settings;
 
+use mediachef_core::burn::{self, BurnJob};
 use mediachef_core::process::CancelToken;
 use mediachef_core::recipe::{Engine, Recipe};
 use mediachef_core::transcribe::{WhisperFormat, WhisperJob};
-use mediachef_core::{catalog, locate, models, naming, probe, template};
+use mediachef_core::{catalog, fit, locate, models, naming, probe, template};
 use queue::{Queue, TestOutcome};
 use serde::Serialize;
 use settings::AppSettings;
@@ -465,8 +466,14 @@ fn whisper_job(
         .ok_or_else(|| format!("recipe {} declares no model param", r.id))?;
     let model = models::model_path(&models_dir(app), model_id)
         .ok_or_else(|| format!("model {model_id} is not downloaded — open Models"))?;
-    let format = WhisperFormat::from_ext(&r.output.ext)
-        .ok_or_else(|| format!("recipe {} cannot write .{} transcripts", r.id, r.output.ext))?;
+    // A burn recipe's `output.ext` is the video's; its transcript is always an
+    // SRT, written into a tempdir that `burn::run_burn` owns.
+    let format = if is_burn(r) {
+        WhisperFormat::Srt
+    } else {
+        WhisperFormat::from_ext(&r.output.ext)
+            .ok_or_else(|| format!("recipe {} cannot write .{} transcripts", r.id, r.output.ext))?
+    };
     Ok(WhisperJob {
         input: PathBuf::from(input),
         output: output.to_path_buf(),
@@ -482,6 +489,41 @@ fn whisper_job(
         // и подсказывать модели чужие термины посреди чужого файла незачем.
         prompt: String::new(),
     })
+}
+
+/// `whisper: {burn: true}` — the transcript is drawn into the video, see [`burn`].
+fn is_burn(r: &Recipe) -> bool {
+    r.whisper.as_ref().is_some_and(|w| w.burn)
+}
+
+/// The two-step command of a burn job, as the preview pane shows it: whisper into
+/// `subs.srt`, then the ffmpeg run that draws it in. The SRT really lives in a
+/// tempdir that ffmpeg is started from — which is why the filter names it bare.
+fn burn_preview(job: &WhisperJob, output: &Path) -> Vec<String> {
+    let mut srt = job.clone();
+    srt.output = PathBuf::from(burn::SUBS_FILE);
+    let mut argv = whisper_preview(&srt);
+    argv.push("&&".into());
+    argv.push("ffmpeg".into());
+    argv.extend(burn::burn_argv(&job.input, output));
+    argv
+}
+
+/// Fills a `fit_size` recipe's derived params (`fit::KEYS`) from the probe:
+/// the bitrate depends on the clip's length, which only ffprobe knows.
+fn derive_fit(
+    r: &Recipe,
+    resolved: &mut HashMap<String, String>,
+    info: &probe::ProbeInfo,
+) -> Result<(), String> {
+    fit::derive(
+        r,
+        resolved,
+        info.duration_s,
+        info.size_bytes,
+        probe::has_audio(&info.raw),
+    )
+    .map_err(human)
 }
 
 /// A whisper recipe's `args:` is empty by design — the queue assembles the
@@ -601,7 +643,14 @@ fn preview(
     params: HashMap<String, String>,
 ) -> Result<Vec<String>, String> {
     let r = find_recipe(&state.recipes, &recipe_id)?;
-    let resolved = template::resolve_params(r, &params).map_err(|e| e.to_string())?;
+    let mut resolved = template::resolve_params(r, &params).map_err(|e| e.to_string())?;
+    // A size target has no command until the clip's length is known, and a file
+    // that already fits is better told here than after Add.
+    if r.fit_size.is_some() {
+        let fp = locate::ffprobe().ok_or_else(|| human("ffprobe not found"))?;
+        let info = probe::probe(&fp, std::path::Path::new(&input)).map_err(human)?;
+        derive_fit(r, &mut resolved, &info)?;
+    }
     // The same planning rule as `enqueue`, minus the reservation — a preview must
     // not claim a path — so the command shown is the command that will run, fixed
     // output folder included. It can still be one ` (N)` off by the time Add is
@@ -616,6 +665,9 @@ fn preview(
         // Surfaces the missing-model error on purpose: the preview pane is where
         // the user should learn the job cannot run, before clicking Add.
         let job = whisper_job(&app, r, &input, &output, &resolved).map_err(human)?;
+        if is_burn(r) {
+            return Ok(burn_preview(&job, &output));
+        }
         return Ok(whisper_preview(&job));
     }
     template::build_argv(r, &input, &output.display().to_string(), &resolved)
@@ -648,7 +700,9 @@ fn enqueue(
             info.media_type
         ));
     }
-    let resolved = template::resolve_params(r, &params).map_err(human)?;
+    let mut resolved = template::resolve_params(r, &params).map_err(human)?;
+    // Before the reservation, like every other refusal here: no cleanup needed.
+    derive_fit(r, &mut resolved, &info)?;
     // Settings' output folder, resolved per job rather than at boot: the user can
     // change it between two Adds, and a missing folder must stop the job here —
     // before a reservation is taken — rather than fail it in ffmpeg later.
@@ -660,7 +714,8 @@ fn enqueue(
     let planned = naming::planned_path(r, std::path::Path::new(&input), base.as_deref());
     check_free_space(
         planned.parent().unwrap_or(Path::new(".")),
-        r.engine,
+        // A burn job ends in a re-encoded video, not a transcript: size it as one.
+        if is_burn(r) { Engine::Ffmpeg } else { r.engine },
         // `size_bytes` is `None` only when ffprobe could not stat the file, which
         // for a file it just probed successfully means something is odd about it;
         // 0 then asks for no room rather than refusing the job on a missing number.
@@ -679,9 +734,18 @@ fn enqueue(
                 return Err(human(e));
             }
         };
-        return Ok(state
-            .queue
-            .push_spec(recipe_id, input, out_s, queue::JobSpec::Whisper { job }));
+        let spec = if is_burn(r) {
+            queue::JobSpec::Burn {
+                job: BurnJob {
+                    transcript: job,
+                    output: output.clone(),
+                    duration_s: info.duration_s,
+                },
+            }
+        } else {
+            queue::JobSpec::Whisper { job }
+        };
+        return Ok(state.queue.push_spec(recipe_id, input, out_s, spec));
     }
     let argv = match template::build_argv(r, &input, &out_s, &resolved) {
         Ok(argv) => argv,
@@ -786,10 +850,16 @@ fn whisper_worker(q: Queue) {
             let whisper = whisper
                 .as_ref()
                 .ok_or("whisper-cli not found".to_string())?;
-            let queue::JobSpec::Whisper { job: wj } = &job.spec else {
-                return Err("not a whisper job".to_string());
+            let res = match &job.spec {
+                queue::JobSpec::Whisper { job: wj } => {
+                    mediachef_core::transcribe::run_whisper(ffmpeg, whisper, wj, &job.cancel, on_p)
+                }
+                queue::JobSpec::Burn { job: bj } => {
+                    burn::run_burn(ffmpeg, whisper, bj, &job.cancel, on_p)
+                }
+                queue::JobSpec::Ffmpeg { .. } => return Err("not a whisper job".to_string()),
             };
-            match mediachef_core::transcribe::run_whisper(ffmpeg, whisper, wj, &job.cancel, on_p) {
+            match res {
                 Ok(_) => Ok(TestOutcome::Done),
                 Err(e) => Err(format!("{}\n{}", e.message, e.stderr_tail)),
             }

@@ -101,9 +101,28 @@ pub fn run_streaming(
     bin: &Path,
     argv: &[String],
     cancel: &CancelToken,
+    on_line: impl FnMut(Pipe, &str),
+) -> Result<Exit, StreamError> {
+    run_streaming_in(bin, argv, None, cancel, on_line)
+}
+
+/// [`run_streaming`] with the child's working directory set to `cwd`.
+///
+/// Exists for one caller, `burn`: ffmpeg's `subtitles=` filter takes its file
+/// name inside a filtergraph, where `:` and `\` are syntax, so a Windows path
+/// (`C:\Users\…`) would need two layers of escaping to survive. Run from the
+/// folder that holds the file, the name is a bare `subs.srt` and needs none.
+pub fn run_streaming_in(
+    bin: &Path,
+    argv: &[String],
+    cwd: Option<&Path>,
+    cancel: &CancelToken,
     mut on_line: impl FnMut(Pipe, &str),
 ) -> Result<Exit, StreamError> {
     let mut cmd = Command::new(bin);
+    if let Some(dir) = cwd {
+        cmd.current_dir(dir);
+    }
     cmd.args(argv)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

@@ -3,21 +3,21 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Spracheingabe auf dem Mac — offline, kostenlos, ohne Minutenabrechnung",
+  title: "Spracheingabe auf Mac und Windows — offline, kostenlos, ohne Minutenabrechnung",
   description:
     "Kurzbefehl irgendwo drücken, sprechen — und die Wörter erscheinen da, wo der Cursor steht. Die Erkennung läuft auf Ihrem eigenen Rechner mit Whisper: nichts wird hochgeladen, nichts abgerechnet. Drin: gemessene Verzögerung, Modellgrößen und die eine Freigabe, die es braucht.",
   h1: "Mit der Stimme schreiben, ohne dass etwas den Rechner verlässt",
   crumb: "Spracheingabe",
 
   answer:
-    "Drücken Sie die rechte ⌥-Taste irgendwo auf dem Mac, sagen Sie einen Satz, drücken Sie noch einmal — und der Text wird direkt in das Feld getippt, in dem der Cursor steht: ein Terminal, ein Chat, ein Browserformular. Erkannt wird von demselben Whisper, den MediaChef schon mitbringt, also verlässt der Ton Ihre Festplatte nicht und niemand zählt Minuten. In unserer Messung kam ein Satz von fünf Sekunden nach 780 Millisekunden zurück.",
+    "Drücken Sie irgendwo die rechte ⌥-Taste auf dem Mac — oder die rechte Strg-Taste unter Windows —, sagen Sie einen Satz, drücken Sie noch einmal — und der Text wird direkt in das Feld getippt, in dem der Cursor steht: ein Terminal, ein Chat, ein Browserformular. Erkannt wird von demselben Whisper, den MediaChef schon mitbringt, also verlässt der Ton Ihre Festplatte nicht und niemand zählt Minuten. In unserer Messung kam ein Satz von fünf Sekunden nach 780 Millisekunden zurück.",
 
   facts: [
-    { k: "Stand", v: "Seit Version 0.8.0 veröffentlicht, vorerst nur macOS" },
+    { k: "Stand", v: "Auf macOS seit Version 0.8.0, auf Windows und Linux seit 0.8.5" },
     { k: "Wo es läuft", v: "Vollständig auf Ihrem Rechner, ohne Konto und ohne Upload" },
     { k: "Tempo", v: "780 ms von der Taste zum Text bei einem Fünf-Sekunden-Satz (gemessen)" },
     { k: "Was es kostet", v: "Nichts. Kein Abo, keine Minutenabrechnung" },
-    { k: "Plattform", v: "macOS zuerst; Windows und Linux danach" },
+    { k: "Plattform", v: "macOS, Windows 10/11, Linux in einer X11-Sitzung" },
     { k: "Einmaliger Download", v: "Ein Sprachmodell, 488 MB beim voreingestellten" },
   ],
 
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Einmal einschalten",
-      p: "Im Diktat-Tab gibt es einen Schalter und einen Auslöser zur Wahl: die rechte ⌥-Taste, die rechte ⌘-Taste oder eine von zwei Kombinationen. Bis Sie einschalten, registriert MediaChef überhaupt keinen systemweiten Kurzbefehl: eine Anwendung, die sich still eine Systemkombination nimmt, ist eine Anwendung, die andere kaputt macht.",
+      p: "Im Diktat-Tab gibt es einen Schalter und einen Auslöser zur Wahl: auf dem Mac die rechte ⌥- oder ⌘-Taste, unter Windows die rechte Strg-, die rechte Alt-Taste oder die Feststelltaste, und überall zwei Kombinationen. Bis Sie einschalten, registriert MediaChef überhaupt keinen systemweiten Kurzbefehl: eine Anwendung, die sich still eine Systemkombination nimmt, ist eine Anwendung, die andere kaputt macht.",
     },
     {
       h: "Kurzbefehl irgendwo drücken",
@@ -145,8 +145,8 @@ export default {
     "Offen gesagt, denn es später zu erfahren ist schlimmer, als es jetzt zu lesen.",
   notFor: [
     {
-      h: "Sie sind nicht auf einem Mac.",
-      p: "macOS kommt zuerst, weil dort gebaut und geprüft wurde. Windows und Linux folgen: die Erkennung ist schon plattformübergreifend, Arbeit je Plattform brauchen der Kurzbefehl und das Tippen des Textes.",
+      h: "Sie nutzen Linux mit Wayland.",
+      p: "Eine Wayland-Sitzung lässt keine Anwendung eine globale Taste abfangen oder in ein anderes Fenster tippen, deshalb funktioniert das Diktat dort noch nicht — der Diktat-Tab sagt das auch. In einer X11-Sitzung funktioniert es, mit Ctrl+Alt+D oder Ctrl+Alt+Space: einen Ein-Tasten-Auslöser gibt es unter Linux noch nicht.",
     },
     {
       h: "Sie brauchen Schreiben im Sprechen.",
@@ -174,7 +174,11 @@ export default {
     },
     {
       q: "Welche Kombination benutzt es?",
-      a: "Standard ist die rechte ⌥-Taste — ein einzelner Modifier: halten und sprechen, oder einmal tippen zum Starten und noch einmal zum Beenden; mit Shift wird der Text per Enter abgeschickt. Ein Modifier allein tippt nichts und kollidiert mit nichts. Kombinationen wie ⌥ Space tippten im Haltemodus ein Leerzeichen, wenn ⌥ zuerst losgelassen wurde — deshalb sind sie raus; ⌃⌥ Space und ⌃⌥ D bleiben als Ausweichmöglichkeiten.",
+      a: "Standard ist die rechte ⌥-Taste — ein einzelner Modifier: halten und sprechen, oder einmal tippen zum Starten und noch einmal zum Beenden; mit Shift wird der Text per Enter abgeschickt. Ein Modifier allein tippt nichts und kollidiert mit nichts. Kombinationen wie ⌥ Space tippten im Haltemodus ein Leerzeichen, wenn ⌥ zuerst losgelassen wurde — deshalb sind sie raus; ⌃⌥ Space und ⌃⌥ D bleiben als Ausweichmöglichkeiten. Unter Windows ist es standardmäßig die rechte Strg-Taste, alternativ die rechte Alt-Taste oder die Feststelltaste; unter Linux Ctrl+Alt+D.",
+    },
+    {
+      q: "Funktioniert es unter Windows und Linux?",
+      a: "Ja, seit Version 0.8.5. Unter Windows ist es eine einzige Taste wie auf dem Mac — standardmäßig die rechte Strg-Taste — und außer dem Mikrofonzugriff braucht es keine Berechtigung. Startet der Tastatur-Hook nicht, funktioniert weiterhin Ctrl+Alt+D. Unter Linux läuft das Diktat in einer X11-Sitzung mit Ctrl+Alt+D; unter Wayland erlaubt das System es noch nicht.",
     },
     {
       q: "Warum braucht es die Bedienungshilfen-Freigabe?",

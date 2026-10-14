@@ -1,0 +1,45 @@
+id: compress-video-size
+category: compress
+title:
+  en: "Compress video to a file size"
+  ru: "Сжать видео до нужного размера"
+  es: "Comprimir vídeo a un tamaño"
+  pt: "Comprimir vídeo para um tamanho"
+  fr: "Compresser une vidéo à une taille donnée"
+  de: "Video auf eine Dateigröße komprimieren"
+  pl: "Skompresuj wideo do rozmiaru"
+  it: "Comprimi video a una dimensione"
+  ar: "ضغط الفيديو إلى حجم محدد"
+  zh: "把视频压缩到指定大小"
+aliases:
+  en: [compress video to 10mb, compress video for discord, video under 25mb, shrink video to a size, video too big to send, compress video for email]
+  ru: [сжать видео до 10 мб, сжать видео для дискорда, видео меньше 25 мб, уменьшить видео до размера, видео слишком большое для отправки, сжать видео для телеграма]
+  es: ["comprimir vídeo a 10 mb", "comprimir vídeo para discord", "vídeo de menos de 25 mb", "reducir vídeo a un tamaño", "vídeo demasiado grande para enviar"]
+  pt: ["comprimir vídeo para 10 mb", "comprimir vídeo para o discord", "vídeo com menos de 25 mb", "reduzir vídeo para um tamanho", "vídeo grande demais para enviar"]
+  fr: ["compresser une vidéo à 10 mo", "compresser une vidéo pour discord", "vidéo de moins de 25 mo", "réduire une vidéo à une taille", "vidéo trop lourde pour l'envoyer"]
+  de: ["video auf 10 mb komprimieren", "video für discord komprimieren", "video unter 25 mb", "video auf dateigröße verkleinern", "video zu groß zum senden"]
+  pl: ["skompresować wideo do 10 mb", "skompresować wideo na discorda", "wideo poniżej 25 mb", "zmniejszyć wideo do rozmiaru", "film za duży do wysłania"]
+  it: ["comprimere video a 10 mb", "comprimere video per discord", "video sotto i 25 mb", "ridurre il video a una dimensione", "video troppo grande da inviare"]
+  ar: ["ضغط فيديو إلى 10 ميغابايت", "ضغط فيديو لديسكورد", "فيديو أقل من 25 ميغابايت", "تصغير الفيديو إلى حجم معين", "الفيديو كبير جدًا للإرسال"]
+  zh: ["视频压缩到10mb", "压缩视频发 discord", "视频小于25mb", "压缩视频到指定大小", "视频太大发不出去"]
+description:
+  en: "Works out the bitrate from the video's length so the file fits the size you set — for Discord, Telegram or an email attachment. H.264; when the budget is tight the frame is scaled down."
+  ru: "Считает битрейт по длине ролика, чтобы файл влез в заданный размер — для Discord, Telegram или вложения в письмо. H.264; при тесном бюджете кадр уменьшается."
+  es: "Calcula el bitrate a partir de la duración para que el archivo quepa en el tamaño indicado: para Discord, Telegram o un adjunto de correo. H.264; si el margen es justo, se reduce el cuadro."
+  pt: "Calcula o bitrate pela duração para o arquivo caber no tamanho escolhido — para Discord, Telegram ou anexo de e-mail. H.264; com orçamento apertado, o quadro é reduzido."
+  fr: "Calcule le débit d'après la durée pour que le fichier tienne dans la taille choisie — pour Discord, Telegram ou une pièce jointe. H.264 ; si le budget est serré, l'image est réduite."
+  de: "Berechnet die Bitrate aus der Länge, damit die Datei in die gewählte Größe passt — für Discord, Telegram oder einen Mailanhang. H.264; bei knappem Budget wird das Bild verkleinert."
+  pl: "Liczy bitrate z długości filmu, żeby plik zmieścił się w zadanym rozmiarze — na Discorda, Telegram albo do załącznika. H.264; przy ciasnym budżecie obraz jest zmniejszany."
+  it: "Calcola il bitrate dalla durata perché il file stia nella dimensione scelta — per Discord, Telegram o un allegato email. H.264; con un budget stretto il fotogramma viene ridotto."
+  ar: "يحسب معدل البت من طول الفيديو ليتسع الملف للحجم الذي تحدده — لديسكورد أو تيليغرام أو مرفق بريد. H.264؛ وعند ضيق الحجم يُصغَّر الإطار."
+  zh: "根据视频时长算出码率，让文件装进你设定的大小——发 Discord、Telegram 或作邮件附件都合适。H.264；预算紧时会缩小画面。"
+input: {types: [video]}
+params:
+  - {key: size_mb, type: int, default: 10, min: 1, max: 4000, unit: MB, label: {en: "Target size", ru: "Целевой размер", es: "Tamaño objetivo", pt: "Tamanho alvo", fr: "Taille cible", de: "Zielgröße", pl: "Docelowy rozmiar", it: "Dimensione obiettivo", ar: "الحجم المستهدف", zh: "目标大小"}}
+engine: ffmpeg
+# Битрейт, буфер, звук и потолок высоты считает очередь из длительности (core/src/fit.rs):
+# в шаблоне их нет, это ключи fit::KEYS. Высота — потолок, а не цель: min(ih, …) не растягивает.
+fit_size: {param: size_mb, audio_kbps: 128}
+args: ["-i", "{input}", "-c:v", "libx264", "-preset", "medium", "-b:v", "{fit_video_bitrate}", "-maxrate", "{fit_video_bitrate}", "-bufsize", "{fit_bufsize}", "-vf", "scale=-2:'trunc(min(ih,{fit_height})/2)*2'", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "{fit_audio_bitrate}", "-movflags", "+faststart", "{output}"]
+output: {ext: mp4, suffix: small}
+seo: {slug: compress-video-to-size, priority: high}
