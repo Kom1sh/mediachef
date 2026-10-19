@@ -37,7 +37,7 @@ export const ui = {
   shotCaption:
     "The real window, shown in the theme you are reading in. Drop board in the middle, queue on the right, engines already inside.",
   outTitle: "What it does out of the box",
-  outLead: `Seventeen recipes ship with the app. Each one is a real FFmpeg or Whisper job with the parameters already filled in, and each one writes its result next to your file as {name}.{what}.{ext}.`,
+  outLead: `${FACTS.recipeCount} recipes ship with the app. Each one is a real FFmpeg or Whisper job with the parameters already filled in, and each one writes its result next to your file as {name}.{what}.{ext}.`,
   outHead: ["Direction", "Recipe in the app", "What you get"],
   outRows: [
     ["Video → audio", "Extract audio to MP3", "<code>clip.audio.mp3</code> at 128, 192 or 320 kbps"],

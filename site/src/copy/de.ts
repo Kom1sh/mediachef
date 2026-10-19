@@ -36,7 +36,7 @@ export const ui = {
     "Das echte Fenster, im selben Farbschema, in dem Sie gerade lesen. Die Ablagefläche in der Mitte, die Warteschlange rechts, die Engines bereits eingebaut.",
   outTitle: "Was die App sofort kann",
   outLead:
-    "Siebzehn Rezepte sind eingebaut. Jedes ist eine echte FFmpeg- oder Whisper-Aufgabe mit bereits gesetzten Parametern, und jedes schreibt sein Ergebnis neben Ihre Datei als {Name}.{was}.{Endung}.",
+    `${FACTS.recipeCount} Rezepte sind eingebaut. Jedes ist eine echte FFmpeg- oder Whisper-Aufgabe mit bereits gesetzten Parametern, und jedes schreibt sein Ergebnis neben Ihre Datei als {Name}.{was}.{Endung}.`,
   outHead: ["Richtung", "Rezept in der App", "Was dabei herauskommt"],
   outRows: [
     ["Video → Audio", "Audio als MP3 extrahieren", "<code>clip.audio.mp3</code> mit 128, 192 oder 320 kbps"],
