@@ -22,6 +22,8 @@
   },
   "devDependencies": {
     "playwright": "^1.62.1",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2",
     "wrangler": "^4.131.2",
     "yaml": "^2.9.0"
   }

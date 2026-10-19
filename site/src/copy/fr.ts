@@ -36,7 +36,7 @@ export const ui = {
     "La vraie fenêtre, dans le thème où vous lisez en ce moment. La zone de dépôt au centre, la file à droite, les moteurs déjà à l'intérieur.",
   outTitle: "Ce qu'il fait dès l'installation",
   outLead:
-    "L'application embarque dix-sept recettes. Chacune est une véritable tâche FFmpeg ou Whisper dont les paramètres sont déjà renseignés, et chacune écrit son résultat à côté de votre fichier sous la forme {nom}.{quoi}.{extension}.",
+    `L'application embarque ${FACTS.recipeCount} recettes. Chacune est une véritable tâche FFmpeg ou Whisper dont les paramètres sont déjà renseignés, et chacune écrit son résultat à côté de votre fichier sous la forme {nom}.{quoi}.{extension}.`,
   outHead: ["Sens", "Recette dans l'application", "Ce que vous obtenez"],
   outRows: [
     ["Vidéo → audio", "Extraire l'audio en MP3", "<code>clip.audio.mp3</code> en 128, 192 ou 320 kbps"],

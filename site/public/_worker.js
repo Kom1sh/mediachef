@@ -18,8 +18,12 @@
 //     же базу D1. Единственный путь наружу у сайта, и он ручной — человек
 //     нажимает «отправить» сам.
 //
+//  5. Markdown-версии страниц для ИИ-агентов: `Accept: text/markdown` на адрес
+//     страницы отдаёт её index.md (его пишет integrations/markdown-pages.mjs),
+//     прямой адрес …/index.md — тот же файл с кодировкой и canonical на HTML.
+//
 // Плюс мелочь, выросшая из журнала: на HTML-ответы вешается заголовок `Link`
-// с указателем на llms.txt — см. ниже.
+// с указателем на llms.txt и на markdown-версию — см. ниже.
 
 const SECURITY = {
   "x-content-type-options": "nosniff",
@@ -412,6 +416,34 @@ async function logHit(env, entry) {
   }
 }
 
+// Markdown-версия страницы (dist/<путь>/index.md, её пишет
+// integrations/markdown-pages.mjs) — для агентов, которые просят текст без
+// вёрстки заголовком `Accept: text/markdown`. Отдаётся, только если markdown
+// назван явно и не хуже HTML: браузер шлёт `text/html,…,*/*;q=0.8`, и звёздочка
+// не должна превращать его страницу в markdown.
+function qOf(accept, type) {
+  let q = -1;
+  for (const part of accept.split(",")) {
+    const [range, ...params] = part.trim().toLowerCase().split(";");
+    if (range.trim() !== type) continue;
+    const qp = params.map((p) => p.trim()).find((p) => p.startsWith("q="));
+    q = Math.max(q, qp ? Number(qp.slice(2)) || 0 : 1);
+  }
+  return q;
+}
+
+function wantsMarkdown(request) {
+  const accept = request.headers.get("accept") || "";
+  const md = qOf(accept, "text/markdown");
+  return md > 0 && md >= qOf(accept, "text/html");
+}
+
+const MARKDOWN_TYPE = "text/markdown; charset=utf-8";
+
+// HTML-адрес страницы для её markdown-версии: canonical, чтобы поисковик не
+// завёл копию страницы в индексе, а модель цитировала обычный адрес.
+const canonicalFor = (url, pagePath) => `<${new URL(pagePath, url).href}>; rel="canonical"`;
+
 function cacheControlFor(pathname) {
   // Файлы из /_astro/ — с хешем в имени, живут вечно.
   if (pathname.startsWith("/_astro/")) return "public, max-age=31536000, immutable";
@@ -495,6 +527,41 @@ export default {
       });
     }
 
+    // Markdown-версия главной: у корня своей страницы нет, он раздаёт языки.
+    if (url.pathname === "/index.md") {
+      const locale = pickLocale(request.headers.get("accept-language"));
+      record?.(302, null);
+      return new Response(null, {
+        status: 302,
+        headers: {
+          location: new URL(`/${locale}/index.md`, url).toString(),
+          vary: "accept-language",
+          "cache-control": "no-store",
+          ...SECURITY,
+        },
+      });
+    }
+
+    // Тот же адрес страницы, но агенту, который попросил markdown. Нет файла —
+    // молча отдаём HTML, как всем: просьба не обязывает сервер.
+    const isPage = url.pathname.endsWith("/");
+    if (isPage && (request.method === "GET" || request.method === "HEAD") && wantsMarkdown(request)) {
+      const md = await env.ASSETS.fetch(new Request(new URL(url.pathname + "index.md", url), request));
+      if (md.ok) {
+        const out = new Response(request.method === "HEAD" ? null : md.body, {
+          status: 200,
+          headers: {
+            "content-type": MARKDOWN_TYPE,
+            vary: "accept",
+            link: canonicalFor(url, url.pathname),
+            ...SECURITY,
+          },
+        });
+        record?.(200, MARKDOWN_TYPE);
+        return out;
+      }
+    }
+
     const asset = await env.ASSETS.fetch(request);
     if (NULL_BODY.has(asset.status)) {
       record?.(asset.status, asset.headers.get("content-type"));
@@ -521,7 +588,21 @@ export default {
     // llmstxt.org предлагает ровно это отношение. Только на HTML: у картинок и
     // шрифтов описания нет.
     if (out.ok && (out.headers.get("content-type") || "").startsWith("text/html")) {
-      out.headers.set("link", '</llms.txt>; rel="describedby"; type="text/plain"');
+      const links = ['</llms.txt>; rel="describedby"; type="text/plain"'];
+      // У страницы есть markdown-версия — о ней сказано и в заголовке. Ответ
+      // теперь зависит от Accept, кешам это надо знать.
+      // У формы отзывов markdown-версии нет — она закрыта от индекса.
+      if (isPage && !feedbackLocale(url.pathname)) {
+        links.push(`<${url.pathname}index.md>; rel="alternate"; type="text/markdown"`);
+        out.headers.append("vary", "accept");
+      }
+      out.headers.set("link", links.join(", "));
+    }
+    // Прямой адрес …/index.md: статика отдаёт его без кодировки, и кириллица
+    // у части клиентов превращается в кракозябры.
+    if (out.ok && url.pathname.endsWith("/index.md")) {
+      out.headers.set("content-type", MARKDOWN_TYPE);
+      out.headers.set("link", canonicalFor(url, url.pathname.slice(0, -"index.md".length)));
     }
     // После правки заголовков: в журнал уезжает то, что реально ушло роботу,
     // включая итоговый Content-Type.

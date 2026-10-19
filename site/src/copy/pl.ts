@@ -36,7 +36,7 @@ export const ui = {
     "Prawdziwe okno, w tym samym motywie, w którym właśnie czytasz. Pole na pliki pośrodku, kolejka po prawej, silniki już w środku.",
   outTitle: "Co potrafi zaraz po instalacji",
   outLead:
-    "W aplikacji jest siedemnaście przepisów. Każdy to prawdziwe zadanie FFmpeg albo Whisper z gotowymi parametrami, i każdy zapisuje wynik obok twojego pliku jako {nazwa}.{co}.{rozszerzenie}.",
+    `W aplikacji jest ${FACTS.recipeCount} przepisów. Każdy to prawdziwe zadanie FFmpeg albo Whisper z gotowymi parametrami, i każdy zapisuje wynik obok twojego pliku jako {nazwa}.{co}.{rozszerzenie}.`,
   outHead: ["Kierunek", "Przepis w aplikacji", "Co dostajesz"],
   outRows: [
     ["Wideo → audio", "Wyciągnij audio do MP3", "<code>clip.audio.mp3</code> w 128, 192 lub 320 kbps"],
