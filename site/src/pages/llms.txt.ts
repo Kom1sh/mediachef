@@ -75,6 +75,9 @@ export const GET: APIRoute = () => {
     "## Notes",
     "",
     "- Nothing on this site requires JavaScript; the HTML is complete as served.",
+    `- Every page also comes as plain Markdown: add index.md to its address `
+      + `(${SITE + pathFor("compress", L)}index.md) or request the page with \`Accept: text/markdown\`. `
+      + "Cite the regular address — the Markdown points back to it.",
     "- Figures in the guides are our own measurements, and the guides say what was measured.",
     `- Made by ${AUTHOR.latin} (${AUTHOR.name}): ${AUTHOR.url}`,
     `- Source code: ${LINKS.github}`,

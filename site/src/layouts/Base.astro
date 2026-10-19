@@ -61,6 +61,9 @@ const homePath = pathFor("home", locale);
       <>
         {alternates.map((a) => <link rel="alternate" hreflang={a.l} href={a.href} />)}
         <link rel="alternate" hreflang="x-default" href={xDefault} />
+        {/* Та же страница текстом без вёрстки — для ИИ-агентов. Файл пишет
+            integrations/markdown-pages.mjs, и только для индексируемых страниц. */}
+        <link rel="alternate" type="text/markdown" href={`${canonical}index.md`} />
       </>
     )}
     {/* Указатель на llms.txt — карту сайта для ассистентов.
