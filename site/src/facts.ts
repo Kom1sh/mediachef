@@ -46,7 +46,7 @@ export const FACTS = {
   // Дата последней правки текстов — уезжает в <lastmod> sitemap.xml.
   // Меняется вручную вместе с содержимым, а не при каждой пересборке:
   // «сегодня» в lastmod у неизменившейся страницы Google просто перестаёт верить.
-  updated: "2026-10-14",
+  updated: "2026-10-26",
   recipeCount: 19,
   modelCount: 4,
   platformCount: 3,
