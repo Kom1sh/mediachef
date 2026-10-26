@@ -229,15 +229,19 @@ mod tests {
     /// running, not in a batch after it exits. The stand-in prints one stderr
     /// line and then sleeps for 5s; `exec` keeps the sleeper on the child's own
     /// pid, so the cancel kill closes the pipes and leaves no stray process.
+    ///
+    /// The stand-in is `sh -c`, not a freshly written script: exec'ing a file
+    /// right after writing it fails now and then with ETXTBSY ("Text file busy")
+    /// under the multi-threaded test runner — a sibling test's fork inherits the
+    /// still-open write descriptor for an instant. CI hit it on 26.10.
     #[cfg(unix)]
     #[test]
     fn stderr_line_arrives_while_child_still_runs() {
-        use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("mediachef_process_{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let script = dir.join("live_stderr.sh");
-        std::fs::write(&script, "#!/bin/sh\necho live-stderr 1>&2\nexec sleep 5\n").unwrap();
-        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let sh = Path::new("/bin/sh");
+        let script = [
+            "-c".to_string(),
+            "echo live-stderr 1>&2; exec sleep 5".to_string(),
+        ];
 
         let cancel = CancelToken::new();
         let canceller = cancel.clone();
@@ -245,7 +249,7 @@ mod tests {
         let t0 = std::time::Instant::now();
         // Cancel from inside the callback: returning before the child's own 5s
         // exit is what proves the line was not a post-mortem replay.
-        let exit = run_streaming(&script, &[], &cancel, |pipe, line| {
+        let exit = run_streaming(sh, &script, &cancel, |pipe, line| {
             if first.is_none() {
                 first = Some((pipe, line.to_string(), t0.elapsed()));
                 canceller.cancel();
@@ -253,7 +257,6 @@ mod tests {
         })
         .unwrap();
         let total = t0.elapsed();
-        let _ = std::fs::remove_dir_all(&dir);
 
         let (pipe, line, at) = first.expect("the stderr line must be delivered");
         assert_eq!(pipe, Pipe::Stderr);
