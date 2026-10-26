@@ -9,6 +9,31 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
+/// `CREATE_NO_WINDOW` из WinBase.h: дочерний консольный процесс без окна.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+/// `Command` для движков — ffmpeg, ffprobe, whisper-cli. Все запуски движков
+/// идут через неё.
+///
+/// Зачем: релизная сборка на Windows — оконное приложение (`windows_subsystem
+/// = "windows"`), а движки — консольные. Без этого флага Windows открывает
+/// каждому своё чёрное окно консоли, на всё время работы. Человек его
+/// закрывает, и процесс получает CTRL_CLOSE_EVENT и умирает с кодом
+/// 0xC000013A (−1073741510): так пришёл отзыв 26.10 — расшифровка 54 минут
+/// оборвалась на 60%. При диктовке такое окно ещё и уводит фокус из поля,
+/// куда должен напечататься текст. Потоки вывода флаг не трогает.
+pub fn engine_command(bin: &Path) -> Command {
+    #[allow(unused_mut)]
+    let mut cmd = Command::new(bin);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    cmd
+}
+
 /// Poll interval of the cancel watchdog.
 const CANCEL_POLL_MS: u64 = 150;
 /// Poll interval of the child-exit loop. Must never block under the child mutex.
@@ -119,7 +144,7 @@ pub fn run_streaming_in(
     cancel: &CancelToken,
     mut on_line: impl FnMut(Pipe, &str),
 ) -> Result<Exit, StreamError> {
-    let mut cmd = Command::new(bin);
+    let mut cmd = engine_command(bin);
     if let Some(dir) = cwd {
         cmd.current_dir(dir);
     }

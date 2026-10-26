@@ -1,7 +1,6 @@
 use crate::recipe::MediaType;
 use serde::Serialize;
 use std::path::Path;
-use std::process::Command;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -57,7 +56,9 @@ pub fn detect_media_type(raw: &serde_json::Value) -> MediaType {
 }
 
 pub fn probe(ffprobe: &Path, file: &Path) -> Result<ProbeInfo, ProbeError> {
-    let out = Command::new(ffprobe)
+    // Не `Command::new`: на Windows ffprobe иначе мигал бы окном консоли на
+    // каждый брошенный файл — см. `process::engine_command`.
+    let out = crate::process::engine_command(ffprobe)
         .args([
             "-v",
             "error",
