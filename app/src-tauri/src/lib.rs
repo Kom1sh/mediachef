@@ -542,6 +542,8 @@ fn whisper_preview(job: &WhisperJob) -> Vec<String> {
         job.input.display().to_string(),
         "-l".into(),
         job.language.clone(),
+        "-t".into(),
+        mediachef_core::transcribe::whisper_threads().to_string(),
         "--print-progress".into(),
         job.format.flag().into(),
         "--output-file".into(),

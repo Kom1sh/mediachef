@@ -110,6 +110,20 @@ pub struct WhisperJob {
 /// `--prompt` появляется только при непустом словаре: пустой промпт whisper-у
 /// передавать незачем, а лишний флаг пришлось бы объяснять в предпросмотре
 /// команды, который видит пользователь.
+/// Сколько потоков дать whisper-cli: все логические ядра, но не больше восьми.
+///
+/// Без `-t` whisper-cli берёт min(4, ядра), и на машине с 16 потоками считал в
+/// четыре — так было в отзыве 26.10: 54 минуты речи на large-v3-turbo, без
+/// видеокарты, к обрыву на 60% прошли часы. Потолок 8 — потому что дальше
+/// whisper.cpp почти не ускоряется, а гиперпотоки на тех же ядрах только
+/// толкаются, отнимая машину у человека, который за ней работает.
+pub fn whisper_threads() -> usize {
+    std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4)
+        .clamp(1, 8)
+}
+
 fn whisper_argv(job: &WhisperJob, wav: &Path, out_prefix: &Path) -> Vec<String> {
     let mut argv: Vec<String> = vec![
         "-m".into(),
@@ -118,6 +132,8 @@ fn whisper_argv(job: &WhisperJob, wav: &Path, out_prefix: &Path) -> Vec<String> 
         wav.display().to_string(),
         "-l".into(),
         job.language.clone(),
+        "-t".into(),
+        whisper_threads().to_string(),
         "--print-progress".into(),
         job.format.flag().into(),
         "--output-file".into(),
@@ -509,6 +525,20 @@ mod tests {
         // словаря внутри есть пробелы и запятые, и разбирать его должен
         // не шелл, а сам whisper.
         assert_eq!(argv[at + 1], dict);
+    }
+
+    // Без `-t` whisper-cli считает в четыре потока на любой машине.
+    #[test]
+    fn argv_sets_thread_count() {
+        let argv = whisper_argv(
+            &argv_job("", false),
+            Path::new("/tmp/audio16k.wav"),
+            Path::new("/tmp/result"),
+        );
+        let at = argv.iter().position(|a| a == "-t").expect("нет -t");
+        let n: usize = argv[at + 1].parse().expect("-t не число");
+        assert!((1..=8).contains(&n), "{n} потоков");
+        assert_eq!(n, whisper_threads());
     }
 
     #[test]
