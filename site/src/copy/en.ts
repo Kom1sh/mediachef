@@ -4,7 +4,7 @@ import { FACTS } from "../facts";
 
 
 export const ui = {
-  title: "MediaChef — free offline video converter with transcription",
+  title: "Free offline video converter with transcription — MediaChef",
   description:
     "Free open-source app for macOS, Windows and Linux: convert video and audio on your own computer and transcribe speech to text with Whisper. No uploads, no size limits, no subscription.",
   nav: { recipes: "Recipes", transcribe: "Transcription", privacy: "Offline", faq: "FAQ" },

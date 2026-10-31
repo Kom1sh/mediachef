@@ -3,7 +3,7 @@
 import { FACTS } from "../facts";
 
 export const ui = {
-  title: "MediaChef — محوّل فيديو وصوت يعمل دون إنترنت مع تفريغ نصي",
+  title: "محوّل فيديو وصوت يعمل دون إنترنت مع تفريغ نصي — MediaChef",
   description:
     "تطبيق مجاني مفتوح المصدر لنظام macOS وWindows وLinux: حوّل الفيديو والصوت على جهازك، وحوّل الكلام إلى نص باستخدام Whisper. بلا رفع للملفات، وبلا حد للحجم، وبلا اشتراك.",
   nav: { recipes: "الوصفات", transcribe: "التفريغ النصي", privacy: "دون إنترنت", faq: "أسئلة" },
