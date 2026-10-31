@@ -2,7 +2,7 @@
 import { FACTS } from "../facts";
 
 export const ui = {
-  title: "MediaChef — 离线视频音频转换器，带语音转文字",
+  title: "离线视频音频转换器，带语音转文字 — MediaChef",
   description:
     "面向 macOS、Windows 和 Linux 的免费开源应用：在自己的电脑上转换视频和音频，并用 Whisper 把语音转成文字。无需上传、没有体积上限、不用订阅。",
   nav: { recipes: "配方", transcribe: "语音转文字", privacy: "离线", faq: "常见问题" },

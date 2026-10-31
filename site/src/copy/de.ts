@@ -2,7 +2,7 @@
 import { FACTS } from "../facts";
 
 export const ui = {
-  title: "MediaChef — Video- und Audio-Konverter offline mit Transkription",
+  title: "Video- und Audio-Konverter offline mit Transkription — MediaChef",
   description:
     "Kostenlose Open-Source-App für macOS, Windows und Linux: Video und Audio auf dem eigenen Rechner umwandeln und Sprache mit Whisper in Text verwandeln. Ohne Upload, ohne Größenlimit, ohne Abo.",
   nav: { recipes: "Rezepte", transcribe: "Transkription", privacy: "Offline", faq: "Fragen" },
