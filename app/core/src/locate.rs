@@ -40,6 +40,21 @@ fn find(bin: &str, env_key: &str) -> Option<PathBuf> {
     {
         return Some(p);
     }
+    // Dev tree: the sidecars themselves, as `fetch-sidecars` left them in
+    // `app/src-tauri/binaries/<name>-<triple>`. The copies the step above finds
+    // in `target/debug/` are put there by tauri-build, which locates the target
+    // dir by walking three levels up from OUT_DIR — and Rust 1.100's Cargo moved
+    // OUT_DIR (13.11: the copies stopped appearing, smoke fell through to
+    // Homebrew's ffmpeg without libass and the burn recipe failed). Reading the
+    // source dir does not depend on Cargo's layout. In a shipped app this
+    // build-machine path does not exist and the bundle's own engines win above.
+    if let Some(p) = dev_sidecar(
+        &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../src-tauri/binaries"),
+        bin,
+        &triple,
+    ) {
+        return Some(p);
+    }
     let repo_bin = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .join("bin")
@@ -92,6 +107,17 @@ fn find_near(dir: &Path, bin_name: &str) -> Option<PathBuf> {
     Some(p)
 }
 
+/// `dir/<bin>-<triple>[.exe]` — a sidecar under its source name, the way
+/// tauri's `externalBin` wants it in `src-tauri/binaries/`.
+fn dev_sidecar(dir: &Path, bin: &str, triple: &str) -> Option<PathBuf> {
+    let ext = if cfg!(target_os = "windows") {
+        ".exe"
+    } else {
+        ""
+    };
+    find_near(dir, &format!("{bin}-{triple}{ext}"))
+}
+
 fn which_path(bin: &str) -> Option<PathBuf> {
     let path = std::env::var_os("PATH")?;
     std::env::split_paths(&path)
@@ -136,6 +162,51 @@ mod tests {
         std::fs::write(&fake, b"#!/bin/sh\n").unwrap();
         make_executable(&fake);
         assert_eq!(find_near(dir.path(), "ffmpeg"), Some(fake));
+    }
+
+    /// The dev-tree step reads the sidecar under its source name, triple and
+    /// all — the name `fetch-sidecars` gives it in `src-tauri/binaries/`.
+    #[test]
+    fn dev_sidecar_uses_the_source_name_with_triple() {
+        let dir = tempfile::tempdir().unwrap();
+        let ext = if cfg!(target_os = "windows") {
+            ".exe"
+        } else {
+            ""
+        };
+        let triple = "aarch64-apple-darwin";
+        assert_eq!(dev_sidecar(dir.path(), "ffmpeg", triple), None);
+        // A plain `ffmpeg` is the *copied* name — not what this step looks for.
+        let copied = dir.path().join(format!("ffmpeg{ext}"));
+        std::fs::write(&copied, b"#!/bin/sh\n").unwrap();
+        make_executable(&copied);
+        assert_eq!(dev_sidecar(dir.path(), "ffmpeg", triple), None);
+        let source = dir.path().join(format!("ffmpeg-{triple}{ext}"));
+        std::fs::write(&source, b"#!/bin/sh\n").unwrap();
+        make_executable(&source);
+        assert_eq!(dev_sidecar(dir.path(), "ffmpeg", triple), Some(source));
+    }
+
+    /// The real tree: wherever Cargo puts its build dir, a fetched sidecar is
+    /// found — this is what the smoke runner and `tauri dev` rely on.
+    #[test]
+    fn ffmpeg_prefers_a_fetched_sidecar_over_path() {
+        let binaries = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../src-tauri/binaries");
+        let any_ffmpeg = std::fs::read_dir(&binaries)
+            .map(|d| {
+                d.flatten()
+                    .any(|e| e.file_name().to_string_lossy().starts_with("ffmpeg-"))
+            })
+            .unwrap_or(false);
+        if !any_ffmpeg || std::env::var_os("MEDIACHEF_FFMPEG").is_some() {
+            return; // no sidecars fetched in this tree, or an explicit override
+        }
+        let found = ffmpeg().expect("a fetched sidecar must be found");
+        let inside = found.starts_with(&binaries)
+            || found
+                .parent()
+                .is_some_and(|d| std::env::current_exe().is_ok_and(|e| e.starts_with(d)));
+        assert!(inside, "picked {} instead of the sidecar", found.display());
     }
 
     #[test]
