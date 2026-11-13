@@ -266,6 +266,35 @@ fn main() {
     std::fs::create_dir_all(&out_dir).unwrap();
     let whisper = whisper_env(&fixtures);
 
+    // Какие движки взял прогон — первой строкой. 13.11 вшивание в CI упало с
+    // «No option name near 'subs.srt…'»: так отвечает ffmpeg без libass, то есть
+    // не наш сайдкар, хотя `locate` ставит его выше PATH. Без этой строки по
+    // логу не понять, какой бинарник на самом деле запускался.
+    let has_subtitles = std::process::Command::new(&ffmpeg)
+        .args(["-hide_banner", "-filters"])
+        .output()
+        .is_ok_and(|o| String::from_utf8_lossy(&o.stdout).contains(" subtitles "));
+    let near = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.join("ffmpeg")))
+        .map(|p| {
+            format!(
+                "{} {}",
+                p.display(),
+                if p.exists() { "есть" } else { "нет" }
+            )
+        })
+        .unwrap_or_default();
+    println!(
+        "engines: ffmpeg {} (subtitles: {}), ffprobe {}, whisper-cli {}; рядом со smoke: {near}",
+        ffmpeg.display(),
+        if has_subtitles { "да" } else { "нет" },
+        ffprobe.display(),
+        whisper
+            .as_ref()
+            .map_or("—".to_string(), |w| w.bin.display().to_string()),
+    );
+
     let mut failed = 0;
     // A run that skipped every recipe (missing fixtures) used to print
     // "all ffmpeg recipes passed" and exit 0 — a green CI proving nothing.
