@@ -10,7 +10,7 @@ export default {
   crumb: "Video zu SRT",
 
   answer:
-    "Ziehen Sie das Video in MediaChef, wählen Sie „SRT-Untertitel für ein Video erstellen“, lassen Sie das Modell auf small und die Sprache auf automatisch, und starten Sie. Neben dem Video erscheint eine .srt-Datei, Zeitmarken inklusive. Alles wird auf Ihrem Rechner berechnet: die Sprache verlässt die Festplatte nicht, und sobald das Modell heruntergeladen ist, läuft das Rezept mit abgeschaltetem Netz. Auf einem M5-Laptop brauchten 2 Minuten 43 Sekunden Sprache mit dem Standardmodell 6,2 Sekunden — rund 26-mal schneller als Echtzeit — und ergaben 73 Untertitel mit im Schnitt 39 Zeichen, kurz genug zum bequemen Lesen.",
+    "Laden Sie unter „Modelle“ einmalig ein Whisper-Modell und ziehen Sie das Video in MediaChef. Wählen Sie „SRT-Untertitel für ein Video erstellen“ und klicken Sie auf „Zur Warteschlange“. Prüfen Sie Namen und Zeiten in clip.subs.srt in einem Editor. Für fest eingeblendete Untertitel wählen Sie „Untertitel ins Video einbrennen“. Das Rezept erstellt neue Untertitel aus dem Ton. Eine bearbeitete SRT-Datei wird dabei nicht verwendet.",
 
   facts: [
     { k: "Was Sie brauchen", v: `MediaChef ${FACTS.version} plus einen einmaligen Modell-Download` },
@@ -47,8 +47,8 @@ export default {
       p: "„SRT-Untertitel für ein Video erstellen“ nimmt das Video direkt — Sie müssen den Ton nicht vorher herauslösen. MediaChef dekodiert die Spur in das 16-kHz-Mono, das Whisper verlangt, in einem temporären Ordner, den Sie nie zu sehen bekommen.",
     },
     {
-      h: "Starten und die .srt öffnen",
-      p: "Die Datei landet neben dem Video als clip.subs.srt, mit nummerierten Untertiteln und Zeitmarken. Player, Schnittprogramme und Videoplattformen lesen sie direkt, und da es reiner Text ist, lässt sich ein Name oder ein Fachwort in jedem Editor korrigieren.",
+      h: "Klicken Sie auf „Zur Warteschlange“",
+      p: "Öffnen Sie nach Abschluss clip.subs.srt aus der Warteschlange. Dort sehen Sie den Speicherort.",
     },
   ],
   shotAlt:
@@ -149,7 +149,7 @@ export default {
   notFor: [
     {
       h: "Sie wollen die Untertitel fest im Bild.",
-      p: "Hier entsteht eine getrennte .srt, die der Player neben dem Video lädt. Den Text dauerhaft in die Bilder zu brennen ist eine andere Operation: sie kodiert das Video neu, und danach lassen sich die Wörter weder abschalten noch korrigieren.",
+      p: "Für eine separate, bearbeitbare SRT-Datei wählen Sie „SRT-Untertitel für ein Video erstellen“. Für fest eingeblendete Untertitel wählen Sie „Untertitel ins Video einbrennen“. Dadurch entsteht ein neues MP4 mit permanenten Untertiteln.",
     },
     {
       h: "Sie brauchen sendefähige Genauigkeit.",
@@ -177,7 +177,7 @@ export default {
     },
     {
       q: "Wie lange dauert das?",
-      a: "Rund 26-mal schneller als Echtzeit mit dem Standardmodell: wir haben 6,2 Sekunden für 2 Minuten 43 Sekunden Sprache auf einem M5-Laptop gemessen. In diesem Verhältnis ist eine einstündige Aufnahme in ein paar Minuten durch. Auf demselben Ton lief tiny mit ×78 und large-v3-turbo mit ×14.",
+      a: "Bei einem Test mit 2 min 43 s dauerte die Verarbeitung mit small auf einem Apple M5 6,2 s. Die tatsächliche Dauer hängt von der Aufnahme, dem Modell und der Hardware ab.",
     },
     {
       q: "Welches Modell soll ich wählen?",
@@ -193,7 +193,7 @@ export default {
     },
     {
       q: "Kann es die Untertitel ins Englische übersetzen?",
-      a: "Ja, mit dem Rezept „Sprache in englische Untertitel übersetzen“: fremdsprachige Rede hinein, zeitgenaues englisches SRT heraus, in einem Durchgang statt erst transkribieren und dann übersetzen. Englisch ist die einzige Zielsprache, die das Modell beherrscht.",
+      a: "Ja, mit dem Rezept „Sprache in englische Untertitel übersetzen“: fremdsprachige Rede hinein, zeitgenaues englisches SRT heraus, in einem Durchgang statt erst transkribieren und dann übersetzen. Englisch ist die einzige Zielsprache, die das Modell beherrscht. Für Übersetzungen ins Englische verwenden Sie zunächst small. large-v3-turbo dient zur Transkription und wurde nicht für Übersetzungen trainiert.",
     },
     {
       q: "Was ist der Unterschied zwischen SRT und VTT?",

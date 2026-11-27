@@ -386,7 +386,7 @@ export function guideArticleLd(opts: {
   headline: string;
   description: string;
   body: string;
-  imageUrl: string;
+  imageUrl?: string;
   dateModified?: string;
 }) {
   return {
@@ -402,7 +402,7 @@ export function guideArticleLd(opts: {
     dateModified: opts.dateModified ?? FACTS.updated,
     author: { "@id": ORG_ID },
     publisher: { "@id": ORG_ID },
-    image: opts.imageUrl,
+    ...(opts.imageUrl ? { image: opts.imageUrl } : {}),
     about: { "@id": APP_ID },
     articleBody: opts.body,
   };

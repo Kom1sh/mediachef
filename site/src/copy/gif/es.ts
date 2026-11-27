@@ -6,19 +6,19 @@ import { FACTS } from "../../facts";
 export default {
   title: "Vídeo a GIF — gratis y sin conexión, en tu propio ordenador",
   description:
-    "Cómo hacer un GIF de un vídeo en tu ordenador: elige fotogramas por segundo y ancho, pulsa empezar. Sin subir nada, sin límite de tamaño, sin marca de agua. Dentro, los tamaños medidos para cada ajuste.",
+    "Arrastra un MP4 u otro vídeo compatible a MediaChef y elige «Vídeo a GIF».",
   h1: "Vídeo a GIF, en tu propio ordenador",
   crumb: "Vídeo a GIF",
 
   answer:
-    "Suelta el vídeo en MediaChef, elige la receta «Vídeo a GIF», ajusta los fotogramas por segundo y el ancho, y pulsa empezar. El GIF aparece junto al archivo original. No se sube nada: FFmpeg trabaja en tu máquina, así que no hay tope de tamaño ni cola de espera. Con los ajustes por defecto —15 fotogramas por segundo y 480 píxeles de ancho— un GIF cuesta unos 130 KB por segundo de vídeo: diez segundos salen en torno a 1,3 MB.",
+    "Arrastra un MP4 u otro vídeo compatible a MediaChef y elige «Vídeo a GIF». Empieza con 15 fps y 480 px de ancho y pulsa «Añadir a la cola». La cola muestra dónde se ha guardado clip.video-to-gif.gif. El GIF no lleva sonido. Si pesa demasiado, acorta el clip o reduce el ancho.",
 
   facts: [
     { k: "Qué necesitas", v: `MediaChef ${FACTS.version} — una descarga, FFmpeg ya va dentro` },
     { k: "Funciona sin conexión", v: "Sí, del todo — la red no se toca en ningún momento" },
     { k: "Qué acepta", v: "MP4, MKV, MOV, WebM, AVI, TS y todo lo demás que FFmpeg lea" },
     { k: "Ajustes", v: "Fotogramas/s 10 / 15 / 24 · ancho 320 / 480 / 640 píxeles" },
-    { k: "Qué obtienes", v: "clip.gif, escrito junto al vídeo de origen" },
+    { k: "Qué obtienes", v: "clip.video-to-gif.gif, escrito junto al vídeo de origen" },
     { k: "Precio", v: "Gratis, código abierto (GPL-3.0), sin cuenta y sin marca de agua" },
   ],
 
@@ -48,8 +48,8 @@ export default {
       p: "Dos ajustes: fotogramas por segundo y ancho en píxeles. La altura se calcula a partir del ancho y las proporciones se mantienen: un clip 16:9 con ancho 480 sale a 480×270.",
     },
     {
-      h: "Pulsa empezar y coge el archivo",
-      p: "El GIF aparece junto al vídeo como clip.gif. La cola muestra el avance y la ruta final; suelta varios vídeos a la vez y se harán uno tras otro.",
+      h: "Pulsa «Añadir a la cola»",
+      p: "Al terminar, abre clip.video-to-gif.gif desde la cola. Allí figura la ruta de salida.",
     },
   ],
   shotAlt:
@@ -167,7 +167,7 @@ export default {
   faq: [
     {
       q: "¿Cuánto puede durar el GIF?",
-      a: "MediaChef no pone límite: el límite es tu disco, y la aplicación comprueba el espacio libre antes de empezar. El límite práctico es el tamaño: con los ajustes por defecto cada segundo cuesta unos 130 KB, así que un GIF de un minuto son unos 8 MB y uno de cinco minutos unos 39 MB. Si va a un mensaje, recorta el clip primero.",
+      a: "MediaChef no fija un límite de duración. El tamaño depende del movimiento, los detalles, el ancho y los fps. Un clip corto es más fácil de compartir.",
     },
     {
       q: "¿Por qué mi GIF pesa más que el vídeo del que salió?",

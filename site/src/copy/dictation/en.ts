@@ -14,7 +14,7 @@ export default {
   crumb: "Voice to text",
 
   answer:
-    "Press the right ⌥ key on a Mac — or the right Ctrl on Windows — anywhere, say a sentence, press it again, and the text is typed straight into whatever field your cursor sits in: a terminal, a chat, a browser form. Recognition happens on your own machine with the same Whisper engine MediaChef already carries, so the audio never leaves your disk and there is no per-minute charge. In our measurement a five-second phrase came back in 780 milliseconds.",
+    "Open “Dictation” in MediaChef, enable it and select a Whisper model. With the cursor in a text field, press Right ⌥ on macOS, Right Ctrl on Windows or Ctrl+Alt+D on Linux, speak, and press the shortcut again to stop. Linux needs an X11 session. Once the model is downloaded, recognition runs locally.",
 
   facts: [
     { k: "Status", v: "On macOS since version 0.8.0, on Windows and Linux since 0.8.5" },
@@ -40,7 +40,7 @@ export default {
   steps: [
     {
       h: "Turn it on once",
-      p: "The Dictation tab has a switch and a choice of trigger: on a Mac the right ⌥ or the right ⌘, on Windows the right Ctrl, the right Alt or Caps Lock, and two combinations everywhere. It is off until you turn it on, and until then MediaChef registers no global shortcut at all — an app that quietly claims a system-wide key combination is an app that breaks other apps.",
+      p: "Open “Dictation” in MediaChef, enable it and select a Whisper model. On macOS, Live Dictation needs microphone and Accessibility permissions. Linux requires X11.",
     },
     {
       h: "Press the hotkey anywhere",
@@ -55,9 +55,6 @@ export default {
       p: "Typed straight into the focused field, without touching your clipboard. If you would rather it went to the clipboard instead, that is the other setting.",
     },
   ],
-  shotAlt:
-    "MediaChef ready to convert: the board waits for a video file, the job queue is on the right.",
-  shotCaption: "The Dictation tab in MediaChef: trigger, models, language, dictionary and the permission state — all in one place.",
 
   tables: [
     {
@@ -112,8 +109,8 @@ export default {
         "Two choices, and the difference matters more than it sounds when you dictate several times an hour.",
       head: ["Setting", "What happens", "What it needs"],
       rows: [
-        ["Type it", "The words appear in the focused field. Your clipboard is untouched", "The Accessibility permission, once"],
-        ["Clipboard", "The text is copied and you paste it yourself with ⌘V", "Nothing beyond the microphone"],
+        ["Type it", "The words appear in the focused field. Your clipboard is untouched", "macOS · The Accessibility permission, once"],
+        ["Clipboard", "The text is copied and you paste it yourself with ⌘V / Ctrl+V", "Microphone and any system permission needed by the shortcut"],
       ],
       note:
         "Typing leaves the clipboard alone, and that is the whole point of preferring it: if every dictation overwrote your clipboard, you could not keep a link in it while you worked. macOS treats typing into another app as synthetic input and asks for the Accessibility permission — the first attempt opens the right pane of System Settings by itself. When the permission is missing the text still lands in the clipboard, so a dictation is never lost.",
@@ -178,7 +175,7 @@ export default {
     },
     {
       q: "Which hotkey does it use?",
-      a: "The right ⌥ key by default — a lone modifier: hold it and speak, or tap once to start and again to stop; with Shift the text is sent with Enter. A modifier on its own types nothing and clashes with nothing. Combos like ⌥ Space typed a space in hold mode when ⌥ was released first, so they were dropped; ⌃⌥ Space and ⌃⌥ D remain as fallbacks. On Windows the default is the right Ctrl, with the right Alt and Caps Lock as alternatives; on Linux, Ctrl+Alt+D.",
+      a: "Right ⌥ on macOS, Right Ctrl on Windows and Ctrl+Alt+D on Linux (X11) by default. Hold the key while speaking or press once to start and once more to stop.",
     },
     {
       q: "Does it work on Windows and Linux?",

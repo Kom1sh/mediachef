@@ -123,14 +123,6 @@ export default {
       p: "O MediaChef comprime o vídeo no seu computador. O arquivo original e a versão comprimida ficam no seu dispositivo.",
     },
     {
-      h: "Sem limite de tamanho.",
-      p: "Compressores online terminam entre 100 MB e 2 GB, que é exatamente a faixa onde comprimir começa a importar. Um arquivo de quatro gigas é tratado como um de quatro megas.",
-    },
-    {
-      h: "Mais rápido que enviar.",
-      p: "Vinte segundos de 1080p são recodificados aqui em menos de dois. Num serviço web o mesmo clipe tem de ir e voltar primeiro.",
-    },
-    {
       h: "O original é preservado.",
       p: "O resultado é um arquivo novo ao lado da origem, então um nível escolhido errado custa uma passada a mais, não o material.",
     },
@@ -198,7 +190,7 @@ export default {
     },
     {
       q: "Existe limite de tamanho?",
-      a: "Não. O MediaChef não impõe nenhum; o limite é o espaço livre em disco, e o aplicativo confere antes de começar. Essa é a principal diferença prática em relação aos compressores web, que costumam terminar entre 100 MB e 2 GB.",
+      a: "Não há um limite fixo para o arquivo de entrada. Reserve espaço em disco para o resultado. A receita por tamanho aceita de 1 a 4000 MB como meta.",
     },
     {
       q: "Comprimir duas vezes deixa ainda menor?",

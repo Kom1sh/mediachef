@@ -126,14 +126,6 @@ export default {
       p: "MediaChef compresses the video on your computer. The original and the compressed file stay on your device.",
     },
     {
-      h: "No size limit.",
-      p: "Online compressors stop between 100 MB and 2 GB, which is exactly the range where compressing starts to matter. A four-gigabyte file is treated like a four-megabyte one.",
-    },
-    {
-      h: "Faster than uploading.",
-      p: "Twenty seconds of 1080p re-encodes in under two seconds here. On a web service the same clip has to travel there and back first.",
-    },
-    {
       h: "The original is kept.",
       p: "The result is a new file next to the source, so a level you picked wrong costs one more run rather than the footage.",
     },
@@ -201,7 +193,7 @@ export default {
     },
     {
       q: "Is there a size limit?",
-      a: "No. MediaChef sets none; the limit is free disk space, and the app checks it before starting. This is the main practical difference from web compressors, which usually stop somewhere between 100 MB and 2 GB.",
+      a: "There is no fixed cap on the input file. Keep enough disk space for the output. The target-size recipe accepts an output target from 1 to 4,000 MB.",
     },
     {
       q: "Will compressing twice make it even smaller?",

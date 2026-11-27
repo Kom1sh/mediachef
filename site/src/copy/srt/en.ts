@@ -10,7 +10,7 @@ export default {
   crumb: "Video to SRT",
 
   answer:
-    "Drop the video into MediaChef, pick «Make SRT subtitles for a video», leave the model on small and the language on auto, and run it. A .srt file lands next to the video with timings already in it. Everything happens on your machine: the speech never leaves the disk, and once the model is downloaded the recipe works with the network off. On an M5 laptop, 2 minutes 43 seconds of speech took 6.2 seconds with the default model — about 26 times faster than real time — and produced 73 subtitle cues averaging 39 characters, which is short enough to read comfortably.",
+    "Download a Whisper model in “Models” once, then drop your video into MediaChef. Choose “Make SRT subtitles for a video” and click “Add to queue” to get clip.subs.srt. Open the SRT in an editor to check names and timings. To make the captions part of the picture, choose “Burn subtitles into a video”. This recipe generates fresh captions from the audio. It does not use an edited .srt.",
 
   facts: [
     { k: "What you need", v: `MediaChef ${FACTS.version} plus a one-time model download` },
@@ -47,8 +47,8 @@ export default {
       p: "«Make SRT subtitles for a video» takes the video straight — you do not need to pull the audio out first. MediaChef decodes the sound to the 16 kHz mono that Whisper wants, in a temporary folder you never see.",
     },
     {
-      h: "Run it and open the .srt",
-      p: "The file lands next to the video as clip.subs.srt, with numbered cues and timestamps. Players, editors and video platforms all read it directly, and it is plain text, so you can fix a name or a term in any editor.",
+      h: "Click “Add to queue”",
+      p: "Open clip.subs.srt from the queue when the job finishes. The queue shows the saved path.",
     },
   ],
   shotAlt:
@@ -149,7 +149,7 @@ export default {
   notFor: [
     {
       h: "You want the subtitles burnt into the picture.",
-      p: "This produces a separate .srt file that a player loads alongside the video. Burning the text permanently into the frames is a different operation — it re-encodes the video, and the words then cannot be turned off or edited.",
+      p: "For a separate, editable .srt, use “Make SRT subtitles for a video”. For captions that stay visible wherever the video is played, use “Burn subtitles into a video”. It creates a new MP4 with permanent captions.",
     },
     {
       h: "You need broadcast-grade accuracy.",
@@ -177,7 +177,7 @@ export default {
     },
     {
       q: "How long does it take?",
-      a: "About 26 times faster than real time on the default model: we measured 6.2 seconds for 2 minutes 43 seconds of speech on an M5 laptop. By that ratio an hour-long recording takes a couple of minutes. tiny ran at ×78 and large-v3-turbo at ×14 on the same audio.",
+      a: "On this 2-minute-43-second sample, small took 6.2 seconds on an Apple M5. Actual time depends on the recording, the model and the hardware.",
     },
     {
       q: "Which model should I choose?",
@@ -193,7 +193,7 @@ export default {
     },
     {
       q: "Can it translate the subtitles into English?",
-      a: "Yes, with the «Translate speech to English subtitles» recipe: foreign speech in, timed English SRT out, in one pass rather than transcribe-then-translate. English is the only target language the model supports.",
+      a: "Yes, with the «Translate speech to English subtitles» recipe: foreign speech in, timed English SRT out, in one pass rather than transcribe-then-translate. English is the only target language the model supports. For translation into English, start with small. large-v3-turbo is for transcription and is not trained to translate.",
     },
     {
       q: "What is the difference between SRT and VTT?",

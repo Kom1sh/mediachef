@@ -123,14 +123,6 @@ export default {
       p: "MediaChef compresse la vidéo sur votre ordinateur. L’original et le fichier compressé restent sur votre appareil.",
     },
     {
-      h: "Aucune limite de taille.",
-      p: "Les compresseurs en ligne s'arrêtent entre 100 Mo et 2 Go, c'est-à-dire exactement dans la plage où compresser commence à compter. Un fichier de quatre gigaoctets est traité comme un de quatre mégaoctets.",
-    },
-    {
-      h: "Plus rapide qu'un envoi.",
-      p: "Vingt secondes de 1080p sont réencodées ici en moins de deux. Sur un service web, le même clip doit d'abord faire l'aller-retour.",
-    },
-    {
       h: "L'original est conservé.",
       p: "Le résultat est un nouveau fichier à côté de la source : un niveau mal choisi coûte une passe de plus, pas le rush.",
     },
@@ -198,7 +190,7 @@ export default {
     },
     {
       q: "Y a-t-il une limite de taille ?",
-      a: "Non. MediaChef n'en fixe aucune ; la limite est l'espace disque libre, et l'application le vérifie avant de démarrer. C'est la principale différence pratique avec les compresseurs web, qui s'arrêtent généralement entre 100 Mo et 2 Go.",
+      a: "Le fichier source n’a pas de taille maximale fixe. Prévoyez de la place sur le disque pour le résultat. Le mode taille cible accepte de 1 à 4 000 Mo.",
     },
     {
       q: "Compresser deux fois donnera-t-il encore plus petit ?",

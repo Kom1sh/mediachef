@@ -123,14 +123,6 @@ export default {
       p: "MediaChef kompresuje wideo na Twoim komputerze. Oryginał i skompresowany plik zostają na urządzeniu.",
     },
     {
-      h: "Bez limitu rozmiaru.",
-      p: "Kompresory online kończą się między 100 MB a 2 GB, czyli dokładnie w zakresie, w którym kompresja zaczyna mieć znaczenie. Czterogigabajtowy plik traktowany jest jak czteromegabajtowy.",
-    },
-    {
-      h: "Szybciej niż wysyłka.",
-      p: "Dwadzieścia sekund 1080p przekodowuje się tu w mniej niż dwie. W serwisie internetowym ten sam klip musi najpierw pojechać tam i wrócić.",
-    },
-    {
       h: "Oryginał zostaje.",
       p: "Wynik to nowy plik obok źródła, więc źle wybrany poziom kosztuje jeden przebieg więcej, a nie materiał.",
     },
@@ -198,7 +190,7 @@ export default {
     },
     {
       q: "Czy jest limit rozmiaru?",
-      a: "Nie. MediaChef nie ustawia żadnego; limitem jest wolne miejsce na dysku, a aplikacja sprawdza je przed startem. To główna praktyczna różnica wobec kompresorów internetowych, które zwykle kończą się między 100 MB a 2 GB.",
+      a: "Plik wejściowy nie ma stałego limitu rozmiaru. Zostaw na dysku miejsce na wynik. W trybie rozmiaru docelowego można wpisać od 1 do 4000 MB.",
     },
     {
       q: "Czy skompresowanie dwa razy da jeszcze mniej?",

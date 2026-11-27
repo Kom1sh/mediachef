@@ -6,19 +6,19 @@ import { FACTS } from "../../facts";
 export default {
   title: "Video in GIF umwandeln — kostenlos und offline, auf dem eigenen Rechner",
   description:
-    "Wie Sie aus einem Video ein GIF machen, auf dem eigenen Rechner: Bilder pro Sekunde und Breite wählen, starten. Kein Hochladen, keine Größengrenze, kein Wasserzeichen. Drinnen die gemessenen Dateigrößen für jede Einstellung.",
+    "Ziehen Sie ein MP4 oder anderes unterstütztes Video in MediaChef und wählen Sie „Video zu GIF“.",
   h1: "Video in GIF umwandeln, auf dem eigenen Rechner",
   crumb: "Video in GIF",
 
   answer:
-    "Ziehen Sie das Video in MediaChef, wählen Sie das Rezept „Video zu GIF“, stellen Sie Bilder pro Sekunde und Breite ein und starten Sie. Das GIF erscheint neben der Ausgangsdatei. Hochgeladen wird nichts: FFmpeg rechnet auf Ihrer Maschine, es gibt also keine Größengrenze und keine Warteschlange. Mit den Standardwerten — 15 Bilder pro Sekunde und 480 Pixel Breite — kostet ein GIF etwa 130 KB pro Sekunde Video: zehn Sekunden ergeben rund 1,3 MB.",
+    "Ziehen Sie ein MP4 oder anderes unterstütztes Video in MediaChef und wählen Sie „Video zu GIF“. Beginnen Sie mit 15 fps und 480 px Breite und klicken Sie auf „Zur Warteschlange“. Den Speicherort von clip.video-to-gif.gif sehen Sie in der Warteschlange. GIFs haben keinen Ton. Kürzen Sie den Clip oder wählen Sie eine kleinere Breite, wenn die Datei zu groß ist.",
 
   facts: [
     { k: "Was Sie brauchen", v: `MediaChef ${FACTS.version} — ein Download, FFmpeg ist schon drin` },
     { k: "Läuft offline", v: "Ja, vollständig — das Netz wird nie angefasst" },
     { k: "Nimmt an", v: "MP4, MKV, MOV, WebM, AVI, TS und alles andere, was FFmpeg liest" },
     { k: "Einstellungen", v: "Bilder/s 10 / 15 / 24 · Breite 320 / 480 / 640 Pixel" },
-    { k: "Ergebnis", v: "clip.gif, geschrieben neben das Ausgangsvideo" },
+    { k: "Ergebnis", v: "clip.video-to-gif.gif, geschrieben neben das Ausgangsvideo" },
     { k: "Preis", v: "Kostenlos, quelloffen (GPL-3.0), ohne Konto und ohne Wasserzeichen" },
   ],
 
@@ -48,8 +48,8 @@ export default {
       p: "Zwei Einstellungen: Bilder pro Sekunde und Breite in Pixel. Die Höhe wird aus der Breite berechnet, die Proportionen bleiben erhalten — ein 16:9-Clip mit Breite 480 kommt als 480×270 heraus.",
     },
     {
-      h: "Starten und die Datei nehmen",
-      p: "Das GIF landet neben dem Video als clip.gif. Die Warteschlange zeigt Fortschritt und fertigen Pfad; ziehen Sie mehrere Videos gleichzeitig hinein, laufen sie nacheinander.",
+      h: "Klicken Sie auf „Zur Warteschlange“",
+      p: "Öffnen Sie nach Abschluss clip.video-to-gif.gif aus der Warteschlange. Dort sehen Sie den Speicherort.",
     },
   ],
   shotAlt:
@@ -167,7 +167,7 @@ export default {
   faq: [
     {
       q: "Wie lang darf das GIF sein?",
-      a: "MediaChef setzt keine Grenze: die Grenze ist Ihre Festplatte, und die Anwendung prüft den freien Platz vor dem Start. Die praktische Grenze ist die Größe: mit den Standardwerten kostet jede Sekunde etwa 130 KB, ein GIF von einer Minute sind also rund 8 MB und eines von fünf Minuten etwa 39 MB. Wenn es in eine Nachricht geht, kürzen Sie den Clip vorher.",
+      a: "MediaChef setzt keine feste Dauergrenze. Bewegung, Details, Breite und Bildrate bestimmen die Dateigröße. Kürzere Clips lassen sich leichter teilen.",
     },
     {
       q: "Warum ist mein GIF größer als das Video, aus dem es entstand?",

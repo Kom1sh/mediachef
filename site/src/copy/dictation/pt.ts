@@ -10,7 +10,7 @@ export default {
   crumb: "Ditado por voz",
 
   answer:
-    "Aperte a tecla ⌥ direita no Mac — ou a Ctrl direita no Windows — em qualquer lugar, fale uma frase e aperte de novo: o texto é digitado direto no campo onde está o cursor, seja um terminal, um chat ou um formulário do navegador. Quem reconhece é o mesmo Whisper que o MediaChef já carrega, então o áudio não sai do seu disco e ninguém conta os minutos. Na nossa medição uma frase de cinco segundos voltou em 780 milissegundos.",
+    "Abra «Ditado» no MediaChef, ative o ditado e escolha um modelo Whisper. Com o cursor em um campo de texto, pressione ⌥ direito no macOS, Ctrl direito no Windows ou Ctrl+Alt+D no Linux, fale e pressione de novo para parar. No Linux é necessária uma sessão X11. Depois de baixar o modelo, o reconhecimento é local.",
 
   facts: [
     { k: "Situação", v: "No macOS desde a versão 0.8.0; no Windows e no Linux, desde a 0.8.5" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Ligar uma vez",
-      p: "Na aba Ditado há um interruptor e um acionador para escolher: no Mac a ⌥ direita ou a ⌘ direita; no Windows a Ctrl direita, a Alt direita ou Caps Lock; e em todo lugar, duas combinações. Até você ligar, o MediaChef não registra atalho global nenhum: um aplicativo que toma uma combinação do sistema em silêncio é um aplicativo que quebra os outros.",
+      p: "Abra «Ditado» no MediaChef, ative o ditado e escolha um modelo Whisper. No macOS, conceda acesso ao microfone e à acessibilidade. No Linux, use uma sessão X11.",
     },
     {
       h: "Apertar o atalho em qualquer lugar",
@@ -51,9 +51,6 @@ export default {
       p: "Digitado direto no campo em foco, sem mexer na área de transferência. Se você preferir o contrário, que vá para a área de transferência, é a configuração ao lado.",
     },
   ],
-  shotAlt:
-    "MediaChef pronto para converter: a bancada espera um arquivo de vídeo, a fila de tarefas fica à direita.",
-  shotCaption: "A aba Ditado do MediaChef: acionador, modelos, idioma, dicionário e estado da permissão, tudo num só lugar.",
 
   tables: [
     {
@@ -108,8 +105,8 @@ export default {
         "Duas escolhas, e a diferença pesa mais do que parece quando você dita várias vezes por hora.",
       head: ["Configuração", "O que acontece", "Do que precisa"],
       rows: [
-        ["Digitar", "As palavras aparecem no campo em foco. Sua área de transferência fica intacta", "A permissão de Acessibilidade, uma vez"],
-        ["Área de transferência", "O texto é copiado e você cola com ⌘V", "Nada além do microfone"],
+        ["Digitar", "As palavras aparecem no campo em foco. Sua área de transferência fica intacta", "macOS · A permissão de Acessibilidade, uma vez"],
+        ["Área de transferência", "O texto é copiado e você cola com ⌘V / Ctrl+V", "Microfone e as permissões exigidas pelo atalho"],
       ],
       note:
         "Digitar deixa a área de transferência em paz, e é por isso que vale preferir: se cada ditado a sobrescrevesse, você não conseguiria guardar um link ali enquanto trabalha. O macOS considera digitar em outro aplicativo como entrada sintética e pede a permissão de Acessibilidade — a primeira tentativa abre sozinha o painel certo dos Ajustes do Sistema. Quando a permissão falta, o texto ainda assim vai para a área de transferência: um ditado nunca se perde.",
@@ -174,7 +171,7 @@ export default {
     },
     {
       q: "Qual combinação ele usa?",
-      a: "Por padrão, a tecla ⌥ direita — um modificador sozinho: segure e fale, ou toque uma vez para começar e outra para terminar; com Shift o texto é enviado com Enter. Um modificador sozinho não digita nada e não conflita com nada. Combinações como ⌥ Space digitavam um espaço no modo de segurar se ⌥ fosse solto primeiro, por isso foram retiradas; ⌃⌥ Space e ⌃⌥ D ficam como alternativas. No Windows, o padrão é a Ctrl direita, com a Alt direita e Caps Lock como alternativas; no Linux, Ctrl+Alt+D.",
+      a: "Por padrão, use ⌥ direito no macOS, Ctrl direito no Windows e Ctrl+Alt+D no Linux (X11). Segure enquanto fala ou pressione uma vez para começar e outra para parar.",
     },
     {
       q: "Funciona no Windows e no Linux?",

@@ -10,7 +10,7 @@ export default {
   crumb: "Dictée vocale",
 
   answer:
-    "Appuyez n'importe où sur la touche ⌥ droite sur Mac — ou sur la touche Ctrl droite sous Windows —, dites une phrase, appuyez encore : le texte s'écrit directement dans le champ où se trouve le curseur — un terminal, une conversation, un formulaire de navigateur. C'est le même Whisper que MediaChef transporte déjà qui reconnaît, donc l'audio ne quitte pas votre disque et personne ne compte les minutes. Dans notre mesure, une phrase de cinq secondes est revenue en 780 millisecondes.",
+    "Ouvrez « Dictée » dans MediaChef, activez la dictée et sélectionnez un modèle Whisper. Le curseur dans un champ de texte, appuyez sur ⌥ droit sous macOS, Ctrl droit sous Windows ou Ctrl+Alt+D sous Linux, parlez, puis appuyez de nouveau pour arrêter. Linux nécessite une session X11. Une fois le modèle téléchargé, la reconnaissance est locale.",
 
   facts: [
     { k: "État", v: "Sur macOS depuis la version 0.8.0, sur Windows et Linux depuis la 0.8.5" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "L'activer une fois",
-      p: "L'onglet Dictée propose un interrupteur et un déclencheur au choix : sur Mac la touche ⌥ droite ou ⌘ droite, sous Windows la touche Ctrl droite, Alt droite ou Verr. Maj, et partout deux combinaisons. Tant que vous ne l'avez pas activée, MediaChef n'enregistre aucun raccourci global : une application qui s'approprie discrètement une combinaison système est une application qui casse les autres.",
+      p: "Ouvrez « Dictée » dans MediaChef, activez la dictée et sélectionnez un modèle Whisper. Sous macOS, autorisez le microphone et l’accessibilité. Sous Linux, utilisez une session X11.",
     },
     {
       h: "Appuyer sur le raccourci n'importe où",
@@ -51,9 +51,6 @@ export default {
       p: "Écrit directement dans le champ actif, sans toucher au presse-papiers. Si vous préférez l'inverse, qu'il aille au presse-papiers, c'est le réglage voisin.",
     },
   ],
-  shotAlt:
-    "MediaChef prêt à convertir : le plan de travail attend un fichier vidéo, la file des tâches est à droite.",
-  shotCaption: "L'onglet Dictée de MediaChef : déclencheur, modèles, langue, dictionnaire et état de l'autorisation, tout au même endroit.",
 
   tables: [
     {
@@ -108,8 +105,8 @@ export default {
         "Deux choix, et l'écart pèse plus qu'il n'y paraît quand on dicte plusieurs fois par heure.",
       head: ["Réglage", "Ce qui se passe", "Ce qu'il faut"],
       rows: [
-        ["L'écrire", "Les mots apparaissent dans le champ actif. Votre presse-papiers reste intact", "L'autorisation d'Accessibilité, une fois"],
-        ["Presse-papiers", "Le texte est copié et vous le collez avec ⌘V", "Rien de plus que le micro"],
+        ["L'écrire", "Les mots apparaissent dans le champ actif. Votre presse-papiers reste intact", "macOS · L'autorisation d'Accessibilité, une fois"],
+        ["Presse-papiers", "Le texte est copié et vous le collez avec ⌘V / Ctrl+V", "Microphone et autorisations système requises par le raccourci"],
       ],
       note:
         "Écrire laisse le presse-papiers tranquille, et c'est bien pour cela qu'il vaut mieux le préférer : si chaque dictée l'écrasait, vous ne pourriez pas y garder un lien pendant que vous travaillez. macOS considère l'écriture dans une autre application comme une saisie synthétique et demande l'autorisation d'Accessibilité — la première tentative ouvre d'elle-même le bon volet des Réglages Système. Quand l'autorisation manque, le texte arrive tout de même dans le presse-papiers : une dictée n'est jamais perdue.",
@@ -174,7 +171,7 @@ export default {
     },
     {
       q: "Quelle combinaison utilise-t-elle ?",
-      a: "Par défaut, la touche ⌥ droite — un modificateur seul : maintenez-la et parlez, ou appuyez une fois pour démarrer et une autre pour arrêter ; avec Shift, le texte est envoyé par Entrée. Un modificateur seul ne tape rien et n'entre en conflit avec rien. Des combinaisons comme ⌥ Space tapaient une espace en mode maintien si ⌥ était relâché en premier — elles ont donc été retirées ; ⌃⌥ Space et ⌃⌥ D restent en solutions de repli. Sous Windows, c'est la touche Ctrl droite par défaut, avec Alt droite et Verr. Maj en alternatives ; sous Linux, Ctrl+Alt+D.",
+      a: "Par défaut, ⌥ droit sous macOS, Ctrl droit sous Windows et Ctrl+Alt+D sous Linux (X11). Maintenez la touche en parlant ou appuyez une fois pour commencer et une autre fois pour arrêter.",
     },
     {
       q: "Est-ce que ça marche sous Windows et Linux ?",

@@ -10,7 +10,7 @@ export default {
   crumb: "Dictado por voz",
 
   answer:
-    "Pulse la tecla ⌥ derecha en el Mac —o la Ctrl derecha en Windows— en cualquier parte, diga una frase y púlsela otra vez: el texto se escribe directamente en el campo donde está el cursor, sea un terminal, un chat o un formulario del navegador. Reconoce el mismo Whisper que MediaChef ya lleva dentro, así que el audio no sale de su disco y nadie cuenta los minutos. En nuestra medición una frase de cinco segundos volvió en 780 milisegundos.",
+    "Abre «Dictado» en MediaChef, actívalo y selecciona un modelo Whisper. Coloca el cursor en un campo de texto, pulsa ⌥ derecho en macOS, Ctrl derecho en Windows o Ctrl+Alt+D en Linux, habla y vuelve a pulsar para terminar. Linux requiere una sesión X11. Con el modelo descargado, el reconocimiento es local.",
 
   facts: [
     { k: "Estado", v: "En macOS desde la versión 0.8.0; en Windows y Linux, desde la 0.8.5" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Encenderlo una vez",
-      p: "En la pestaña Dictado hay un interruptor y un disparador a elegir: en el Mac la ⌥ derecha o la ⌘ derecha; en Windows la Ctrl derecha, la Alt derecha o Bloq Mayús; y en todas partes, dos combinaciones. Hasta que lo encienda, MediaChef no registra ningún atajo global: una aplicación que se queda con una combinación del sistema en silencio es una aplicación que rompe las demás.",
+      p: "Abre «Dictado» en MediaChef, actívalo y selecciona un modelo Whisper. En macOS, concede permisos de micrófono y accesibilidad. En Linux, usa una sesión X11.",
     },
     {
       h: "Pulsar el atajo en cualquier sitio",
@@ -51,9 +51,6 @@ export default {
       p: "Se escribe directo en el campo con el foco, sin tocar el portapapeles. Si prefiere lo contrario, que vaya al portapapeles, es el ajuste de al lado.",
     },
   ],
-  shotAlt:
-    "MediaChef listo para convertir: la mesa de trabajo espera un archivo de vídeo, la cola de tareas está a la derecha.",
-  shotCaption: "La pestaña Dictado de MediaChef: disparador, modelos, idioma, diccionario y estado del permiso, todo en un sitio.",
 
   tables: [
     {
@@ -108,8 +105,8 @@ export default {
         "Dos opciones, y la diferencia pesa más de lo que parece cuando se dicta varias veces por hora.",
       head: ["Ajuste", "Qué pasa", "Qué necesita"],
       rows: [
-        ["Escribirlo", "Las palabras aparecen en el campo con el foco. El portapapeles queda intacto", "El permiso de Accesibilidad, una vez"],
-        ["Portapapeles", "El texto se copia y usted lo pega con ⌘V", "Nada más que el micrófono"],
+        ["Escribirlo", "Las palabras aparecen en el campo con el foco. El portapapeles queda intacto", "macOS · El permiso de Accesibilidad, una vez"],
+        ["Portapapeles", "El texto se copia y usted lo pega con ⌘V / Ctrl+V", "Micrófono y los permisos que requiera el atajo"],
       ],
       note:
         "Escribir deja el portapapeles en paz, y por eso conviene preferirlo: si cada dictado lo sobrescribiera, no podría guardar un enlace ahí mientras trabaja. macOS considera escribir en otra aplicación como entrada sintética y pide el permiso de Accesibilidad — el primer intento abre por sí solo el panel correspondiente de Ajustes del Sistema. Cuando el permiso falta, el texto igualmente acaba en el portapapeles: un dictado nunca se pierde.",
@@ -174,7 +171,7 @@ export default {
     },
     {
       q: "¿Qué combinación usa?",
-      a: "Por defecto, la tecla ⌥ derecha — un modificador solo: mantenla y habla, o púlsala una vez para empezar y otra para terminar; con Shift el texto se envía con Enter. Un modificador solo no escribe nada ni choca con nada. Combinaciones como ⌥ Space escribían un espacio en modo mantenido si soltabas antes ⌥, así que se retiraron; ⌃⌥ Space y ⌃⌥ D quedan como alternativas. En Windows, por defecto, la Ctrl derecha, con la Alt derecha y Bloq Mayús como alternativas; en Linux, Ctrl+Alt+D.",
+      a: "Por defecto se usa ⌥ derecho en macOS, Ctrl derecho en Windows y Ctrl+Alt+D en Linux (X11). Mantén la tecla pulsada al hablar o pulsa una vez para empezar y otra para terminar.",
     },
     {
       q: "¿Funciona en Windows y Linux?",

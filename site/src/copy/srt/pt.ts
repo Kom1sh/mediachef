@@ -10,7 +10,7 @@ export default {
   crumb: "Vídeo para SRT",
 
   answer:
-    "Arraste o vídeo para o MediaChef, escolha «Criar legendas SRT para um vídeo», deixe o modelo em small e o idioma em automático e execute. Um arquivo .srt aparece ao lado do vídeo, já com os tempos. Tudo é calculado na sua máquina: a fala não sai do disco e, depois que o modelo é baixado, a receita funciona com a rede desligada. Num notebook com M5, 2 minutos e 43 segundos de fala levaram 6,2 segundos no modelo padrão — cerca de 26 vezes mais rápido que o tempo real — e deram 73 legendas com média de 39 caracteres, curtas o bastante para dar tempo de ler.",
+    "Baixe uma vez um modelo Whisper em «Modelos» e arraste o vídeo para o MediaChef. Escolha «Criar legendas SRT para um vídeo» e clique em «Adicionar à fila» para gerar clip.subs.srt. Confira nomes e tempos em um editor. Para gravar as legendas na imagem, use «Embutir legendas no vídeo». Essa receita gera novas legendas a partir do áudio. Ela não usa um .srt editado.",
 
   facts: [
     { k: "O que você precisa", v: `MediaChef ${FACTS.version} mais um download único do modelo` },
@@ -47,8 +47,8 @@ export default {
       p: "«Criar legendas SRT para um vídeo» aceita o vídeo direto — não é preciso extrair o áudio antes. O MediaChef decodifica a faixa para o mono de 16 kHz que o Whisper exige, numa pasta temporária que você nunca chega a ver.",
     },
     {
-      h: "Execute e abra o .srt",
-      p: "O arquivo cai ao lado do vídeo com o nome clip.subs.srt, com as legendas numeradas e seus tempos. Players, editores e plataformas leem direto e, como é texto puro, dá para corrigir um nome ou um termo em qualquer editor.",
+      h: "Clique em «Adicionar à fila»",
+      p: "Quando terminar, abra clip.subs.srt pela fila. O caminho de saída aparece ali.",
     },
   ],
   shotAlt:
@@ -149,7 +149,7 @@ export default {
   notFor: [
     {
       h: "Você quer a legenda queimada na imagem.",
-      p: "Aqui sai um .srt separado que o player carrega junto com o vídeo. Gravar o texto dentro dos quadros é outra operação: ela recodifica o vídeo, e depois disso as palavras não podem mais ser desligadas nem corrigidas.",
+      p: "Para um .srt separado e editável, use «Criar legendas SRT para um vídeo». Para gravar as legendas na imagem, use «Embutir legendas no vídeo». O resultado é um novo MP4 com legendas permanentes.",
     },
     {
       h: "Você precisa de precisão de broadcast.",
@@ -177,7 +177,7 @@ export default {
     },
     {
       q: "Quanto tempo leva?",
-      a: "Cerca de 26 vezes mais rápido que o tempo real no modelo padrão: medimos 6,2 segundos para 2 minutos e 43 segundos de fala num notebook com M5. Nessa proporção, uma gravação de uma hora sai em poucos minutos. No mesmo áudio, o tiny deu ×78 e o large-v3-turbo ×14.",
+      a: "No teste de 2 min 43 s, small levou 6,2 s em um Apple M5. O tempo real depende da gravação, do modelo e do equipamento.",
     },
     {
       q: "Qual modelo eu devo escolher?",
@@ -193,7 +193,7 @@ export default {
     },
     {
       q: "Ele consegue traduzir as legendas para o inglês?",
-      a: "Sim, com a receita «Traduzir a fala para legendas em inglês»: entra fala estrangeira e sai um SRT em inglês com tempos, numa passada só em vez de transcrever e depois traduzir. O inglês é o único idioma de destino que o modelo suporta.",
+      a: "Sim, com a receita «Traduzir a fala para legendas em inglês»: entra fala estrangeira e sai um SRT em inglês com tempos, numa passada só em vez de transcrever e depois traduzir. O inglês é o único idioma de destino que o modelo suporta. Para traduzir para inglês, comece com small. large-v3-turbo serve para transcrição e não foi treinado para traduzir.",
     },
     {
       q: "Qual a diferença entre SRT e VTT?",

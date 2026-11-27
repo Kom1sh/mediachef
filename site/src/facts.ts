@@ -59,6 +59,11 @@ export const FACTS = {
 const PAGE_UPDATED: Partial<Record<string, string>> = {
   compress: "2026-11-27",
   trim: "2026-11-27",
+  gif: "2026-11-27",
+  srt: "2026-11-27",
+  dictation: "2026-11-27",
+  mp3: "2026-11-27",
+  transcribe: "2026-11-27",
 };
 
 export const lastModifiedFor = (page: string) => PAGE_UPDATED[page] ?? FACTS.updated;

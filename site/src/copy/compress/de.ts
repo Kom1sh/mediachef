@@ -123,14 +123,6 @@ export default {
       p: "MediaChef komprimiert das Video auf Ihrem Rechner. Das Original und die komprimierte Datei bleiben auf Ihrem Gerät.",
     },
     {
-      h: "Keine Größengrenze.",
-      p: "Online-Kompressoren enden zwischen 100 MB und 2 GB, also genau in dem Bereich, in dem Komprimieren erst wichtig wird. Eine Vier-Gigabyte-Datei wird behandelt wie eine mit vier Megabyte.",
-    },
-    {
-      h: "Schneller als hochladen.",
-      p: "Zwanzig Sekunden 1080p werden hier in unter zwei Sekunden neu kodiert. Bei einem Webdienst muss derselbe Clip erst hin und zurück.",
-    },
-    {
       h: "Das Original bleibt.",
       p: "Das Ergebnis ist eine neue Datei neben der Quelle, eine falsch gewählte Stufe kostet also einen weiteren Durchlauf, nicht das Material.",
     },
@@ -198,7 +190,7 @@ export default {
     },
     {
       q: "Gibt es eine Größengrenze?",
-      a: "Nein. MediaChef setzt keine; die Grenze ist der freie Speicherplatz, und die Anwendung prüft ihn vor dem Start. Das ist der wesentliche praktische Unterschied zu Web-Kompressoren, die meist zwischen 100 MB und 2 GB enden.",
+      a: "Für die Eingabedatei gibt es kein festes Größenlimit. Planen Sie freien Speicherplatz für das Ergebnis ein. Als Zielgröße können Sie 1 bis 4.000 MB eingeben.",
     },
     {
       q: "Wird es durch zweimaliges Komprimieren noch kleiner?",

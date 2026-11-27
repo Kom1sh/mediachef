@@ -8,6 +8,7 @@ import AppWindow from "../components/AppWindow.astro";
 import Shot from "../components/Shot.astro";
 import { T, LINKS, LANDINGS, SITE, pathFor, type Locale, type PageId } from "../content";
 import { SHOTS } from "../shots";
+import { lastModifiedFor } from "../facts";
 import {
   organizationLd,
   softwareApplicationLd,
@@ -46,46 +47,30 @@ const jsonLd = [
     headline: l.h1,
     description: l.description,
     body: intentBody(l),
+    dateModified: lastModifiedFor(page),
     imageUrl: SITE + SHOTS[locale].light,
   }),
   howToLd({ name: l.stepsTitle, description: l.description, url: pageUrl, steps: l.steps }),
   faqLd(l.faq),
 ];
-
-// Строка вида «00:00:04␠␠текст» рисуется таймкодом + репликой; всё остальное — как есть.
-// Образец результата есть не у всякой посадочной: где его нет, в hero стоит окно
-// приложения. Строку запускаемой команды в hero не показываем принципиально.
-const stamped = l.outSample
-  ? l.outSample.split("\n").map((line) => {
-      const m = line.match(/^(\d\d:\d\d:\d\d) {2}(.*)$/);
-      return m ? { time: m[1], text: m[2] } : { time: null, text: line };
-    })
-  : null;
 ---
 
 <Base locale={locale} page={page} title={l.title} description={l.description} jsonLd={jsonLd}>
-  <main id="main">
+  <main id="main" class="guide">
     <div class="band band-hero">
       <div class="wrap hero hero-intent">
         <div>
           <p class="crumbs"><a href={homePath}>MediaChef</a> <span aria-hidden="true">/</span> {l.crumb}</p>
           <h1>{l.h1}</h1>
-          <Toc label={t.tocLabel} items={tocItems} />
           <p class="sub">{l.lead}</p>
+          <Toc label={t.tocLabel} items={tocItems} />
           <Ctas locale={locale} anchor />
         </div>
 
-        {stamped ? (
+        {l.outSample ? (
           <div class="window out-card">
             <p class="eyebrow">{l.outLabel}</p>
-            <div class="mono cmd">
-              {stamped.map((s) => (
-                <span class="cmd-line">
-                  {s.time && <span class="stamp">{s.time}</span>}
-                  {s.text}
-                </span>
-              ))}
-            </div>
+            <p class="mono cmd transcript-sample">{l.outSample}</p>
             <p class="engine-note">{l.outNote}</p>
           </div>
         ) : (
@@ -183,3 +168,19 @@ const stamped = l.outSample
     </section>
   </main>
 </Base>
+
+<style>
+  .hero-intent {
+    padding-inline: 24px;
+  }
+
+  @media (max-width: 520px) {
+    .hero-intent {
+      padding: 32px 18px 36px;
+    }
+  }
+
+  .transcript-sample {
+    white-space: pre-line;
+  }
+</style>

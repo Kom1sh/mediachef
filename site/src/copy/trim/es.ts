@@ -95,7 +95,7 @@ export default {
         ["Calidad de imagen", "Idéntica", "Se escriben los mismos fotogramas ya codificados. Nunca hay pérdida de generación."],
         ["Códec de vídeo", "Sin cambios", "H.264 entra, H.264 sale. Se conserva lo que usara el origen."],
         ["Resolución", "Sin cambios", "Usa la receta de redimensionar si necesitas menos píxeles."],
-        ["Audio", "Copiado, no recodificado", "La pista conserva su códec y su bitrate originales."],
+        ["Audio", "Copiado, no recodificado", "Se conserva el códec de audio."],
         ["Contenedor", "MP4", "El resultado se escribe como MP4 sea cual sea el contenedor de origen."],
         ["El original", "Intacto", "Se escribe un archivo nuevo al lado; nada se sobrescribe."],
       ],
@@ -195,7 +195,7 @@ export default {
     },
     {
       q: "¿Qué pasa con el sonido?",
-      a: "Se copia junto con la imagen, conservando su códec y su bitrate originales. No se recodifica ninguna de las dos pistas.",
+      a: "La pista de audio seleccionada se copia sin recodificar. El códec se conserva. El bitrate medio del fragmento puede diferir del original.",
     },
     {
       q: "¿Hay límite de duración o de tamaño?",

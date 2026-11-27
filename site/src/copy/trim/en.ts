@@ -100,7 +100,7 @@ export default {
         ["Picture quality", "Identical", "The same encoded frames are written out. No generation loss, ever."],
         ["Video codec", "Unchanged", "H.264 in, H.264 out. Whatever the source used is preserved."],
         ["Resolution", "Unchanged", "Use the resize recipe if you need fewer pixels."],
-        ["Audio", "Copied, not re-encoded", "The soundtrack keeps its original codec and bitrate."],
+        ["Audio", "Copied, not re-encoded", "The audio codec is kept."],
         ["Container", "MP4", "The result is written as MP4 regardless of the source container."],
         ["The original", "Untouched", "A new file is written next to it; nothing is overwritten."],
       ],
@@ -200,7 +200,7 @@ export default {
     },
     {
       q: "What happens to the sound?",
-      a: "It is copied along with the picture, keeping its original codec and bitrate. Nothing is re-encoded on either track.",
+      a: "The selected audio track is copied without re-encoding. Its codec is kept. The average bitrate of an excerpt can differ from that of the original.",
     },
     {
       q: "Is there a length or size limit?",

@@ -10,7 +10,7 @@ export default {
   crumb: "Wideo na SRT",
 
   answer:
-    "Przeciągnij film do MediaChef, wybierz „Zrób napisy SRT do wideo”, zostaw model na small i język na automatycznym, i uruchom. Obok filmu pojawi się plik .srt, już z czasami. Wszystko liczy się na twoim komputerze: mowa nie opuszcza dysku, a gdy model jest już pobrany, przepis działa przy wyłączonej sieci. Na laptopie z M5 2 minuty 43 sekundy mowy zajęły 6,2 sekundy na modelu domyślnym — jakieś 26 razy szybciej niż w czasie rzeczywistym — i dały 73 linijki po średnio 39 znaków, czyli na tyle krótkie, że da się je spokojnie przeczytać.",
+    "Pobierz raz model Whisper w zakładce „Modele” i przeciągnij film do MediaChef. Wybierz „Zrób napisy SRT do wideo” i kliknij „Dodaj do kolejki”, aby utworzyć clip.subs.srt. Sprawdź nazwy i czasy w edytorze. Jeśli napisy mają być częścią obrazu, użyj „Wtop napisy w wideo”. Ten przepis tworzy napisy na nowo na podstawie dźwięku. Nie korzysta z poprawionego pliku .srt.",
 
   facts: [
     { k: "Czego potrzebujesz", v: `MediaChef ${FACTS.version} plus jednorazowe pobranie modelu` },
@@ -47,8 +47,8 @@ export default {
       p: "„Zrób napisy SRT do wideo” bierze film wprost — nie trzeba wcześniej wyciągać dźwięku. MediaChef sam dekoduje ścieżkę do mono 16 kHz, którego wymaga Whisper, w katalogu tymczasowym, którego nigdy nie zobaczysz.",
     },
     {
-      h: "Uruchom i otwórz .srt",
-      p: "Plik ląduje obok filmu jako clip.subs.srt, z ponumerowanymi linijkami i czasami. Odtwarzacze, montażówki i platformy czytają go wprost, a że to zwykły tekst, nazwisko albo termin poprawisz w dowolnym edytorze.",
+      h: "Kliknij „Dodaj do kolejki”",
+      p: "Po zakończeniu otwórz clip.subs.srt z kolejki. W kolejce widać ścieżkę pliku.",
     },
   ],
   shotAlt:
@@ -149,7 +149,7 @@ export default {
   notFor: [
     {
       h: "Chcesz napisy wypalone w obrazie.",
-      p: "Tutaj powstaje osobny .srt, który odtwarzacz wczytuje obok filmu. Wpalenie tekstu na stałe w klatki to inna operacja: przekodowuje film, a potem tych słów już się nie wyłączy ani nie poprawi.",
+      p: "Aby uzyskać osobny, edytowalny plik .srt, użyj „Zrób napisy SRT do wideo”. Aby trwale nanieść napisy na obraz, użyj „Wtop napisy w wideo”. Powstanie nowy MP4 z napisami w obrazie.",
     },
     {
       h: "Potrzebujesz dokładności emisyjnej.",
@@ -177,7 +177,7 @@ export default {
     },
     {
       q: "Ile to trwa?",
-      a: "Jakieś 26 razy szybciej niż w czasie rzeczywistym na modelu domyślnym: zmierzyliśmy 6,2 sekundy na 2 minuty 43 sekundy mowy, laptop z M5. W tej proporcji godzinne nagranie schodzi w kilka minut. Na tym samym dźwięku tiny dał ×78, a large-v3-turbo ×14.",
+      a: "W teście nagrania 2 min 43 s model small potrzebował 6,2 s na Apple M5. Rzeczywisty czas zależy od nagrania, modelu i sprzętu.",
     },
     {
       q: "Który model wybrać?",
@@ -193,7 +193,7 @@ export default {
     },
     {
       q: "Czy potrafi przetłumaczyć napisy na angielski?",
-      a: "Tak, przepisem „Przetłumacz mowę na angielskie napisy”: na wejściu obca mowa, na wyjściu angielski SRT z czasami, w jednym przebiegu zamiast „najpierw przepisz, potem przetłumacz”. Angielski to jedyny język docelowy, jaki obsługuje model.",
+      a: "Tak, przepisem „Przetłumacz mowę na angielskie napisy”: na wejściu obca mowa, na wyjściu angielski SRT z czasami, w jednym przebiegu zamiast „najpierw przepisz, potem przetłumacz”. Angielski to jedyny język docelowy, jaki obsługuje model. Do tłumaczenia na angielski zacznij od small. large-v3-turbo służy do transkrypcji i nie był trenowany do tłumaczenia.",
     },
     {
       q: "Czym różni się SRT od VTT?",

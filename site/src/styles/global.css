@@ -439,6 +439,40 @@ table.ref tr.is-default th { box-shadow: inset 3px 0 0 var(--amber); }
 .also a { color: var(--basil); font-weight: 700; text-decoration: none; font-size: 0.98rem; }
 .also a:hover { text-decoration: underline; }
 
+/* ── контраст на страницах инструкций ─────────────────── */
+.guide {
+  --ink-2: #414C5B;
+  --guide-accent-text: var(--basil-deep);
+  --guide-warning-text: #784B0A;
+}
+
+@media (prefers-color-scheme: dark) {
+  .guide {
+    --ink-2: #B6C2D1;
+    --guide-accent-text: var(--basil);
+    --guide-warning-text: var(--t-ochre);
+  }
+}
+
+.guide .ctas-note a,
+.guide .contact a,
+.guide .also a,
+.guide .toc-list a:hover,
+.guide .faq summary::after,
+.guide .step .n {
+  color: var(--guide-accent-text);
+}
+
+.guide .ctas-note a,
+.guide .contact a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.guide .btn-sub {
+  opacity: 1;
+}
+
 /* ── подвал ─────────────────────────────────────────────
    Колонка бренда плюс четыре колонки ссылок. В «Скачать» — прямые ссылки на
    файлы релиза с весом: подвал тут работает как страница загрузки. */

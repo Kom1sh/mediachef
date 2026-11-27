@@ -95,7 +95,7 @@ export default {
         ["Bildqualität", "Unverändert", "Dieselben kodierten Bilder werden neu geschrieben. Kein Generationsverlust, nie."],
         ["Video-Codec", "Unverändert", "H.264 rein, H.264 raus. Was die Quelle nutzte, bleibt erhalten."],
         ["Auflösung", "Unverändert", "Nehmen Sie das Skalier-Rezept, wenn Sie weniger Pixel brauchen."],
-        ["Ton", "Kopiert, nicht neu kodiert", "Die Spur behält ihren ursprünglichen Codec und ihre Bitrate."],
+        ["Ton", "Kopiert, nicht neu kodiert", "Der Audio-Codec bleibt erhalten."],
         ["Container", "MP4", "Das Ergebnis wird als MP4 geschrieben, egal welcher Container die Quelle war."],
         ["Das Original", "Unangetastet", "Eine neue Datei entsteht daneben, es wird nichts überschrieben."],
       ],
@@ -195,7 +195,7 @@ export default {
     },
     {
       q: "Was passiert mit dem Ton?",
-      a: "Er wird zusammen mit dem Bild kopiert und behält seinen ursprünglichen Codec und seine Bitrate. Keine der beiden Spuren wird neu kodiert.",
+      a: "Die ausgewählte Audiospur wird ohne Neukodierung kopiert. Der Codec bleibt erhalten. Die durchschnittliche Bitrate des Ausschnitts kann von der Quelle abweichen.",
     },
     {
       q: "Gibt es eine Längen- oder Größenbeschränkung?",

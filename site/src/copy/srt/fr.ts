@@ -10,7 +10,7 @@ export default {
   crumb: "Vidéo en SRT",
 
   answer:
-    "Déposez la vidéo dans MediaChef, choisissez « Créer des sous-titres SRT pour une vidéo », laissez le modèle sur small et la langue sur automatique, puis lancez. Un fichier .srt apparaît à côté de la vidéo, minutage compris. Tout se calcule sur votre machine : la parole ne quitte pas le disque, et une fois le modèle téléchargé la recette fonctionne réseau coupé. Sur un portable M5, 2 minutes 43 secondes de parole ont pris 6,2 secondes avec le modèle par défaut — environ 26 fois plus vite que le temps réel — et ont donné 73 sous-titres de 39 caractères en moyenne, assez courts pour être lus tranquillement.",
+    "Téléchargez une fois un modèle Whisper dans « Modèles », puis déposez la vidéo dans MediaChef. Choisissez « Créer des sous-titres SRT pour une vidéo » et cliquez sur « Ajouter à la file » pour obtenir clip.subs.srt. Vérifiez les noms et les temps dans un éditeur. Pour incruster le texte dans l’image, choisissez « Incruster des sous-titres dans une vidéo ». Cette recette génère de nouveaux sous-titres à partir de l’audio. Elle ne reprend pas un .srt modifié.",
 
   facts: [
     { k: "Ce qu'il faut", v: `MediaChef ${FACTS.version} plus un téléchargement unique du modèle` },
@@ -47,8 +47,8 @@ export default {
       p: "« Créer des sous-titres SRT pour une vidéo » prend la vidéo directement : pas besoin d'en extraire le son au préalable. MediaChef décode la piste dans le mono 16 kHz qu'exige Whisper, dans un dossier temporaire que vous ne verrez jamais.",
     },
     {
-      h: "Lancez, puis ouvrez le .srt",
-      p: "Le fichier arrive à côté de la vidéo sous le nom clip.subs.srt, sous-titres numérotés et minutage compris. Les lecteurs, les logiciels de montage et les plateformes le lisent tel quel et, comme c'est du texte brut, un nom ou un terme se corrige dans n'importe quel éditeur.",
+      h: "Cliquez sur « Ajouter à la file »",
+      p: "Une fois le traitement terminé, ouvrez clip.subs.srt dans la file. Elle indique le chemin du fichier.",
     },
   ],
   shotAlt:
@@ -149,7 +149,7 @@ export default {
   notFor: [
     {
       h: "Vous voulez les sous-titres incrustés dans l'image.",
-      p: "Ici on obtient un .srt séparé que le lecteur charge à côté de la vidéo. Graver le texte dans les images est une autre opération : elle réencode la vidéo, et ces mots ne peuvent ensuite plus être coupés ni corrigés.",
+      p: "Pour un .srt séparé et modifiable, choisissez « Créer des sous-titres SRT pour une vidéo ». Pour incruster les sous-titres dans l’image, utilisez « Incruster des sous-titres dans une vidéo ». Vous obtiendrez un nouveau MP4 avec des sous-titres permanents.",
     },
     {
       h: "Il vous faut une précision de diffusion.",
@@ -177,7 +177,7 @@ export default {
     },
     {
       q: "Combien de temps cela prend-il ?",
-      a: "Environ 26 fois plus vite que le temps réel avec le modèle par défaut : nous avons mesuré 6,2 secondes pour 2 minutes 43 secondes de parole sur un portable M5. À ce rythme, un enregistrement d'une heure passe en deux ou trois minutes. Sur le même audio, tiny a donné ×78 et large-v3-turbo ×14.",
+      a: "Sur un extrait de 2 min 43 s, small a mis 6,2 s sur un Apple M5. Le temps réel dépend de l’enregistrement, du modèle et du matériel.",
     },
     {
       q: "Quel modèle choisir ?",
@@ -193,7 +193,7 @@ export default {
     },
     {
       q: "Peut-il traduire les sous-titres en anglais ?",
-      a: "Oui, avec la recette « Traduire la parole en sous-titres anglais » : parole étrangère en entrée, SRT anglais minuté en sortie, en un seul passage plutôt que transcrire puis traduire. L'anglais est la seule langue cible que le modèle prend en charge.",
+      a: "Oui, avec la recette « Traduire la parole en sous-titres anglais » : parole étrangère en entrée, SRT anglais minuté en sortie, en un seul passage plutôt que transcrire puis traduire. L'anglais est la seule langue cible que le modèle prend en charge. Pour traduire vers l’anglais, commencez avec small. large-v3-turbo sert à la transcription et n’a pas été entraîné à la traduction.",
     },
     {
       q: "Quelle différence entre SRT et VTT ?",

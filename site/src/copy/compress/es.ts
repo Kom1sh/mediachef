@@ -123,14 +123,6 @@ export default {
       p: "MediaChef comprime el vídeo en tu ordenador. El archivo original y el comprimido quedan en tu equipo.",
     },
     {
-      h: "Sin límite de tamaño.",
-      p: "Los compresores en línea se acaban entre 100 MB y 2 GB, que es exactamente el rango donde comprimir empieza a importar. Un archivo de cuatro gigas se trata como uno de cuatro megas.",
-    },
-    {
-      h: "Más rápido que subirlo.",
-      p: "Veinte segundos de 1080p se recodifican aquí en menos de dos. En un servicio web el mismo clip tiene que ir y volver primero.",
-    },
-    {
       h: "El original se conserva.",
       p: "El resultado es un archivo nuevo junto al de origen, así que un nivel mal elegido cuesta una pasada más, no el material.",
     },
@@ -198,7 +190,7 @@ export default {
     },
     {
       q: "¿Hay límite de tamaño?",
-      a: "No. MediaChef no pone ninguno; el límite es el espacio libre en disco, y la aplicación lo comprueba antes de empezar. Esa es la diferencia práctica principal con los compresores web, que suelen acabarse entre 100 MB y 2 GB.",
+      a: "No hay un tope fijo para el archivo de entrada. Deja espacio en disco para el resultado. La receta de tamaño objetivo acepta de 1 a 4000 MB.",
     },
     {
       q: "¿Comprimir dos veces lo hará aún más pequeño?",

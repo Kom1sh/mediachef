@@ -10,7 +10,7 @@ export default {
   crumb: "Video in SRT",
 
   answer:
-    "Trascina il video in MediaChef, scegli «Crea sottotitoli SRT per un video», lascia il modello su small e la lingua su automatico, e avvia. Accanto al video comparirà un file .srt, tempi compresi. Tutto viene calcolato sulla tua macchina: il parlato non esce dal disco e, una volta scaricato il modello, la ricetta funziona con la rete spenta. Su un portatile M5, 2 minuti e 43 secondi di parlato hanno richiesto 6,2 secondi con il modello predefinito — circa 26 volte più veloce del tempo reale — e hanno prodotto 73 battute da 39 caratteri in media, abbastanza corte da leggersi con comodo.",
+    "Scarica una volta un modello Whisper in «Modelli» e trascina il video in MediaChef. Scegli «Crea sottotitoli SRT per un video» e fai clic su «Aggiungi alla coda» per ottenere clip.subs.srt. Controlla nomi e tempi in un editor. Per stampare il testo nell’immagine, scegli «Imprimi i sottotitoli nel video». La ricetta genera nuovi sottotitoli dall’audio. Non usa un file .srt già corretto.",
 
   facts: [
     { k: "Cosa serve", v: `MediaChef ${FACTS.version} più uno scaricamento del modello, una volta sola` },
@@ -47,8 +47,8 @@ export default {
       p: "«Crea sottotitoli SRT per un video» prende il video direttamente: non serve estrarre prima l'audio. MediaChef decodifica la traccia nel mono a 16 kHz che Whisper pretende, in una cartella temporanea che non vedrai mai.",
     },
     {
-      h: "Avvia e apri il .srt",
-      p: "Il file arriva accanto al video con il nome clip.subs.srt, con le battute numerate e i loro tempi. Lettori, programmi di montaggio e piattaforme lo leggono così com'è e, dato che è testo semplice, un nome o un termine si corregge in qualsiasi editor.",
+      h: "Fai clic su «Aggiungi alla coda»",
+      p: "Al termine apri clip.subs.srt dalla coda. Lì trovi il percorso del file.",
     },
   ],
   shotAlt:
@@ -149,7 +149,7 @@ export default {
   notFor: [
     {
       h: "Vuoi i sottotitoli impressi nell'immagine.",
-      p: "Qui esce un .srt separato che il lettore carica accanto al video. Bruciare il testo dentro i fotogrammi è un'altra operazione: ricodifica il video, e dopo quelle parole non si possono più spegnere né correggere.",
+      p: "Per un .srt separato e modificabile, scegli «Crea sottotitoli SRT per un video». Per imprimere i sottotitoli nell’immagine, usa «Imprimi i sottotitoli nel video». Si crea un nuovo MP4 con sottotitoli permanenti.",
     },
     {
       h: "Ti serve un'accuratezza da messa in onda.",
@@ -177,7 +177,7 @@ export default {
     },
     {
       q: "Quanto ci mette?",
-      a: "Circa 26 volte più veloce del tempo reale con il modello predefinito: abbiamo misurato 6,2 secondi per 2 minuti e 43 secondi di parlato su un portatile M5. Con quel rapporto, una registrazione di un'ora se ne va in un paio di minuti. Sullo stesso audio tiny ha fatto ×78 e large-v3-turbo ×14.",
+      a: "Su una registrazione di 2 min 43 s, small ha impiegato 6,2 s su Apple M5. Il tempo reale dipende dalla registrazione, dal modello e dal dispositivo.",
     },
     {
       q: "Quale modello dovrei scegliere?",
@@ -193,7 +193,7 @@ export default {
     },
     {
       q: "Può tradurre i sottotitoli in inglese?",
-      a: "Sì, con la ricetta «Traduci il parlato in sottotitoli inglesi»: entra parlato straniero, esce un SRT inglese con i tempi, in una passata sola invece di trascrivere e poi tradurre. L'inglese è l'unica lingua di arrivo che il modello sostiene.",
+      a: "Sì, con la ricetta «Traduci il parlato in sottotitoli inglesi»: entra parlato straniero, esce un SRT inglese con i tempi, in una passata sola invece di trascrivere e poi tradurre. L'inglese è l'unica lingua di arrivo che il modello sostiene. Per tradurre in inglese, parti da small. large-v3-turbo è adatto alla trascrizione e non è addestrato per la traduzione.",
     },
     {
       q: "Che differenza c'è fra SRT e VTT?",

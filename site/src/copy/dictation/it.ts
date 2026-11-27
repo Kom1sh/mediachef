@@ -10,7 +10,7 @@ export default {
   crumb: "Dettatura vocale",
 
   answer:
-    "Premi il tasto ⌥ destro sul Mac — o il Ctrl destro su Windows — in qualsiasi punto, di' una frase, premi di nuovo: il testo viene scritto direttamente nel campo dove sta il cursore — un terminale, una chat, un modulo del browser. Riconosce lo stesso Whisper che MediaChef porta già con sé, quindi l'audio non esce dal tuo disco e nessuno conta i minuti. Nella nostra misura una frase di cinque secondi è tornata in 780 millisecondi.",
+    "Apri «Dettatura» in MediaChef, attivala e scegli un modello Whisper. Metti il cursore in un campo di testo, premi ⌥ destro su macOS, Ctrl destro su Windows o Ctrl+Alt+D su Linux, parla e premi di nuovo per fermarti. Su Linux serve una sessione X11. Dopo il download del modello, il riconoscimento è locale.",
 
   facts: [
     { k: "Stato", v: "Su macOS dalla versione 0.8.0, su Windows e Linux dalla 0.8.5" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Accenderla una volta",
-      p: "Nella scheda Dettatura c'è un interruttore e un attivatore a scelta: sul Mac il tasto ⌥ destro o ⌘ destro, su Windows il Ctrl destro, l'Alt destro o il Blocco maiuscole, e ovunque due combinazioni. Finché non l'accendi, MediaChef non registra nessuna scorciatoia globale: un'applicazione che si prende in silenzio una combinazione di sistema è un'applicazione che rompe le altre.",
+      p: "Apri «Dettatura» in MediaChef, attivala e scegli un modello Whisper. Su macOS autorizza microfono e accessibilità. Su Linux usa una sessione X11.",
     },
     {
       h: "Premere la scorciatoia dove vuoi",
@@ -51,9 +51,6 @@ export default {
       p: "Scritto direttamente nel campo attivo, senza toccare gli appunti. Se preferisci il contrario, che finisca negli appunti, è l'impostazione accanto.",
     },
   ],
-  shotAlt:
-    "MediaChef pronto a convertire: il piano di lavoro aspetta un file video, la coda dei lavori è a destra.",
-  shotCaption: "La scheda Dettatura di MediaChef: attivatore, modelli, lingua, dizionario e stato del permesso, tutto in un posto.",
 
   tables: [
     {
@@ -108,8 +105,8 @@ export default {
         "Due scelte, e la differenza pesa più di quanto sembri quando si detta più volte all'ora.",
       head: ["Impostazione", "Cosa succede", "Cosa serve"],
       rows: [
-        ["Scriverlo", "Le parole compaiono nel campo attivo. I tuoi appunti restano intatti", "Il permesso Accessibilità, una volta"],
-        ["Negli appunti", "Il testo viene copiato e lo incolli tu con ⌘V", "Nulla oltre al microfono"],
+        ["Scriverlo", "Le parole compaiono nel campo attivo. I tuoi appunti restano intatti", "macOS · Il permesso Accessibilità, una volta"],
+        ["Negli appunti", "Il testo viene copiato e lo incolli tu con ⌘V / Ctrl+V", "Microfono e autorizzazioni richieste dalla scorciatoia"],
       ],
       note:
         "Scrivere lascia in pace gli appunti, ed è proprio per questo che conviene preferirlo: se ogni dettatura li sovrascrivesse, non potresti tenerci un collegamento mentre lavori. macOS considera lo scrivere in un'altra applicazione come input sintetico e chiede il permesso Accessibilità — il primo tentativo apre da sé il riquadro giusto delle Impostazioni di Sistema. Quando il permesso manca, il testo finisce comunque negli appunti: una dettatura non si perde mai.",
@@ -174,7 +171,7 @@ export default {
     },
     {
       q: "Quale combinazione usa?",
-      a: "Di default il tasto ⌥ destro — un modificatore da solo: tienilo premuto e parla, oppure premilo una volta per iniziare e di nuovo per finire; con Shift il testo viene inviato con Invio. Un modificatore da solo non scrive nulla e non entra in conflitto con nulla. Combinazioni come ⌥ Space scrivevano uno spazio in modalità pressione prolungata se ⌥ veniva rilasciato prima, quindi sono state tolte; ⌃⌥ Space e ⌃⌥ D restano come alternative. Su Windows di default il Ctrl destro, in alternativa l'Alt destro e il Blocco maiuscole; su Linux Ctrl+Alt+D.",
+      a: "Per impostazione predefinita usa ⌥ destro su macOS, Ctrl destro su Windows e Ctrl+Alt+D su Linux (X11). Tieni premuto mentre parli oppure premi una volta per iniziare e un’altra per fermarti.",
     },
     {
       q: "Funziona su Windows e Linux?",

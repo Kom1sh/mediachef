@@ -101,8 +101,8 @@ export interface GuideCopy {
 
   stepsTitle: string;
   steps: readonly { h: string; p: string }[];
-  shotAlt: string;
-  shotCaption: string;
+  shotAlt?: string;
+  shotCaption?: string;
 
   tables: readonly GuideTable[];
 

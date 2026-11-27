@@ -10,7 +10,7 @@ export default {
   crumb: "Dyktowanie głosem",
 
   answer:
-    "Naciśnij gdziekolwiek prawy ⌥ na Macu albo prawy Ctrl na Windowsie, powiedz zdanie, naciśnij ponownie — a tekst wpisze się prosto w to pole, w którym stoi kursor: w terminalu, w czacie, w formularzu przeglądarki. Rozpoznaje ten sam Whisper, który MediaChef już ze sobą nosi, więc dźwięk nie opuszcza twojego dysku i nikt nie liczy minut. W naszym pomiarze pięciosekundowe zdanie wróciło w 780 milisekund.",
+    "Otwórz „Dyktowanie” w MediaChef, włącz dyktowanie i wybierz model Whisper. Ustaw kursor w polu tekstowym, naciśnij prawy ⌥ w macOS, prawy Ctrl w Windows lub Ctrl+Alt+D w Linuksie, mów i naciśnij ponownie, aby zakończyć. Linux wymaga sesji X11. Po pobraniu modelu rozpoznawanie działa lokalnie.",
 
   facts: [
     { k: "Stan", v: "Na macOS od wersji 0.8.0, na Windowsie i Linuksie od 0.8.5" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Włączyć raz",
-      p: "Na karcie Dyktowanie jest przełącznik i wyzwalacz do wyboru: na Macu prawy ⌥ lub prawy ⌘, na Windowsie prawy Ctrl, prawy Alt albo Caps Lock, a wszędzie dwie kombinacje. Dopóki nie włączysz, MediaChef nie rejestruje żadnego skrótu globalnego: program, który po cichu zabiera systemowe skróty, to program, który psuje inne programy.",
+      p: "Otwórz „Dyktowanie” w MediaChef, włącz dyktowanie i wybierz model Whisper. W macOS zezwól na dostęp do mikrofonu i funkcji dostępności. W Linuksie użyj sesji X11.",
     },
     {
       h: "Nacisnąć skrót gdziekolwiek",
@@ -51,9 +51,6 @@ export default {
       p: "Wpisywany prosto w aktywne pole, bez ruszania schowka. Jeśli wolisz odwrotnie, żeby trafiał do schowka — to ustawienie obok.",
     },
   ],
-  shotAlt:
-    "MediaChef gotowy do konwersji: blat czeka na plik wideo, po prawej kolejka zadań.",
-  shotCaption: "Karta Dyktowanie w MediaChef: wyzwalacz, modele, język, słownik i stan uprawnienia — wszystko w jednym miejscu.",
 
   tables: [
     {
@@ -108,8 +105,8 @@ export default {
         "Dwie możliwości, a różnica waży więcej, niż brzmi, kiedy dyktuje się kilka razy na godzinę.",
       head: ["Ustawienie", "Co się dzieje", "Czego wymaga"],
       rows: [
-        ["Wpisz", "Słowa pojawiają się w aktywnym polu. Twój schowek zostaje nietknięty", "Uprawnienie Dostępność, raz"],
-        ["Do schowka", "Tekst zostaje skopiowany, a ty wklejasz go ⌘V", "Niczego poza mikrofonem"],
+        ["Wpisz", "Słowa pojawiają się w aktywnym polu. Twój schowek zostaje nietknięty", "macOS · Uprawnienie Dostępność, raz"],
+        ["Do schowka", "Tekst zostaje skopiowany, a ty wklejasz go ⌘V / Ctrl+V", "Mikrofon i uprawnienia potrzebne do działania skrótu"],
       ],
       note:
         "Wpisywanie zostawia schowek w spokoju i właśnie dlatego warto je wybrać: gdyby każde dyktowanie go nadpisywało, nie dałoby się trzymać tam odnośnika podczas pracy. macOS uznaje pisanie w cudzym programie za wejście syntetyczne i prosi o uprawnienie Dostępność — pierwsza próba sama otworzy właściwą sekcję Ustawień systemowych. Gdy uprawnienia brakuje, tekst i tak trafia do schowka: dyktowanie nigdy nie przepada.",
@@ -174,7 +171,7 @@ export default {
     },
     {
       q: "Jakiej kombinacji używa?",
-      a: "Domyślnie prawy ⌥ — sam modyfikator: trzymaj i mów albo naciśnij raz, by zacząć, i jeszcze raz, by skończyć; z Shiftem tekst zostanie wysłany Enterem. Sam modyfikator nic nie wpisuje i z niczym nie koliduje. Kombinacje takie jak ⌥ Space w trybie trzymania wpisywały spację, gdy ⌥ puszczano wcześniej — dlatego zniknęły; ⌃⌥ Space i ⌃⌥ D zostają jako zapasowe. Na Windowsie domyślnie prawy Ctrl, do wyboru prawy Alt i Caps Lock (na polskim układzie prawy Alt to AltGr i wpisuje litery — tam zostań przy prawym Ctrl); na Linuksie Ctrl+Alt+D.",
+      a: "Domyślnie prawy ⌥ w macOS, prawy Ctrl w Windows i Ctrl+Alt+D w Linuksie (X11). Trzymaj klawisz podczas mówienia lub naciśnij raz na start i drugi raz na koniec.",
     },
     {
       q: "Czy działa na Windowsie i Linuksie?",

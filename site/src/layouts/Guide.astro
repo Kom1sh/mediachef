@@ -50,7 +50,7 @@ const jsonLd = [
     description: g.description,
     body: guideBody(g),
     dateModified: lastModifiedFor(page),
-    imageUrl: SITE + SHOTS[locale].light,
+    imageUrl: g.shotAlt && g.shotCaption ? SITE + SHOTS[locale].light : undefined,
   }),
   howToLd({ name: g.stepsTitle, description: g.description, url: pageUrl, steps: g.steps }),
   faqLd(g.faq),
@@ -96,7 +96,7 @@ const jsonLd = [
             </li>
           ))}
         </ol>
-        <Shot locale={locale} alt={g.shotAlt} caption={g.shotCaption} />
+        {g.shotAlt && g.shotCaption && <Shot locale={locale} alt={g.shotAlt} caption={g.shotCaption} />}
       </div>
     </section>
 
@@ -195,39 +195,6 @@ const jsonLd = [
 </Base>
 
 <style>
-  .guide {
-    --ink-2: #414C5B;
-    --guide-accent-text: var(--basil-deep);
-    --guide-warning-text: #784B0A;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .guide {
-      --ink-2: #B6C2D1;
-      --guide-accent-text: var(--basil);
-      --guide-warning-text: var(--t-ochre);
-    }
-  }
-
-  .guide :global(.ctas-note a),
-  .guide :global(.contact a),
-  .guide :global(.also a),
-  .guide :global(.toc-list a:hover),
-  .guide :global(.faq summary::after),
-  .guide :global(.step .n) {
-    color: var(--guide-accent-text);
-  }
-
-  .guide :global(.ctas-note a),
-  .guide :global(.contact a) {
-    text-decoration: underline;
-    text-underline-offset: 0.15em;
-  }
-
-  .guide :global(.btn-sub) {
-    opacity: 1;
-  }
-
   /* Вертикальные отступы нужны здесь свои: `padding: 76px 0` в global.css
      задан селектором `section.band`, а hero — это div, а не section. Остальные
      макеты обходятся классом `.hero`, но он ещё и grid в две колонки, а гайду

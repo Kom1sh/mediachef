@@ -95,7 +95,7 @@ export default {
         ["Qualité d'image", "Identique", "Les mêmes images encodées sont réécrites. Aucune perte de génération, jamais."],
         ["Codec vidéo", "Inchangé", "H.264 en entrée, H.264 en sortie. Ce qu'utilisait la source est conservé."],
         ["Résolution", "Inchangée", "Utilisez la recette de redimensionnement s'il vous faut moins de pixels."],
-        ["Audio", "Copié, non réencodé", "La piste conserve son codec et son débit d'origine."],
+        ["Audio", "Copié, non réencodé", "Le codec audio est conservé."],
         ["Conteneur", "MP4", "Le résultat est écrit en MP4 quel que soit le conteneur d'origine."],
         ["L'original", "Intact", "Un nouveau fichier est écrit à côté ; rien n'est écrasé."],
       ],
@@ -195,7 +195,7 @@ export default {
     },
     {
       q: "Qu'advient-il du son ?",
-      a: "Il est copié avec l'image, en conservant son codec et son débit d'origine. Aucune des deux pistes n'est réencodée.",
+      a: "La piste audio choisie est copiée sans réencodage. Son codec est conservé. Le débit moyen de l’extrait peut différer de celui de la source.",
     },
     {
       q: "Y a-t-il une limite de durée ou de taille ?",

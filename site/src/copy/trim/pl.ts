@@ -95,7 +95,7 @@ export default {
         ["Jakość obrazu", "Bez zmian", "Te same zakodowane klatki są zapisywane od nowa. Żadnej straty pokoleniowej, nigdy."],
         ["Kodek wideo", "Bez zmian", "H.264 na wejściu, H.264 na wyjściu. Zostaje to, czego używało źródło."],
         ["Rozdzielczość", "Bez zmian", "Jeśli potrzebujesz mniej pikseli, weź przepis na skalowanie."],
-        ["Dźwięk", "Kopiowany, nie kodowany od nowa", "Ścieżka zachowuje swój oryginalny kodek i bitrate."],
+        ["Dźwięk", "Kopiowany, nie kodowany od nowa", "Kodek dźwięku pozostaje bez zmian."],
         ["Kontener", "MP4", "Wynik zapisuje się jako MP4, niezależnie od kontenera źródła."],
         ["Oryginał", "Nietknięty", "Obok powstaje nowy plik, nic nie jest nadpisywane."],
       ],
@@ -195,7 +195,7 @@ export default {
     },
     {
       q: "Co dzieje się z dźwiękiem?",
-      a: "Jest kopiowany razem z obrazem i zachowuje swój oryginalny kodek oraz bitrate. Żadna z dwóch ścieżek nie jest kodowana od nowa.",
+      a: "Wybrana ścieżka dźwiękowa jest kopiowana bez ponownego kodowania. Kodek pozostaje ten sam. Średni bitrate fragmentu może różnić się od źródła.",
     },
     {
       q: "Czy jest limit długości albo rozmiaru?",

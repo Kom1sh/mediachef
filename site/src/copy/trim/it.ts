@@ -95,7 +95,7 @@ export default {
         ["Qualità dell'immagine", "Invariata", "Gli stessi fotogrammi codificati vengono riscritti. Nessuna perdita di generazione, mai."],
         ["Codec video", "Invariato", "H.264 in ingresso, H.264 in uscita. Resta quello che usava la sorgente."],
         ["Risoluzione", "Invariata", "Se ti servono meno pixel, usa la ricetta di ridimensionamento."],
-        ["Audio", "Copiato, non ricodificato", "La traccia mantiene codec e bitrate originali."],
+        ["Audio", "Copiato, non ricodificato", "Il codec audio viene conservato."],
         ["Contenitore", "MP4", "Il risultato è scritto in MP4 qualunque fosse il contenitore di partenza."],
         ["L'originale", "Intatto", "Accanto nasce un file nuovo, non si sovrascrive niente."],
       ],
@@ -195,7 +195,7 @@ export default {
     },
     {
       q: "Cosa succede all'audio?",
-      a: "Viene copiato insieme all'immagine e mantiene codec e bitrate originali. Nessuna delle due tracce viene ricodificata.",
+      a: "La traccia audio scelta viene copiata senza ricodifica. Il codec rimane quello originale. Il bitrate medio del tratto può essere diverso da quello di partenza.",
     },
     {
       q: "C'è un limite di durata o di dimensione?",

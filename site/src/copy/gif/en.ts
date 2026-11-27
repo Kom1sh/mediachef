@@ -8,21 +8,21 @@ import { FACTS } from "../../facts";
 export default {
   title: "Video to GIF — free, offline converter for macOS, Windows, Linux",
   description:
-    "Turn any video into an animated GIF on your own computer: pick frame rate and width, press start. No upload, no size limit, no watermark. Measured file sizes for every setting inside.",
+    "Make an animated GIF offline with MediaChef. Choose the width and frame rate, check the result, and make the file smaller when needed.",
   h1: "Video to GIF, on your own computer",
   crumb: "Video to GIF",
 
   // Прямой ответ, первые сто слов страницы. Дальше — подробности, но человек,
   // пришедший за одним фактом, получает его здесь и может уйти.
   answer:
-    "Drop the video into MediaChef, pick the “Video to GIF” recipe, choose a frame rate and a width, then press start. The GIF appears next to the original file. Nothing is uploaded — FFmpeg runs on your machine, so there is no file-size cap and no queue. At the default 15 frames per second and 480 pixels wide, a GIF costs about 130 KB per second of video: ten seconds comes out at roughly 1.3 MB.",
+    "Drop an MP4 or another supported video into MediaChef and choose “Video to GIF”. Start with 15 fps and a width of 480 px, then click “Add to queue”. The queue shows where clip.video-to-gif.gif was saved. GIFs have no sound. If the file is too big, shorten the clip or lower the width.",
 
   facts: [
     { k: "What you need", v: `MediaChef ${FACTS.version} — one download, FFmpeg is already inside` },
     { k: "Works offline", v: "Yes, completely — the network is never touched" },
     { k: "Input formats", v: "MP4, MKV, MOV, WebM, AVI, TS and anything else FFmpeg reads" },
     { k: "Settings", v: "Frame rate 10 / 15 / 24 · width 320 / 480 / 640 px" },
-    { k: "Output", v: "clip.gif, written next to the source video" },
+    { k: "Output", v: "clip.video-to-gif.gif, written next to the source video" },
     { k: "Cost", v: "Free, open source (GPL-3.0), no account, no watermark" },
   ],
 
@@ -52,8 +52,8 @@ export default {
       p: "Two settings: frames per second and width in pixels. The height follows the width so the proportions stay intact — a 16:9 clip at 480 px comes out 480×270.",
     },
     {
-      h: "Press start and take the file",
-      p: "The GIF lands next to the video as clip.gif. The queue shows progress and the finished path; drop several videos at once and they run one after another.",
+      h: "Click “Add to queue”",
+      p: "Open clip.video-to-gif.gif from the queue when the job finishes. The queue shows the saved path.",
     },
   ],
   shotAlt:
@@ -171,7 +171,7 @@ export default {
   faq: [
     {
       q: "How long can the GIF be?",
-      a: "MediaChef sets no limit — the limit is your disk, and the app checks free space before it starts. The practical limit is size: at the default settings every second costs about 130 KB, so a one-minute GIF is roughly 8 MB and a five-minute one around 39 MB. Trim the clip first if it is going into a message.",
+      a: "There is no fixed duration limit in MediaChef. GIF size depends on motion, detail, width and frame rate. Short clips are easier to share.",
     },
     {
       q: "Why is my GIF bigger than the video it came from?",

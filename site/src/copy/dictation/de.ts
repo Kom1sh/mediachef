@@ -10,7 +10,7 @@ export default {
   crumb: "Spracheingabe",
 
   answer:
-    "Drücken Sie irgendwo die rechte ⌥-Taste auf dem Mac — oder die rechte Strg-Taste unter Windows —, sagen Sie einen Satz, drücken Sie noch einmal — und der Text wird direkt in das Feld getippt, in dem der Cursor steht: ein Terminal, ein Chat, ein Browserformular. Erkannt wird von demselben Whisper, den MediaChef schon mitbringt, also verlässt der Ton Ihre Festplatte nicht und niemand zählt Minuten. In unserer Messung kam ein Satz von fünf Sekunden nach 780 Millisekunden zurück.",
+    "Öffnen Sie „Diktat“ in MediaChef, aktivieren Sie die Funktion und wählen Sie ein Whisper-Modell. Setzen Sie den Cursor in ein Textfeld, drücken Sie rechts ⌥ unter macOS, rechts Strg unter Windows oder Strg+Alt+D unter Linux, sprechen Sie und drücken Sie erneut zum Beenden. Linux benötigt eine X11-Sitzung. Nach dem Modell-Download läuft die Erkennung lokal.",
 
   facts: [
     { k: "Stand", v: "Auf macOS seit Version 0.8.0, auf Windows und Linux seit 0.8.5" },
@@ -36,7 +36,7 @@ export default {
   steps: [
     {
       h: "Einmal einschalten",
-      p: "Im Diktat-Tab gibt es einen Schalter und einen Auslöser zur Wahl: auf dem Mac die rechte ⌥- oder ⌘-Taste, unter Windows die rechte Strg-, die rechte Alt-Taste oder die Feststelltaste, und überall zwei Kombinationen. Bis Sie einschalten, registriert MediaChef überhaupt keinen systemweiten Kurzbefehl: eine Anwendung, die sich still eine Systemkombination nimmt, ist eine Anwendung, die andere kaputt macht.",
+      p: "Öffnen Sie „Diktat“ in MediaChef, aktivieren Sie die Funktion und wählen Sie ein Whisper-Modell. Erteilen Sie unter macOS Zugriff auf Mikrofon und Bedienungshilfen. Unter Linux benötigen Sie eine X11-Sitzung.",
     },
     {
       h: "Kurzbefehl irgendwo drücken",
@@ -51,9 +51,6 @@ export default {
       p: "Direkt in das aktive Feld getippt, ohne die Zwischenablage anzufassen. Wenn Sie das Gegenteil bevorzugen — in die Zwischenablage —, ist das die Einstellung daneben.",
     },
   ],
-  shotAlt:
-    "MediaChef bereit zum Konvertieren: die Arbeitsfläche wartet auf eine Videodatei, rechts die Warteschlange.",
-  shotCaption: "Der Diktat-Tab in MediaChef: Auslöser, Modelle, Sprache, Wörterbuch und Stand der Berechtigung — alles an einem Ort.",
 
   tables: [
     {
@@ -108,8 +105,8 @@ export default {
         "Zwei Möglichkeiten, und der Unterschied wiegt schwerer, als er klingt, wenn man mehrmals pro Stunde diktiert.",
       head: ["Einstellung", "Was passiert", "Was es braucht"],
       rows: [
-        ["Tippen", "Die Wörter erscheinen im aktiven Feld. Ihre Zwischenablage bleibt unangetastet", "Die Bedienungshilfen-Freigabe, einmal"],
-        ["Zwischenablage", "Der Text wird kopiert, und Sie fügen ihn mit ⌘V selbst ein", "Nichts außer dem Mikrofon"],
+        ["Tippen", "Die Wörter erscheinen im aktiven Feld. Ihre Zwischenablage bleibt unangetastet", "macOS · Die Bedienungshilfen-Freigabe, einmal"],
+        ["Zwischenablage", "Der Text wird kopiert, und Sie fügen ihn mit ⌘V / Ctrl+V selbst ein", "Mikrofon und die für das Tastenkürzel nötigen Freigaben"],
       ],
       note:
         "Tippen lässt die Zwischenablage in Ruhe, und genau deshalb lohnt es sich: würde jedes Diktat sie überschreiben, könnten Sie dort keinen Link aufbewahren, während Sie arbeiten. macOS zählt das Tippen in eine andere Anwendung als synthetische Eingabe und verlangt die Bedienungshilfen-Freigabe — der erste Versuch öffnet von selbst den richtigen Bereich der Systemeinstellungen. Fehlt die Freigabe, landet der Text trotzdem in der Zwischenablage: ein Diktat geht niemals verloren.",
@@ -174,7 +171,7 @@ export default {
     },
     {
       q: "Welche Kombination benutzt es?",
-      a: "Standard ist die rechte ⌥-Taste — ein einzelner Modifier: halten und sprechen, oder einmal tippen zum Starten und noch einmal zum Beenden; mit Shift wird der Text per Enter abgeschickt. Ein Modifier allein tippt nichts und kollidiert mit nichts. Kombinationen wie ⌥ Space tippten im Haltemodus ein Leerzeichen, wenn ⌥ zuerst losgelassen wurde — deshalb sind sie raus; ⌃⌥ Space und ⌃⌥ D bleiben als Ausweichmöglichkeiten. Unter Windows ist es standardmäßig die rechte Strg-Taste, alternativ die rechte Alt-Taste oder die Feststelltaste; unter Linux Ctrl+Alt+D.",
+      a: "Standardmäßig rechts ⌥ unter macOS, rechts Strg unter Windows und Strg+Alt+D unter Linux (X11). Halten Sie die Taste beim Sprechen oder drücken Sie einmal zum Starten und noch einmal zum Stoppen.",
     },
     {
       q: "Funktioniert es unter Windows und Linux?",
