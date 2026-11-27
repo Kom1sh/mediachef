@@ -3,21 +3,21 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Tagliare un video senza perdere qualità — gratis, offline, immediato",
+  title: "Tagliare un video senza ricodifica, gratis e offline",
   description:
-    "Come estrarre uno spezzone da un video sul tuo computer senza toccare la qualità: il flusso viene copiato, non ricalcolato, quindi il lavoro finisce in centesimi di secondo. Dentro: tempi misurati e il limite dei fotogrammi chiave spiegato senza giri di parole.",
+    "Taglia un MP4 senza ricodificarlo in MediaChef. Imposta inizio e fine e scopri perché il taglio può partire da un fotogramma chiave precedente.",
   h1: "Tagliare un video senza perdere qualità",
   crumb: "Tagliare un video",
 
   answer:
-    "Trascina il video in MediaChef, scegli «Taglia senza ricodificare», scrivi inizio e fine in formato HH:MM:SS e avvia. Lo spezzone compare accanto all'originale. Non viene ricalcolato nulla: il flusso è copiato così com'è, quindi l'immagine è identica bit per bit a prima e il lavoro finisce in centesimi di secondo — 0,03 secondi nelle nostre misure, che lo spezzone duri cinque secondi o quindici. L'unico limite è che i tagli possono cadere solo su un fotogramma chiave, e sotto è spiegato perché.",
+    "Trascina un MP4 in MediaChef, scegli «Taglia il video senza ricodificare» e inserisci inizio e fine in HH:MM:SS. Per un tratto da 1:00 a 1:10, usa 00:01:00 e 00:01:10. MediaChef salva un nuovo MP4 accanto all’originale e copia video e audio senza ricodificarli. Tra due fotogrammi chiave, il tratto può iniziare prima del punto richiesto.",
 
   facts: [
     { k: "Cosa serve", v: `MediaChef ${FACTS.version} — un download, FFmpeg è già dentro` },
     { k: "Funziona offline", v: "Sì, del tutto — la rete non viene mai toccata" },
     { k: "Costo in qualità", v: "Nessuno. Non si ricodifica niente, il flusso viene copiato" },
     { k: "Formato orario", v: "HH:MM:SS. Fine vuota significa: fino alla fine del file" },
-    { k: "Velocità", v: "Circa 0,03 s, e non cresce con la durata" },
+    { k: "Velocità", v: "0,03–0,04 s per i brevi esempi in 1080p qui sotto" },
     { k: "Cosa ottieni", v: "clip.trim.mp4 accanto all'originale, che resta al suo posto" },
   ],
 
@@ -43,12 +43,12 @@ export default {
       p: "MediaChef legge il file con ffprobe e mostra solo le ricette adatte. La scheda del taglio la riceve qualsiasi video, qualunque sia il formato di partenza.",
     },
     {
-      h: "Scegli «Taglia senza ricodificare» e scrivi gli orari",
-      p: "Inizio e fine in formato HH:MM:SS — 00:01:30 è un minuto e mezzo. Se lasci la fine vuota, lo spezzone va dal punto d'inizio fino alla fine del file.",
+      h: "Scegli «Taglia il video senza ricodificare» e inserisci i tempi",
+      p: "Il campo Fine è in «Avanzate». Per un tratto da 1:00 a 1:10, inserisci 00:01:00 e 00:01:10. Lascia vuota la fine per conservare tutto dal punto di inizio al termine del file.",
     },
     {
-      h: "Avvia e prendi lo spezzone",
-      p: "Il risultato arriva accanto all'originale con il nome clip.trim.mp4, e l'originale resta intatto. È abbastanza veloce da finire prima che tu abbia distolto lo sguardo.",
+      h: "Fai clic su «Aggiungi alla coda»",
+      p: "Al termine, apri clip.trim.mp4. La coda mostra dove è stato salvato il file. Di norma si trova accanto all’originale. Controlla i primi secondi se ti serve un inizio preciso.",
     },
   ],
   shotAlt:
@@ -60,7 +60,7 @@ export default {
       id: "speed",
       title: "Quanto è veloce davvero",
       lead:
-        "Dato che non si ricalcola nulla, il lavoro si riduce a copiare i byte che servono. Il tempo non dipende dalla durata dello spezzone — misurato su una sorgente 1080p di venti secondi.",
+        "I tempi sono stati misurati su un video di 20 secondi in 1080p. La ricetta copia i dati selezionati. La dimensione del tratto e la velocità del disco influiscono sul tempo.",
       head: ["Spezzone estratto", "Risultato", "Tempo"],
       rows: [
         ["00:00:02 → 00:00:07", "5,2 s", "0,03 s"],
@@ -120,12 +120,8 @@ export default {
   whyTitle: "Perché tagliare sul proprio computer",
   whyBullets: [
     {
-      h: "Non si carica niente.",
-      p: "Tagliare è di solito la prima cosa che si fa al materiale grezzo, cioè esattamente a quello che non hai ancora fatto vedere a nessuno. Resta sul tuo disco.",
-    },
-    {
-      h: "Nessuna attesa.",
-      p: "Uno strumento web deve ricevere il file intero prima di tirarne fuori dieci secondi. Qui il lavoro finisce in centesimi di secondo, con file di qualunque dimensione.",
+      h: "Nessun caricamento sul cloud.",
+      p: "MediaChef taglia il video sul tuo computer. L’originale e il ritaglio restano sul dispositivo.",
     },
     {
       h: "Nessun costo in qualità.",
@@ -179,7 +175,7 @@ export default {
     },
     {
       q: "Quanto ci mette?",
-      a: "Circa 0,03 secondi nelle nostre misure, e non cresce con la durata dello spezzone: cinque secondi e quindici secondi hanno impiegato lo stesso tempo. Ricodificare la stessa sorgente ha richiesto da 1,3 a 2,0 secondi, cioè una cinquantina di volte tanto.",
+      a: "I brevi tagli della tabella hanno richiesto 0,03–0,04 s sul nostro video di 20 secondi in 1080p. Il tempo dipende dai dati da copiare e dalla velocità del disco.",
     },
     {
       q: "Come si scrivono inizio e fine?",
@@ -187,7 +183,7 @@ export default {
     },
     {
       q: "Cosa succede se lascio la fine vuota?",
-      a: "Lo spezzone va dal tuo punto d'inizio fino alla fine del file. È il modo più rapido per tagliare una coda lunga — per esempio una registrazione andata avanti dopo la fine della riunione.",
+      a: "Lascia vuota la fine per conservare tutto dal punto di inizio. Per togliere la coda della registrazione, indica il momento in cui il tratto deve finire.",
     },
     {
       q: "Posso togliere un pezzo in mezzo e tenere il resto?",
@@ -203,11 +199,11 @@ export default {
     },
     {
       q: "C'è un limite di durata o di dimensione?",
-      a: "No. MediaChef non ne impone, e dato che il lavoro è una copia e non un calcolo, un file di due ore non si taglia più lentamente di uno di due minuti. Il limite è lo spazio libero sul disco, che il programma controlla prima di partire.",
+      a: "MediaChef non impone un limite alle dimensioni del file in ingresso per questa ricetta. Serve spazio libero per il nuovo tratto.",
     },
     {
       q: "Quali formati posso tagliare?",
-      a: "Tutto ciò che FFmpeg sa leggere: MP4, MKV, MOV, WebM, AVI, TS e altri. Il risultato viene scritto in MP4 con dentro i flussi video e audio originali.",
+      a: "Un caso comune è MP4 con video H.264 e audio AAC. Altri contenitori funzionano se le tracce selezionate si possono copiare in MP4. Se il codec impedisce l’esportazione, converti prima il file di origine in MP4.",
     },
     {
       q: "Posso tagliare più video insieme?",

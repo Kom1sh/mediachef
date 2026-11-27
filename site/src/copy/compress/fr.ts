@@ -5,20 +5,20 @@ import { FACTS } from "../../facts";
 export default {
   title: "Compresser une vidéo — gratuit, hors ligne, sans limite de taille",
   description:
-    "Comment réduire la taille d'une vidéo sur votre ordinateur : choisissez l'un des trois niveaux de qualité et lancez. Rien n'est envoyé, aucun plafond de taille, aucun filigrane. À l'intérieur : tailles mesurées, débits obtenus, et le cas où compresser agrandit le fichier.",
+    "Compressez un MP4 hors ligne dans MediaChef. Choisissez un niveau de qualité ou indiquez un poids cible en Mo pour respecter une limite.",
   h1: "Compresser une vidéo sur votre propre ordinateur",
   crumb: "Compresser une vidéo",
 
   answer:
-    "Déposez la vidéo dans MediaChef, choisissez la recette « Compresser la vidéo », sélectionnez un niveau de qualité et lancez. Le fichier réduit apparaît à côté de l'original, qui reste intact. Chaque cran de l'échelle — 23, 28, 33 — divise le fichier par environ deux : dans nos mesures 23 a donné 5,5–10 Mbit/s, 28 a donné 2,7–4,6 et 33 environ 1,6. Rien n'est envoyé, il n'y a pas de plafond de taille, et vingt secondes de 1080p sont réencodées en moins de deux secondes.",
+    "Déposez une vidéo dans MediaChef. Pour alléger le fichier, choisissez « Compresser la vidéo (préréglage de qualité) » et commencez avec le CRF 28. Pour respecter une limite en Mo, choisissez « Compresser une vidéo à une taille donnée » et indiquez le maximum. Lancez le traitement et vérifiez le MP4 obtenu. L’original reste sur votre ordinateur.",
 
   facts: [
     { k: "Ce qu'il faut", v: `MediaChef ${FACTS.version} — un téléchargement, FFmpeg est déjà dedans` },
     { k: "Fonctionne hors ligne", v: "Oui, entièrement — le réseau n'est jamais sollicité" },
     { k: "Niveaux de qualité", v: "23 (haute) · 28 (par défaut) · 33 (petit fichier)" },
-    { k: "Codec", v: `Vidéo H.264, audio AAC à 128 kbit/s (FFmpeg ${FACTS.ffmpeg})` },
-    { k: "Ce que vous obtenez", v: "clip.compressed.mp4 à côté de l'original, qui est conservé" },
-    { k: "Vitesse", v: "20 s de 1080p30 en 1,3–2,0 s sur un portable Apple Silicon" },
+    { k: "Codec", v: `CRF: Vidéo H.264, audio AAC à 128 kbit/s (FFmpeg ${FACTS.ffmpeg})` },
+    { k: "Ce que vous obtenez", v: "clip.compressed.mp4 (CRF) · clip.small.mp4 (Mo)" },
+    { k: "Vitesse", v: "CRF: 20 s de 1080p30 en 1,3–2,0 s sur un portable Apple Silicon" },
   ],
 
   toc: [
@@ -43,12 +43,12 @@ export default {
       p: "MediaChef lit le fichier avec ffprobe et ne garde que les recettes qui conviennent. N'importe quelle vidéo reçoit la fiche de compression, quel que soit le format d'origine.",
     },
     {
-      h: "Choisissez « Compresser la vidéo » et un niveau",
-      p: "Un seul réglage : 23, 28 ou 33, où un nombre plus bas signifie une meilleure image et un fichier plus gros. 28 est la valeur par défaut et le bon premier choix pour presque tout.",
+      h: "Choisissez la qualité ou la taille cible",
+      p: "Pour alléger le fichier, choisissez « Compresser la vidéo (préréglage de qualité) » et essayez 28. Pour une limite en Mo, choisissez « Compresser une vidéo à une taille donnée » et indiquez le maximum. L’application calcule le débit d’après la durée et peut réduire la résolution.",
     },
     {
-      h: "Lancez et comparez",
-      p: "Le résultat arrive à côté de l'original sous le nom clip.compressed.mp4. Le fichier source n'est pas modifié : vous pouvez regarder les deux et relancer la recette à un autre niveau si vous vous êtes trompé.",
+      h: "Cliquez sur « Ajouter à la file »",
+      p: "Vérifiez la taille une fois le traitement terminé. La file indique l’emplacement du fichier. Par défaut, il est enregistré à côté de l’original. Le mode qualité crée clip.compressed.mp4. Le mode taille cible crée clip.small.mp4.",
     },
   ],
   shotAlt:
@@ -65,7 +65,7 @@ export default {
       rows: [
         ["23", "Difficile à distinguer de l'original à distance normale", "La vidéo compte pour elle-même : une pièce de portfolio, un rush que vous remonterez, tout ce qui passera sur grand écran."],
         ["28", "Bonne. Le détail fin s'adoucit si on le cherche", "La valeur par défaut. Partager, publier, envoyer — le bon niveau tant qu'il n'y a pas de raison d'en changer."],
-        ["33", "Visiblement plus mou ; des blocs apparaissent sur le mouvement rapide et les scènes sombres", "Le fichier doit tenir dans une limite précise. À choisir exprès, pas par défaut."],
+        ["33", "Visiblement plus mou ; des blocs apparaissent sur le mouvement rapide et les scènes sombres", "Choisissez 33 si un fichier plus léger vaut une perte visible de détails. Pour une limite en Mo, utilisez le mode taille cible."],
       ],
       note:
         "Comme c'est la qualité qui est visée, le même niveau donne un petit fichier sur une capture d'écran statique et un gros sur une prise à main levée où bougent des feuilles. Deux clips au niveau 28 peuvent différer plusieurs fois.",
@@ -74,7 +74,7 @@ export default {
       id: "size",
       title: "Ce que vous obtenez vraiment",
       lead:
-        "Mesuré sur deux clips 1080p30 de vingt secondes : l'un avec des dégradés doux et un mouvement continu, l'autre avec du détail fin dans toute l'image — à peu près le côté facile et le côté difficile de ce que rencontre un encodeur. La colonne du débit est celle qui se transpose à votre matériau ; les mégaoctets sont propres à ces clips.",
+        "Mesures en CRF sur deux clips de 20 secondes en 1080p30, l’un avec des dégradés et l’autre riche en détails. Les tailles et les débits sont propres à ces deux clips.",
       head: ["Niveau", "Clip doux", "Clip détaillé", "Débit obtenu"],
       rows: [
         ["Source", "47,0 Mo", "23,9 Mo", "10–20 Mbit/s"],
@@ -119,8 +119,8 @@ export default {
   whyTitle: "Pourquoi compresser sur son propre ordinateur",
   whyBullets: [
     {
-      h: "Rien n'est envoyé.",
-      p: "La vidéo qu'on veut réduire est souvent celle qu'on n'a pas encore publiée. Elle reste sur votre disque : aucune copie sur un serveur dont il faudrait croire la politique de conservation.",
+      h: "Aucun envoi dans le cloud.",
+      p: "MediaChef compresse la vidéo sur votre ordinateur. L’original et le fichier compressé restent sur votre appareil.",
     },
     {
       h: "Aucune limite de taille.",
@@ -146,7 +146,7 @@ export default {
   notFor: [
     {
       h: "Vous n'avez besoin que d'un extrait.",
-      p: "Couper d'abord est gratuit : la recette « Découper sans réencoder » copie le flux au lieu de le recalculer, en centièmes de seconde et sans perte. Coupez, puis compressez si c'est encore trop gros.",
+      p: "Si vous n’avez besoin que d’un extrait, commencez par « Découper la vidéo sans réencodage ». La recette copie les pistes sans réencodage. Compressez l’extrait si nécessaire.",
     },
     {
       h: "Le fichier est déjà fortement compressé.",
@@ -166,7 +166,7 @@ export default {
   faq: [
     {
       q: "De combien mon fichier va-t-il diminuer ?",
-      a: "Cela dépend du débit dont vous partez, pas de la taille du fichier. Dans nos mesures, le niveau 28 a produit 2,7–4,6 Mbit/s et le niveau 33 environ 1,6 Mbit/s, quelle que soit la source. Divisez votre débit actuel par ces chiffres pour estimer : un enregistrement de téléphone à 40 Mbit/s tombe d'environ dix fois au niveau 28, alors qu'un téléchargement à 3 Mbit/s bouge à peine.",
+      a: "Cela dépend de la source et de sa durée. Avec le CRF 28, les deux clips du tableau font 11,0 et 6,4 Mo. Pour respecter un plafond, utilisez le mode taille cible.",
     },
     {
       q: "Que signifient les nombres 23, 28 et 33 ?",
@@ -174,7 +174,7 @@ export default {
     },
     {
       q: "Quel niveau choisir ?",
-      a: "Commencez à 28 — c'est la valeur par défaut et la bonne pour partager, envoyer et publier. Prenez 23 quand la vidéo compte pour elle-même et que vous la regarderez de près ou la remonterez. Prenez 33 seulement quand le fichier doit tenir dans une limite précise ; l'adoucissement se voit sur le mouvement rapide et dans les scènes sombres.",
+      a: "Commencez par 28. Essayez 23 pour conserver davantage de détails ou 33 pour obtenir un fichier plus léger. Pour un plafond en Mo, utilisez « Compresser une vidéo à une taille donnée » et vérifiez le résultat.",
     },
     {
       q: "Pourquoi la compression a-t-elle agrandi mon fichier ?",
@@ -182,15 +182,15 @@ export default {
     },
     {
       q: "Est-ce que la résolution change ?",
-      a: "Non. 1080p en entrée, 1080p en sortie ; la recette change la façon dont l'image est stockée, pas sa taille. Si vous voulez moins de pixels, utilisez « Réduire en 720p », qui s'attaque à la taille à sa source et se combine avec celle-ci.",
+      a: "Le mode qualité conserve la résolution. Le mode taille cible peut la réduire en fonction du débit disponible.",
     },
     {
       q: "Qu'advient-il du son ?",
-      a: "L'audio est réencodé en AAC à 128 kbit/s, quoi qu'il ait été avant. C'est assez transparent pour la parole et pour la musique d'un clip qu'on partage. S'il vous faut l'audio d'origine intact, extrayez-le avant avec « Extraire l'audio en MP3 » ou gardez le fichier source.",
+      a: "Le mode qualité réencode le son en AAC à 128 kbit/s. Le mode taille cible peut réduire le débit audio. Conservez l’original si vous avez besoin du son intact.",
     },
     {
       q: "Le fichier d'origine est-il écrasé ?",
-      a: "Non. Le résultat est écrit à côté sous le nom clip.compressed.mp4, et la source n'est ni modifiée, ni renommée, ni supprimée. Vous pouvez relancer la recette à un autre niveau et comparer.",
+      a: "Les deux modes créent un nouveau MP4 à côté de l’original : clip.compressed.mp4 pour la qualité et clip.small.mp4 pour la taille cible. L’original est conservé.",
     },
     {
       q: "Combien de temps cela prend-il ?",
@@ -202,7 +202,7 @@ export default {
     },
     {
       q: "Compresser deux fois donnera-t-il encore plus petit ?",
-      a: "Plus petit oui, mais chaque passe perd de la qualité définitivement et la seconde gagne beaucoup moins que la première. Si le résultat est encore lourd, repartez de l'original avec un nombre plus élevé plutôt que d'empiler les passes sur la copie compressée.",
+      a: "Un deuxième passage peut réduire ou augmenter la taille et dégrader encore l’image. Si le premier résultat dépasse le plafond, utilisez la recette de taille cible sur l’original.",
     },
     {
       q: "Quels formats puis-je compresser ?",

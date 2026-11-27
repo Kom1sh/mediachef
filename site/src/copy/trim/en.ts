@@ -1,29 +1,29 @@
 // Гайд «обрезать видео», английский. Эталон формы для остальных девяти языков.
 //
 // Цифры — наши измерения: обрезка 20-секундного 1080p занимала 0,026–0,04 с
-// при любой длине куска, кодек не менялся. Отдельно измерена привязка к
+// на трёх коротких отрезках источника. Отдельно измерена привязка к
 // опорным кадрам на двух файлах с разным их интервалом — это главная
 // особенность рецепта и причина, по которой люди считают такие инструменты
 // сломанными.
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Trim a video without re-encoding — free, offline, instant",
+  title: "Trim video without re-encoding — free and offline",
   description:
-    "Cut a piece out of a video on your own computer without touching the quality: the stream is copied, not recalculated, so it finishes in hundredths of a second whatever the length. Measured times, and the keyframe limit explained honestly.",
+    "Cut an MP4 without re-encoding in MediaChef. Set start and end times, save the clip locally, and see why the start can move to an earlier keyframe.",
   h1: "Trim a video without losing quality",
   crumb: "Trim video",
 
   answer:
-    "Drop the video into MediaChef, pick “Trim without re-encoding”, type the start and end as HH:MM:SS, then press start. The piece appears next to the original. Nothing is recalculated — the stream is copied as it is, so the picture is bit-for-bit what it was and the job finishes in hundredths of a second: in our measurements 0.03 seconds, whether the piece was five seconds or fifteen. The one catch is that cuts can only land on a keyframe, which is explained below.",
+    "Drop an MP4 into MediaChef, choose “Trim video without re-encoding”, and enter Start and End as HH:MM:SS. End is under “Advanced”. For a clip from 1:00 to 1:10, enter 00:01:00 and 00:01:10. Click “Add to queue”. MediaChef writes a new MP4 and copies the selected video and audio without re-encoding. If the start falls between keyframes, the clip can begin earlier than requested.",
 
   facts: [
     { k: "What you need", v: `MediaChef ${FACTS.version} — one download, FFmpeg is already inside` },
     { k: "Works offline", v: "Yes, completely — the network is never touched" },
     { k: "Quality cost", v: "None. Nothing is re-encoded; the stream is copied" },
     { k: "Time format", v: "HH:MM:SS. Leave the end empty to cut to the end of the file" },
-    { k: "Speed", v: "About 0.03 s, and it does not grow with the length of the piece" },
-    { k: "Output", v: "clip.trim.mp4, next to the source; the original is kept" },
+    { k: "Speed", v: "0.03–0.04 s for the short 1080p examples below" },
+    { k: "Output", v: "clip.trim.mp4, beside the source by default" },
   ],
 
   toc: [
@@ -48,12 +48,12 @@ export default {
       p: "MediaChef reads the file with ffprobe and shows only the recipes that fit it. Any video gets the trim card, whatever the source format.",
     },
     {
-      h: "Pick “Trim without re-encoding” and type the times",
-      p: "Start and end as HH:MM:SS — 00:01:30 is one minute thirty. Leaving the end empty cuts from the start point to the end of the file.",
+      h: "Choose “Trim video without re-encoding” and enter the times",
+      p: "End is under “Advanced”. For a clip from 1:00 to 1:10, enter 00:01:00 and 00:01:10. Leave End blank to keep everything from Start to the end of the file.",
     },
     {
-      h: "Press start and take the piece",
-      p: "The result lands next to the original as clip.trim.mp4, and the original is untouched. It is fast enough that the job is finished before you have looked away.",
+      h: "Click “Add to queue”",
+      p: "Open clip.trim.mp4 when the job finishes. The queue shows the output path. By default the file is saved beside the source. Check the first few seconds if you need the clip to start at a particular moment.",
     },
   ],
   shotAlt:
@@ -65,7 +65,7 @@ export default {
       id: "speed",
       title: "How fast it actually is",
       lead:
-        "Because nothing is recalculated, the work is a file copy of the relevant bytes. The time does not depend on how long the piece is — measured on a 20-second 1080p source.",
+        "These timings are from one 20-second 1080p source. The recipe copies the selected data, so the size of the exported clip and the speed of the drive affect how long it takes.",
       head: ["Piece cut", "Result", "Time taken"],
       rows: [
         ["00:00:02 → 00:00:07", "5.2 s", "0.03 s"],
@@ -125,12 +125,8 @@ export default {
   whyTitle: "Why trim on your own computer",
   whyBullets: [
     {
-      h: "Nothing is uploaded.",
-      p: "Trimming is usually the first thing you do to raw footage, which is exactly the footage you have not shown anyone. It stays on your disk.",
-    },
-    {
-      h: "No waiting at all.",
-      p: "A web tool has to receive the whole file before it can cut ten seconds out of it. Here the work is over in hundredths of a second, on a file of any size.",
+      h: "No cloud uploads.",
+      p: "MediaChef trims the video on your computer. The original and the finished clip stay on your device.",
     },
     {
       h: "No quality cost.",
@@ -184,7 +180,7 @@ export default {
     },
     {
       q: "How long does it take?",
-      a: "About 0.03 seconds in our measurements, and it does not grow with the length of the piece: five seconds and fifteen seconds both finished in the same time. Re-encoding the same source took 1.3 to 2.0 seconds, roughly fifty times longer.",
+      a: "On our 20-second 1080p source, the three short cuts in the table took 0.03–0.04 seconds. In a separate test with the same recipe, copying 7 MB took about 0.02 seconds and copying 133 MB took about 0.08 seconds. Your time depends on the amount of data and the drive.",
     },
     {
       q: "How do I write the start and end?",
@@ -192,7 +188,7 @@ export default {
     },
     {
       q: "What if I leave the end empty?",
-      a: "The piece runs from your start point to the end of the file. That is the quickest way to drop a long tail — a recording that kept going after the meeting ended, for example.",
+      a: "Leave End blank to keep the rest of the file after Start. To remove a trailing section, enter an end time where you want the clip to stop.",
     },
     {
       q: "Can I cut a piece out of the middle and keep the rest?",
@@ -208,11 +204,11 @@ export default {
     },
     {
       q: "Is there a length or size limit?",
-      a: "No. MediaChef sets none, and because the work is a copy rather than a calculation, a two-hour file is no slower to trim than a two-minute one. The limit is free disk space, which the app checks before starting.",
+      a: "MediaChef does not set an input size cap for this recipe. Leave enough free disk space to write the new clip.",
     },
     {
       q: "Which formats can I trim?",
-      a: "Anything FFmpeg reads: MP4, MKV, MOV, WebM, AVI, TS and the rest. The result is written as MP4 with the original video and audio streams inside it.",
+      a: "MP4 with H.264 video and AAC audio is a common case. Other input containers can work if the selected video and audio codecs can be copied into MP4. If the export fails for an incompatible codec, convert the source to MP4 first.",
     },
     {
       q: "Can I trim several videos at once?",

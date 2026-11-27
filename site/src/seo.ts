@@ -377,9 +377,8 @@ export function itemListLd(
  * отдельно: разойтись они тогда не могут. Дублирование видимого текста —
  * не скрытый контент: это ровно то, что человек видит глазами.
  *
- * `dateModified` двигается вместе с FACTS.updated, который правится руками при
- * правке текстов. Дата, которая не двигается при реальных изменениях, — частая
- * и бессмысленная ошибка: свежесть влияет на цитируемость, но только настоящая.
+ * `dateModified` передаёт дату изменения конкретного гайда, если она известна.
+ * Для остальных страниц сохраняется дата версии сайта.
  */
 export function guideArticleLd(opts: {
   locale: Locale;
@@ -388,6 +387,7 @@ export function guideArticleLd(opts: {
   description: string;
   body: string;
   imageUrl: string;
+  dateModified?: string;
 }) {
   return {
     "@context": "https://schema.org",
@@ -399,7 +399,7 @@ export function guideArticleLd(opts: {
     url: opts.url,
     mainEntityOfPage: { "@type": "WebPage", "@id": opts.url },
     datePublished: FACTS.updated,
-    dateModified: FACTS.updated,
+    dateModified: opts.dateModified ?? FACTS.updated,
     author: { "@id": ORG_ID },
     publisher: { "@id": ORG_ID },
     image: opts.imageUrl,

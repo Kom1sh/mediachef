@@ -6,22 +6,22 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Compress video — free, offline, no size limit",
+  title: "Compress a video offline by quality or file size",
   description:
-    "Make a video file smaller on your own computer: pick one of three quality levels, press start. No upload, no size cap, no watermark. Measured sizes, resulting bitrates, and the one case where compressing makes the file bigger.",
-  h1: "Compress video on your own computer",
+    "Compress an MP4 offline in MediaChef. Choose a quality preset for a smaller file or enter a target in MB for an attachment limit.",
+  h1: "Compress a video offline in MediaChef",
   crumb: "Compress video",
 
   answer:
-    "Drop the video into MediaChef, pick the “Compress video” recipe, choose a quality level, then press start. The smaller file appears next to the original, which is left untouched. Each step down the scale — 23, 28, 33 — roughly halves the file: in our measurements 23 gave 5.5–10 Mbit/s, 28 gave 2.7–4.6, and 33 gave about 1.6. Nothing is uploaded, there is no size cap, and a 20-second 1080p clip re-encodes in under two seconds.",
+    "Drop a video into MediaChef. To make it smaller, choose “Compress video (quality preset)” and start at CRF 28. If the file has to fit a limit such as 8 MB, choose “Compress video to a file size” and enter that number as Target size. Click “Add to queue”, then check the size of the new MP4. The original stays on your computer.",
 
   facts: [
     { k: "What you need", v: `MediaChef ${FACTS.version} — one download, FFmpeg is already inside` },
     { k: "Works offline", v: "Yes, completely — the network is never touched" },
     { k: "Quality levels", v: "23 (high) · 28 (default) · 33 (small file)" },
-    { k: "Codec", v: `H.264 video, AAC 128 kbps audio (FFmpeg ${FACTS.ffmpeg})` },
-    { k: "Output", v: "clip.compressed.mp4, next to the source; the original is kept" },
-    { k: "Speed", v: "20 s of 1080p30 in 1.3–2.0 s on an Apple Silicon laptop" },
+    { k: "Codec", v: `CRF: H.264 video, AAC 128 kbps audio (FFmpeg ${FACTS.ffmpeg})` },
+    { k: "Output", v: "clip.compressed.mp4 (CRF) · clip.small.mp4 (MB)" },
+    { k: "Speed", v: "CRF: 20 s of 1080p30 in 1.3–2.0 s on an Apple Silicon laptop" },
   ],
 
   toc: [
@@ -46,12 +46,12 @@ export default {
       p: "MediaChef reads the file with ffprobe and shows only the recipes that fit it. Any video gets the compress card, whatever the source format.",
     },
     {
-      h: "Pick “Compress video” and a quality level",
-      p: "One setting: 23, 28 or 33, where a lower number means better picture and a larger file. 28 is the default and the right first guess for almost everything.",
+      h: "Choose a quality level or a target size",
+      p: "For a smaller file, choose “Compress video (quality preset)” and start at 28. For a limit in MB, choose “Compress video to a file size” and enter the cap under Target size. The app calculates the bitrate from the clip’s length and may reduce the resolution to fit the budget.",
     },
     {
-      h: "Press start and compare",
-      p: "The result lands next to the original as clip.compressed.mp4. The original file is not modified, so you can look at both and run the recipe again at a different level if you were wrong.",
+      h: "Click “Add to queue”",
+      p: "Check the result once the job finishes. The queue shows the output path. By default the file is saved beside the source. The quality preset writes clip.compressed.mp4. The size recipe writes clip.small.mp4. In a test on a noisy 20-second 720p clip with audio, an 8 MB target produced a 7.36 MB MP4.",
     },
   ],
   shotAlt:
@@ -68,7 +68,7 @@ export default {
       rows: [
         ["23", "Hard to tell from the original at normal viewing distance", "The video matters: a portfolio piece, footage you will edit again, anything going on a big screen."],
         ["28", "Good. Softer on fine detail if you look for it", "The default. Sharing, uploading, sending — the level that is right unless you have a reason."],
-        ["33", "Visibly softer; blocking shows on fast motion and dark scenes", "The file has to fit somewhere specific. Choose this deliberately, not by default."],
+        ["33", "Visibly softer; blocking shows on fast motion and dark scenes", "Use 33 when you can accept more visible compression in exchange for a smaller file. For a cap in MB, use the size recipe."],
       ],
       note:
         "Because the target is quality, the same level gives a small file for a static screen recording and a large one for handheld footage of moving leaves. Two clips at level 28 can differ several times over.",
@@ -77,7 +77,7 @@ export default {
       id: "size",
       title: "What you actually get",
       lead:
-        "Measured on two 20-second 1080p30 clips: one with smooth gradients and continuous movement, one with fine detail across the whole frame — roughly the easy and the hard end of what an encoder meets. The bitrate column is the number that transfers to your own footage; the megabytes are specific to these clips.",
+        "These are CRF measurements on two 20-second 1080p30 clips. One has smooth gradients and the other has fine detail. Both file sizes and bitrates are specific to those clips.",
       head: ["Level", "Smooth clip", "Detailed clip", "Resulting bitrate"],
       rows: [
         ["Source", "47.0 MB", "23.9 MB", "10–20 Mbit/s"],
@@ -106,7 +106,7 @@ export default {
       id: "changes",
       title: "What changes and what stays as it was",
       lead:
-        "The recipe re-encodes; it does not reframe. Knowing exactly what it touches saves a round of surprises.",
+        "This table applies to the CRF preset. The preset re-encodes the video while keeping its resolution.",
       head: ["Property", "After compressing", "Note"],
       rows: [
         ["Resolution", "Unchanged", "1080p in, 1080p out. Use the resize recipe if you want fewer pixels."],
@@ -122,8 +122,8 @@ export default {
   whyTitle: "Why compress on your own computer",
   whyBullets: [
     {
-      h: "Nothing is uploaded.",
-      p: "The video you want to shrink is usually the one you have not published yet. It stays on your disk — no copy on a server whose retention policy you would have to trust.",
+      h: "No cloud uploads.",
+      p: "MediaChef compresses the video on your computer. The original and the compressed file stay on your device.",
     },
     {
       h: "No size limit.",
@@ -149,7 +149,7 @@ export default {
   notFor: [
     {
       h: "You only need part of the clip.",
-      p: "Cutting first is free: the “Trim without re-encoding” recipe copies the stream instead of recalculating it, in hundredths of a second and with no quality loss. Trim, then compress if it is still too big.",
+      p: "If you only need one part, use “Trim video without re-encoding” first. It copies the selected data without re-encoding. Compress the shorter clip if it is still too large.",
     },
     {
       h: "The file is already heavily compressed.",
@@ -169,7 +169,7 @@ export default {
   faq: [
     {
       q: "How much smaller will my file get?",
-      a: "It depends on the bitrate you start from, not on the file size. In our measurements level 28 produced 2.7–4.6 Mbit/s and level 33 about 1.6 Mbit/s, whatever the source was. Divide your current bitrate by those numbers to estimate: a 40 Mbit/s phone recording drops roughly tenfold at level 28, while a 3 Mbit/s download barely moves.",
+      a: "The size reduction depends on the source and its duration. At CRF 28, the two clips in the table came out at 11.0 and 6.4 MB. Use the target-size recipe if the result must fit a limit in MB.",
     },
     {
       q: "What does the number 23, 28 or 33 mean?",
@@ -177,7 +177,7 @@ export default {
     },
     {
       q: "Which level should I choose?",
-      a: "Start at 28 — it is the default and it is right for sharing, sending and uploading. Use 23 when the video itself matters and you will look at it closely or edit it again. Use 33 only when the file has to fit a specific limit; the softening is visible on fast motion and in dark scenes.",
+      a: "Start at 28 for everyday use. Try 23 for more detail or 33 for a smaller file with more visible compression. For a fixed cap, use “Compress video to a file size”, enter the limit in MB and check the result.",
     },
     {
       q: "Why did compressing make my file bigger?",
@@ -185,15 +185,15 @@ export default {
     },
     {
       q: "Does it change the resolution?",
-      a: "No. 1080p in means 1080p out; the recipe changes how the picture is stored, not how big it is. If you want fewer pixels, use the “Resize to 720p” recipe, which addresses size at its source and can be combined with this one.",
+      a: "The quality preset keeps the resolution. When the target is in MB, MediaChef may reduce the resolution to fit the available bitrate.",
     },
     {
       q: "What happens to the sound?",
-      a: "The audio is re-encoded to AAC at 128 kbps, whatever it was before. That is transparent enough for speech and for music in a clip you are sharing. If you need the original audio untouched, extract it first with “Extract audio to MP3” or keep the source file.",
+      a: "The quality preset encodes audio as AAC at 128 kbps. The target-size recipe can use a lower audio bitrate for a tight limit. Keep the source if you need its original audio.",
     },
     {
       q: "Is the original file overwritten?",
-      a: "No. The result is written next to it as clip.compressed.mp4, and the source is not modified, renamed or deleted. You can run the recipe again at another level and compare.",
+      a: "Both recipes keep the source and write a new MP4. The queue shows the output path.",
     },
     {
       q: "How long does it take?",
@@ -205,7 +205,7 @@ export default {
     },
     {
       q: "Will compressing twice make it even smaller?",
-      a: "Smaller, yes, but each pass loses quality permanently, and the second pass wins far less than the first. If the result is still too heavy, go back to the original and use a higher number instead of stacking passes on the compressed copy.",
+      a: "A second pass can make the file smaller or larger and can reduce picture quality further. If the first result is too large, run the size recipe on the original.",
     },
     {
       q: "Which formats can I compress?",

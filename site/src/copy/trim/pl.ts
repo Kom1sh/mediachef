@@ -3,21 +3,21 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Przytnij wideo bez utraty jakości — za darmo, offline, od razu",
+  title: "Jak przyciąć wideo bez ponownego kodowania i bez internetu",
   description:
-    "Jak wyciąć fragment z filmu na własnym komputerze, nie ruszając jakości: strumień jest kopiowany, a nie przeliczany od nowa, więc robota kończy się w setnych częściach sekundy. W środku: zmierzone czasy i uczciwie wyjaśnione ograniczenie klatek kluczowych.",
+    "Przytnij MP4 w MediaChef bez ponownego kodowania. Ustaw początek i koniec i sprawdź, dlaczego klip może zacząć się wcześniej.",
   h1: "Przycinanie wideo bez utraty jakości",
   crumb: "Przytnij wideo",
 
   answer:
-    "Przeciągnij film do MediaChef, wybierz „Przytnij bez ponownego kodowania”, wpisz początek i koniec w formacie HH:MM:SS i uruchom. Fragment pojawi się obok oryginału. Nic nie jest przeliczane: strumień jest kopiowany bez zmian, więc obraz jest bit w bit taki sam jak wcześniej, a robota kończy się w setnych częściach sekundy — 0,03 sekundy w naszych pomiarach, niezależnie od tego, czy fragment ma pięć sekund, czy piętnaście. Jedyne ograniczenie to to, że cięcia mogą wypadać wyłącznie na klatce kluczowej — o tym niżej.",
+    "Przeciągnij plik MP4 do MediaChef, wybierz „Przytnij wideo bez ponownego kodowania” i podaj początek i koniec w formacie GG:MM:SS. Dla odcinka od 1:00 do 1:10 wpisz 00:01:00 i 00:01:10. MediaChef zapisze nowy MP4 obok oryginału i skopiuje obraz oraz dźwięk bez ponownego kodowania. Między klatkami kluczowymi początek może wypaść wcześniej.",
 
   facts: [
     { k: "Czego potrzebujesz", v: `MediaChef ${FACTS.version} — jedno pobranie, FFmpeg jest już w środku` },
     { k: "Działa offline", v: "Tak, w pełni — sieć nigdy nie jest ruszana" },
     { k: "Koszt jakości", v: "Zerowy. Nic nie jest kodowane od nowa, strumień jest kopiowany" },
     { k: "Format czasu", v: "HH:MM:SS. Puste pole końca oznacza: do końca pliku" },
-    { k: "Szybkość", v: "Około 0,03 s i nie rośnie wraz z długością" },
+    { k: "Szybkość", v: "0,03–0,04 s dla krótkich przykładów 1080p poniżej" },
     { k: "Co dostajesz", v: "clip.trim.mp4 obok oryginału, który zostaje na miejscu" },
   ],
 
@@ -43,12 +43,12 @@ export default {
       p: "MediaChef czyta plik przez ffprobe i pokazuje tylko te przepisy, które do niego pasują. Kartę przycinania dostaje każdy film, niezależnie od formatu źródła.",
     },
     {
-      h: "Wybierz „Przytnij bez ponownego kodowania” i wpisz czasy",
-      p: "Początek i koniec w formacie HH:MM:SS — 00:01:30 to półtorej minuty. Jeśli zostawisz koniec pusty, fragment poleci od punktu startu do końca pliku.",
+      h: "Wybierz „Przytnij wideo bez ponownego kodowania” i podaj czasy",
+      p: "Pole końca znajduje się w sekcji „Zaawansowane”. Dla odcinka od 1:00 do 1:10 wpisz 00:01:00 i 00:01:10. Zostaw pole końca puste, aby zachować wszystko od wskazanego początku do końca pliku.",
     },
     {
-      h: "Uruchom i odbierz fragment",
-      p: "Wynik ląduje obok oryginału jako clip.trim.mp4, a oryginał zostaje nietknięty. Jest na tyle szybko, że skończy się, zanim zdążysz odwrócić wzrok.",
+      h: "Kliknij „Dodaj do kolejki”",
+      p: "Po zakończeniu otwórz clip.trim.mp4. Kolejka pokazuje ścieżkę wyniku. Domyślnie plik trafia obok oryginału. Jeśli zależy Ci na dokładnym początku, sprawdź pierwsze sekundy.",
     },
   ],
   shotAlt:
@@ -60,7 +60,7 @@ export default {
       id: "speed",
       title: "Jak szybko to naprawdę działa",
       lead:
-        "Skoro nic nie jest przeliczane, robota sprowadza się do skopiowania potrzebnych bajtów. Czas nie zależy od długości fragmentu — mierzone na dwudziestosekundowym źródle 1080p.",
+        "Czasy zmierzyliśmy na jednym 20-sekundowym nagraniu 1080p. Przepis kopiuje wybrane dane, więc czas zależy od wielkości fragmentu i szybkości dysku.",
       head: ["Wycięty fragment", "Wynik", "Czas"],
       rows: [
         ["00:00:02 → 00:00:07", "5,2 s", "0,03 s"],
@@ -120,12 +120,8 @@ export default {
   whyTitle: "Dlaczego przycinać na własnym komputerze",
   whyBullets: [
     {
-      h: "Nic nie jest wysyłane.",
-      p: "Przycinanie to zwykle pierwsza rzecz, jaką robi się z surowym materiałem — czyli dokładnie z tym, czego nikomu jeszcze nie pokazywałeś. Zostaje na twoim dysku.",
-    },
-    {
-      h: "Zero czekania.",
-      p: "Narzędzie w przeglądarce musi przyjąć cały plik, zanim wyjmie z niego dziesięć sekund. Tutaj robota kończy się w setnych częściach sekundy, przy pliku dowolnej wielkości.",
+      h: "Bez wysyłania do chmury.",
+      p: "MediaChef przycina wideo na Twoim komputerze. Oryginał i gotowy fragment zostają na urządzeniu.",
     },
     {
       h: "Zero kosztu jakości.",
@@ -179,7 +175,7 @@ export default {
     },
     {
       q: "Ile to trwa?",
-      a: "Około 0,03 sekundy w naszych pomiarach i nie rośnie wraz z długością fragmentu: pięć sekund i piętnaście sekund zajęło tyle samo. Ponowne zakodowanie tego samego źródła zajęło od 1,3 do 2,0 sekundy, czyli jakieś pięćdziesiąt razy dłużej.",
+      a: "Krótkie cięcia z tabeli zajęły 0,03–0,04 s na naszym 20-sekundowym filmie 1080p. U Ciebie czas zależy od ilości kopiowanych danych i szybkości dysku.",
     },
     {
       q: "Jak wpisać początek i koniec?",
@@ -187,7 +183,7 @@ export default {
     },
     {
       q: "Co się stanie, jeśli zostawię koniec pusty?",
-      a: "Fragment poleci od twojego punktu startu do końca pliku. To najszybszy sposób na odcięcie długiego ogona — na przykład nagrania, które leciało dalej po zakończeniu spotkania.",
+      a: "Puste pole końca zachowuje wszystko od wybranego początku do końca pliku. Aby odciąć końcówkę, podaj moment, w którym klip ma się skończyć.",
     },
     {
       q: "Czy mogę wyciąć kawałek ze środka i zostawić resztę?",
@@ -203,11 +199,11 @@ export default {
     },
     {
       q: "Czy jest limit długości albo rozmiaru?",
-      a: "Nie. MediaChef żadnego nie ustawia, a skoro robota polega na kopiowaniu, a nie na liczeniu, dwugodzinny plik tnie się nie wolniej niż dwuminutowy. Granicą jest wolne miejsce na dysku, które program sprawdza przed startem.",
+      a: "MediaChef nie narzuca limitu rozmiaru pliku wejściowego dla tego przepisu. Na dysku musi być miejsce na nowy klip.",
     },
     {
       q: "Jakie formaty mogę przycinać?",
-      a: "Wszystko, co FFmpeg potrafi przeczytać: MP4, MKV, MOV, WebM, AVI, TS i inne. Wynik zapisuje się jako MP4 z oryginalnymi strumieniami wideo i audio w środku.",
+      a: "Typowy przypadek to MP4 z obrazem H.264 i dźwiękiem AAC. Inne kontenery też mogą działać, jeśli wybrane ścieżki da się zapisać w MP4. Gdy kodek uniemożliwia eksport, najpierw przekonwertuj źródło do MP4.",
     },
     {
       q: "Czy mogę przyciąć kilka filmów naraz?",

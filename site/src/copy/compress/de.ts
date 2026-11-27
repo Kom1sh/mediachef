@@ -5,20 +5,20 @@ import { FACTS } from "../../facts";
 export default {
   title: "Video komprimieren — kostenlos, offline, ohne Größengrenze",
   description:
-    "Wie Sie ein Video auf dem eigenen Rechner verkleinern: eine von drei Qualitätsstufen wählen, starten. Kein Hochladen, keine Größengrenze, kein Wasserzeichen. Drinnen: gemessene Größen, erreichte Bitraten und der Fall, in dem Komprimieren die Datei größer macht.",
+    "Komprimieren Sie ein MP4 offline in MediaChef. Wählen Sie eine Qualitätsstufe oder geben Sie ein Dateilimit in MB an.",
   h1: "Video komprimieren auf dem eigenen Rechner",
   crumb: "Video komprimieren",
 
   answer:
-    "Ziehen Sie das Video in MediaChef, wählen Sie das Rezept „Video komprimieren“, dann eine Qualitätsstufe, und starten Sie. Die kleinere Datei erscheint neben dem Original, das unangetastet bleibt. Jede Stufe der Skala — 23, 28, 33 — halbiert die Datei etwa: in unseren Messungen ergab 23 5,5–10 Mbit/s, 28 ergab 2,7–4,6 und 33 rund 1,6. Hochgeladen wird nichts, es gibt keine Größengrenze, und zwanzig Sekunden 1080p werden in unter zwei Sekunden neu kodiert.",
+    "Ziehen Sie das Video in MediaChef. Für eine kleinere Datei wählen Sie „Video komprimieren (Qualitätsvorgabe)“ und beginnen mit CRF 28. Bei einem Dateilimit in MB wählen Sie „Video auf eine Dateigröße komprimieren“ und geben das Maximum ein. Starten Sie den Auftrag und prüfen Sie das neue MP4. Das Original bleibt auf Ihrem Rechner.",
 
   facts: [
     { k: "Was Sie brauchen", v: `MediaChef ${FACTS.version} — ein Download, FFmpeg ist schon drin` },
     { k: "Läuft offline", v: "Ja, vollständig — das Netz wird nie angefasst" },
     { k: "Qualitätsstufen", v: "23 (hoch) · 28 (Standard) · 33 (kleine Datei)" },
-    { k: "Codec", v: `H.264-Video, AAC-Ton mit 128 kbit/s (FFmpeg ${FACTS.ffmpeg})` },
-    { k: "Ergebnis", v: "clip.compressed.mp4 neben dem Original, das erhalten bleibt" },
-    { k: "Geschwindigkeit", v: "20 s 1080p30 in 1,3–2,0 s auf einem Apple-Silicon-Notebook" },
+    { k: "Codec", v: `CRF: H.264-Video, AAC-Ton mit 128 kbit/s (FFmpeg ${FACTS.ffmpeg})` },
+    { k: "Ergebnis", v: "clip.compressed.mp4 (CRF) · clip.small.mp4 (MB)" },
+    { k: "Geschwindigkeit", v: "CRF: 20 s 1080p30 in 1,3–2,0 s auf einem Apple-Silicon-Notebook" },
   ],
 
   toc: [
@@ -43,12 +43,12 @@ export default {
       p: "MediaChef liest die Datei mit ffprobe und lässt nur die passenden Rezepte übrig. Jedes Video bekommt die Komprimieren-Karte, unabhängig vom Ausgangsformat.",
     },
     {
-      h: "„Video komprimieren“ und eine Stufe wählen",
-      p: "Eine einzige Einstellung: 23, 28 oder 33, wobei eine kleinere Zahl besseres Bild und größere Datei bedeutet. 28 ist der Standard und für fast alles die richtige erste Annahme.",
+      h: "Qualität oder Zielgröße auswählen",
+      p: "Für eine kleinere Datei wählen Sie „Video komprimieren (Qualitätsvorgabe)“ und beginnen mit 28. Bei einem Limit wählen Sie „Video auf eine Dateigröße komprimieren“ und geben es in MB ein. MediaChef berechnet die Bitrate aus der Dauer und kann die Auflösung senken.",
     },
     {
-      h: "Starten und vergleichen",
-      p: "Das Ergebnis landet neben dem Original als clip.compressed.mp4. Die Ausgangsdatei wird nicht verändert, Sie können also beide ansehen und das Rezept mit einer anderen Stufe erneut laufen lassen.",
+      h: "Klicken Sie auf „Zur Warteschlange“",
+      p: "Prüfen Sie nach Abschluss die Dateigröße. Die Warteschlange zeigt den Speicherort. Standardmäßig liegt die Ausgabe neben dem Original. Die Qualitätsvorgabe erstellt clip.compressed.mp4. Die Zielgröße erstellt clip.small.mp4.",
     },
   ],
   shotAlt:
@@ -65,7 +65,7 @@ export default {
       rows: [
         ["23", "Aus normalem Abstand kaum vom Original zu unterscheiden", "Das Video zählt für sich: eine Portfolioarbeit, Material für weiteren Schnitt, alles für die große Leinwand."],
         ["28", "Gut. Feine Textur wird weicher, wenn man danach sucht", "Der Standard. Teilen, hochladen, verschicken — die richtige Stufe, solange kein Grund dagegen spricht."],
-        ["33", "Sichtbar weicher; bei schneller Bewegung und in dunklen Szenen zeigen sich Blöcke", "Die Datei muss in eine konkrete Grenze passen. Bewusst wählen, nicht aus Gewohnheit."],
+        ["33", "Sichtbar weicher; bei schneller Bewegung und in dunklen Szenen zeigen sich Blöcke", "Wählen Sie 33, wenn Sie für eine kleinere Datei sichtbare Qualitätsverluste in Kauf nehmen. Für ein Limit in MB verwenden Sie die Zielgröße."],
       ],
       note:
         "Weil die Qualität das Ziel ist, ergibt dieselbe Stufe bei einer statischen Bildschirmaufnahme eine kleine und bei Handkamera mit bewegtem Laub eine große Datei. Zwei Clips auf Stufe 28 können sich um ein Mehrfaches unterscheiden.",
@@ -74,7 +74,7 @@ export default {
       id: "size",
       title: "Was dabei herauskommt",
       lead:
-        "Gemessen an zwei zwanzig Sekunden langen 1080p30-Clips: einer mit sanften Verläufen und durchgehender Bewegung, einer mit feiner Struktur im ganzen Bild — etwa das leichte und das schwere Ende dessen, was einem Encoder begegnet. Die Bitratenspalte ist der Wert, der sich auf Ihr Material übertragen lässt; die Megabyte gehören zu diesen Clips.",
+        "CRF-Messungen an zwei 20 Sekunden langen Clips in 1080p30, einer mit Farbverläufen und einer mit feinen Details. Größen und Bitraten gelten nur für diese Clips.",
       head: ["Stufe", "Sanfter Clip", "Detailreicher Clip", "Erreichte Bitrate"],
       rows: [
         ["Quelle", "47,0 MB", "23,9 MB", "10–20 Mbit/s"],
@@ -119,8 +119,8 @@ export default {
   whyTitle: "Warum auf dem eigenen Rechner komprimieren",
   whyBullets: [
     {
-      h: "Es wird nichts hochgeladen.",
-      p: "Das Video, das man verkleinern will, ist meist genau das noch nicht veröffentlichte. Es bleibt auf Ihrer Festplatte — keine Kopie auf einem Server, dessen Aufbewahrungsregeln Sie glauben müssten.",
+      h: "Kein Upload in die Cloud.",
+      p: "MediaChef komprimiert das Video auf Ihrem Rechner. Das Original und die komprimierte Datei bleiben auf Ihrem Gerät.",
     },
     {
       h: "Keine Größengrenze.",
@@ -146,7 +146,7 @@ export default {
   notFor: [
     {
       h: "Sie brauchen nur einen Ausschnitt.",
-      p: "Zuerst zu schneiden ist kostenlos: das Rezept „Ohne Neukodierung zuschneiden“ kopiert den Datenstrom, statt ihn neu zu berechnen — in Hundertstelsekunden und ohne Verlust. Schneiden, dann komprimieren, falls es noch zu groß ist.",
+      p: "Wenn Sie nur einen Ausschnitt benötigen, verwenden Sie zuerst „Video ohne Neukodierung zuschneiden“. Das Rezept kopiert die Spuren ohne Neukodierung. Komprimieren Sie den Ausschnitt bei Bedarf.",
     },
     {
       h: "Die Datei ist schon stark komprimiert.",
@@ -166,7 +166,7 @@ export default {
   faq: [
     {
       q: "Um wie viel wird meine Datei kleiner?",
-      a: "Das hängt von der Bitrate ab, mit der Sie starten, nicht von der Dateigröße. In unseren Messungen ergab Stufe 28 2,7–4,6 Mbit/s und Stufe 33 rund 1,6 Mbit/s, unabhängig von der Quelle. Teilen Sie Ihre aktuelle Bitrate durch diese Werte: eine Handyaufnahme mit 40 Mbit/s fällt auf Stufe 28 etwa um das Zehnfache, ein Download mit 3 Mbit/s bewegt sich kaum.",
+      a: "Das hängt vom Original und seiner Dauer ab. Mit CRF 28 waren die beiden Clips aus der Tabelle 11,0 und 6,4 MB groß. Bei einem festen Limit verwenden Sie die Zielgröße.",
     },
     {
       q: "Was bedeuten die Zahlen 23, 28 und 33?",
@@ -174,7 +174,7 @@ export default {
     },
     {
       q: "Welche Stufe soll ich wählen?",
-      a: "Beginnen Sie mit 28 — das ist der Standard und richtig für Teilen, Verschicken und Hochladen. Nehmen Sie 23, wenn das Video für sich zählt und Sie es genau ansehen oder neu schneiden. Nehmen Sie 33 nur, wenn die Datei in eine konkrete Grenze passen muss; das Weichwerden zeigt sich bei schneller Bewegung und in dunklen Szenen.",
+      a: "Beginnen Sie mit 28. Versuchen Sie 23 für mehr Details oder 33 für eine kleinere Datei. Bei einem Limit in MB verwenden Sie „Video auf eine Dateigröße komprimieren“ und prüfen das Ergebnis.",
     },
     {
       q: "Warum ist meine Datei nach dem Komprimieren größer?",
@@ -182,15 +182,15 @@ export default {
     },
     {
       q: "Ändert sich die Auflösung?",
-      a: "Nein. 1080p hinein heißt 1080p heraus; das Rezept ändert, wie das Bild gespeichert wird, nicht wie groß es ist. Wollen Sie weniger Pixel, nehmen Sie „Auf 720p verkleinern“, das die Größe an ihrer Quelle angeht und sich mit diesem kombinieren lässt.",
+      a: "Die Qualitätsvorgabe behält die Auflösung bei. Bei einer Zielgröße kann MediaChef die Auflösung an die verfügbare Bitrate anpassen.",
     },
     {
       q: "Was passiert mit dem Ton?",
-      a: "Der Ton wird zu AAC mit 128 kbit/s neu kodiert, was auch vorher war. Für Sprache und für Musik in einem geteilten Clip ist das transparent genug. Brauchen Sie den Originalton unangetastet, holen Sie ihn vorher mit „Audio als MP3 extrahieren“ heraus oder behalten Sie die Quelldatei.",
+      a: "Die Qualitätsvorgabe kodiert den Ton als AAC mit 128 kbit/s. Bei enger Zielgröße kann die Audio-Bitrate niedriger ausfallen. Behalten Sie die Quelle, wenn der Originalton erhalten bleiben soll.",
     },
     {
       q: "Wird die Originaldatei überschrieben?",
-      a: "Nein. Das Ergebnis wird daneben als clip.compressed.mp4 geschrieben, und die Quelle wird nicht verändert, umbenannt oder gelöscht. Sie können das Rezept mit einer anderen Stufe erneut laufen lassen und vergleichen.",
+      a: "Beide Modi schreiben eine neue MP4-Datei neben dem Original: clip.compressed.mp4 bei der Qualitätsvorgabe und clip.small.mp4 bei der Zielgröße. Das Original bleibt erhalten.",
     },
     {
       q: "Wie lange dauert das?",
@@ -202,7 +202,7 @@ export default {
     },
     {
       q: "Wird es durch zweimaliges Komprimieren noch kleiner?",
-      a: "Kleiner ja, aber jeder Durchlauf verliert Qualität endgültig, und der zweite gewinnt viel weniger als der erste. Ist das Ergebnis noch zu schwer, gehen Sie zurück zum Original und nehmen eine höhere Zahl, statt Durchläufe auf der komprimierten Kopie zu stapeln.",
+      a: "Ein zweiter Durchlauf kann die Datei verkleinern oder vergrößern und das Bild weiter verschlechtern. Ist das Ergebnis zu groß, verwenden Sie das Rezept mit Zielgröße für das Original.",
     },
     {
       q: "Welche Formate kann ich komprimieren?",

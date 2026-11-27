@@ -5,20 +5,20 @@ import { FACTS } from "../../facts";
 export default {
   title: "Comprimir vídeo — grátis, sem conexão, sem limite de tamanho",
   description:
-    "Como reduzir o tamanho de um vídeo no seu computador: escolha um dos três níveis de qualidade e aperte começar. Sem enviar nada, sem teto de tamanho, sem marca d'água. Dentro, tamanhos medidos, bitrates resultantes e o caso em que comprimir aumenta o arquivo.",
+    "Comprima um MP4 offline no MediaChef. Escolha um nível de qualidade ou informe o tamanho desejado em MB para respeitar um limite.",
   h1: "Comprimir vídeo no seu próprio computador",
   crumb: "Comprimir vídeo",
 
   answer:
-    "Solte o vídeo no MediaChef, escolha a receita «Comprimir vídeo», selecione um nível de qualidade e aperte começar. O arquivo menor aparece ao lado do original, que fica intacto. Cada passo da escala — 23, 28, 33 — reduz o arquivo em cerca de metade: nas nossas medições 23 deu 5,5–10 Mbit/s, 28 deu 2,7–4,6 e 33 por volta de 1,6. Nada é enviado, não há teto de tamanho, e vinte segundos de 1080p são recodificados em menos de dois segundos.",
+    "Arraste o vídeo para o MediaChef. Para reduzir o arquivo, escolha «Comprimir vídeo (predefinição de qualidade)» e comece pelo CRF 28. Se houver um limite em MB, use «Comprimir vídeo para um tamanho» e informe o tamanho máximo. Inicie a tarefa e confira o MP4 gerado. O original fica no computador.",
 
   facts: [
     { k: "O que você precisa", v: `MediaChef ${FACTS.version} — um download, o FFmpeg já vem dentro` },
     { k: "Funciona sem conexão", v: "Sim, totalmente — a rede não é tocada em momento algum" },
     { k: "Níveis de qualidade", v: "23 (alta) · 28 (padrão) · 33 (arquivo pequeno)" },
-    { k: "Codec", v: `Vídeo H.264, áudio AAC a 128 kbps (FFmpeg ${FACTS.ffmpeg})` },
-    { k: "O que você recebe", v: "clip.compressed.mp4 ao lado do original, que é preservado" },
-    { k: "Velocidade", v: "20 s de 1080p30 em 1,3–2,0 s num notebook com Apple Silicon" },
+    { k: "Codec", v: `CRF: Vídeo H.264, áudio AAC a 128 kbps (FFmpeg ${FACTS.ffmpeg})` },
+    { k: "O que você recebe", v: "clip.compressed.mp4 (CRF) · clip.small.mp4 (MB)" },
+    { k: "Velocidade", v: "CRF: 20 s de 1080p30 em 1,3–2,0 s num notebook com Apple Silicon" },
   ],
 
   toc: [
@@ -43,12 +43,12 @@ export default {
       p: "O MediaChef lê o arquivo com o ffprobe e deixa só as receitas que servem. Qualquer vídeo recebe o cartão de comprimir, seja qual for o formato de origem.",
     },
     {
-      h: "Escolha «Comprimir vídeo» e um nível",
-      p: "Um único ajuste: 23, 28 ou 33, onde um número menor significa imagem melhor e arquivo maior. 28 é o padrão e o primeiro palpite certo para quase tudo.",
+      h: "Escolha a qualidade ou o tamanho desejado",
+      p: "Para reduzir o arquivo, escolha «Comprimir vídeo (predefinição de qualidade)» e comece em 28. Para um limite em MB, escolha «Comprimir vídeo para um tamanho» e informe o máximo. O aplicativo calcula a taxa de bits pela duração e pode reduzir a resolução.",
     },
     {
-      h: "Aperte começar e compare",
-      p: "O resultado fica ao lado do original como clip.compressed.mp4. O arquivo de origem não é modificado, então você pode ver os dois e repetir a receita em outro nível se errou.",
+      h: "Clique em «Adicionar à fila»",
+      p: "Confira o tamanho do arquivo no fim. A fila mostra onde o arquivo foi salvo. Por padrão, ele fica ao lado do original. O modo de qualidade gera clip.compressed.mp4. O modo por tamanho gera clip.small.mp4.",
     },
   ],
   shotAlt:
@@ -65,7 +65,7 @@ export default {
       rows: [
         ["23", "Difícil de distinguir do original a uma distância normal", "O vídeo importa por si: uma peça de portfólio, material que você vai reeditar, algo que vai para uma tela grande."],
         ["28", "Boa. A textura fina amolece se você for procurar", "O padrão. Compartilhar, subir, enviar — o nível certo enquanto não houver motivo para outro."],
-        ["33", "Visivelmente mais mole; aparecem blocos no movimento rápido e em cenas escuras", "O arquivo tem de caber em algo específico. Escolha de propósito, não por inércia."],
+        ["33", "Visivelmente mais mole; aparecem blocos no movimento rápido e em cenas escuras", "Use 33 se aceitar mais perda visual em troca de um arquivo menor. Para um limite em MB, use a receita por tamanho."],
       ],
       note:
         "Como o que se define é a qualidade, o mesmo nível dá um arquivo pequeno numa gravação de tela estática e grande em material filmado na mão com folhas se movendo. Dois clipes no nível 28 podem diferir várias vezes.",
@@ -74,7 +74,7 @@ export default {
       id: "size",
       title: "O que você recebe de fato",
       lead:
-        "Medido em dois clipes de 1080p30 com vinte segundos: um com gradientes suaves e movimento contínuo, outro com detalhe fino em todo o quadro — mais ou menos a ponta fácil e a difícil do que um codificador encontra. A coluna do bitrate é a que se transfere para o seu material; os megabytes são destes clipes.",
+        "Medições com CRF em dois vídeos de 20 segundos em 1080p30, um com gradientes e outro com detalhes finos. Os tamanhos e taxas de bits correspondem apenas a esses vídeos.",
       head: ["Nível", "Clipe suave", "Clipe detalhado", "Bitrate resultante"],
       rows: [
         ["Origem", "47,0 MB", "23,9 MB", "10–20 Mbit/s"],
@@ -119,8 +119,8 @@ export default {
   whyTitle: "Por que comprimir no seu próprio computador",
   whyBullets: [
     {
-      h: "Nada é enviado.",
-      p: "O vídeo que você quer reduzir costuma ser justamente o que ainda não publicou. Ele fica no seu disco: sem cópia num servidor cuja política de retenção você teria de acreditar.",
+      h: "Sem enviar arquivos para a nuvem.",
+      p: "O MediaChef comprime o vídeo no seu computador. O arquivo original e a versão comprimida ficam no seu dispositivo.",
     },
     {
       h: "Sem limite de tamanho.",
@@ -146,7 +146,7 @@ export default {
   notFor: [
     {
       h: "Você só precisa de um pedaço do clipe.",
-      p: "Cortar primeiro é de graça: a receita «Cortar sem recodificar» copia o fluxo em vez de recalculá-lo, em centésimos de segundo e sem perda. Corte e depois comprima, se ainda estiver grande.",
+      p: "Se você só precisa de um trecho, use «Cortar vídeo sem recodificar» primeiro. Ela copia as faixas sem recodificar. Comprima o trecho se ele ainda for grande demais.",
     },
     {
       h: "O arquivo já está muito comprimido.",
@@ -166,7 +166,7 @@ export default {
   faq: [
     {
       q: "Quanto meu arquivo vai diminuir?",
-      a: "Depende do bitrate de onde você parte, não do tamanho do arquivo. Nas nossas medições o nível 28 produziu 2,7–4,6 Mbit/s e o 33 cerca de 1,6 Mbit/s, seja qual fosse a origem. Divida seu bitrate atual por esses números para estimar: uma gravação de celular a 40 Mbit/s cai umas dez vezes no nível 28, enquanto um download a 3 Mbit/s quase não se move.",
+      a: "Depende do vídeo de origem e de sua duração. Com CRF 28, os dois vídeos da tabela ficaram com 11,0 e 6,4 MB. Para um limite específico, use o modo por tamanho.",
     },
     {
       q: "O que significam os números 23, 28 e 33?",
@@ -174,7 +174,7 @@ export default {
     },
     {
       q: "Qual nível devo escolher?",
-      a: "Comece no 28 — é o padrão e está certo para compartilhar, enviar e subir. Use 23 quando o vídeo importar por si e você for olhar de perto ou reeditar. Use 33 só quando o arquivo tiver de caber num limite específico; o amolecimento aparece no movimento rápido e em cenas escuras.",
+      a: "Comece em 28. Experimente 23 para preservar mais detalhes ou 33 para um arquivo menor. Para um limite em MB, use «Comprimir vídeo para um tamanho» e confira o resultado.",
     },
     {
       q: "Por que comprimir aumentou meu arquivo?",
@@ -182,15 +182,15 @@ export default {
     },
     {
       q: "Muda a resolução?",
-      a: "Não. 1080p na entrada é 1080p na saída; a receita muda como a imagem é guardada, não o tamanho dela. Se você quer menos pixels, use «Reduzir para 720p», que ataca o tamanho na origem e combina com esta.",
+      a: "O modo de qualidade preserva a resolução. O modo por tamanho pode reduzi-la para caber na taxa de bits disponível.",
     },
     {
       q: "O que acontece com o som?",
-      a: "O áudio é recodificado para AAC a 128 kbps, fosse o que fosse antes. É transparente o bastante para fala e para música num clipe que você compartilha. Se precisa do áudio original intacto, extraia antes com «Tirar o áudio para MP3» ou guarde o arquivo de origem.",
+      a: "O modo de qualidade recodifica o áudio para AAC a 128 kbps. O modo por tamanho pode usar uma taxa de áudio menor. Guarde o original se precisar do áudio intacto.",
     },
     {
       q: "O arquivo original é sobrescrito?",
-      a: "Não. O resultado é escrito ao lado como clip.compressed.mp4, e a origem não é modificada, renomeada nem apagada. Você pode rodar a receita de novo em outro nível e comparar.",
+      a: "Os dois modos gravam um novo MP4 ao lado do original: clip.compressed.mp4 no modo de qualidade e clip.small.mp4 no modo por tamanho. O original é preservado.",
     },
     {
       q: "Quanto tempo leva?",
@@ -202,7 +202,7 @@ export default {
     },
     {
       q: "Comprimir duas vezes deixa ainda menor?",
-      a: "Menor, sim, mas cada passada perde qualidade de forma permanente e a segunda ganha muito menos que a primeira. Se o resultado ainda pesa, volte ao original e use um número maior em vez de empilhar passadas sobre a cópia comprimida.",
+      a: "Uma segunda passada pode diminuir ou aumentar o arquivo e piorar a imagem. Se o primeiro resultado exceder o limite, use a receita por tamanho no original.",
     },
     {
       q: "Quais formatos posso comprimir?",

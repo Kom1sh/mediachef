@@ -54,3 +54,11 @@ export const FACTS = {
   whisper: "v1.7.6",
   license: "GPL-3.0",
 };
+
+// Дата правки этих гайдов во всех локалях. Остальные страницы используют дату версии сайта.
+const PAGE_UPDATED: Partial<Record<string, string>> = {
+  compress: "2026-11-27",
+  trim: "2026-11-27",
+};
+
+export const lastModifiedFor = (page: string) => PAGE_UPDATED[page] ?? FACTS.updated;

@@ -3,21 +3,21 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Découper une vidéo sans réencoder — gratuit, hors ligne, instantané",
+  title: "Découper une vidéo sans réencoder, gratuitement et hors ligne",
   description:
-    "Comment extraire un passage d'une vidéo sur votre ordinateur sans toucher à la qualité : le flux est copié, pas recalculé, l'opération se termine donc en centièmes de seconde quelle que soit la durée. À l'intérieur : temps mesurés et la limite des images-clés expliquée honnêtement.",
+    "Découpez un MP4 sans réencoder avec MediaChef. Indiquez le début et la fin et comprenez pourquoi la coupe peut commencer à une image clé précédente.",
   h1: "Découper une vidéo sans perte de qualité",
   crumb: "Découper une vidéo",
 
   answer:
-    "Déposez la vidéo dans MediaChef, choisissez « Découper sans réencoder », saisissez le début et la fin au format HH:MM:SS, puis lancez. Le passage apparaît à côté de l'original. Rien n'est recalculé : le flux est copié tel quel, l'image est donc bit pour bit celle d'avant et le travail se termine en centièmes de seconde — 0,03 seconde dans nos mesures, que le passage fasse cinq secondes ou quinze. Le seul bémol est que les coupes ne peuvent tomber que sur une image-clé, ce qui est expliqué plus bas.",
+    "Déposez un MP4 dans MediaChef, choisissez « Découper la vidéo sans réencodage » et saisissez le début et la fin au format HH:MM:SS. Pour un passage de 1:00 à 1:10, utilisez 00:01:00 et 00:01:10. MediaChef enregistre un nouveau MP4 à côté de l’original et copie la vidéo et l’audio sans les réencoder. Entre deux images clés, le passage peut commencer plus tôt que prévu.",
 
   facts: [
     { k: "Ce qu'il faut", v: `MediaChef ${FACTS.version} — un téléchargement, FFmpeg est déjà dedans` },
     { k: "Fonctionne hors ligne", v: "Oui, entièrement — le réseau n'est jamais sollicité" },
     { k: "Coût en qualité", v: "Aucun. Rien n'est réencodé ; le flux est copié" },
     { k: "Format d'heure", v: "HH:MM:SS. Laissez la fin vide pour couper jusqu'au bout" },
-    { k: "Vitesse", v: "Environ 0,03 s, et cela n'augmente pas avec la longueur" },
+    { k: "Vitesse", v: "0,03 à 0,04 s pour les courts exemples en 1080p ci-dessous" },
     { k: "Ce que vous obtenez", v: "clip.trim.mp4 à côté de l'original, qui est conservé" },
   ],
 
@@ -43,12 +43,12 @@ export default {
       p: "MediaChef lit le fichier avec ffprobe et ne garde que les recettes qui conviennent. N'importe quelle vidéo reçoit la fiche de découpe, quel que soit le format d'origine.",
     },
     {
-      h: "Choisissez « Découper sans réencoder » et saisissez les heures",
-      p: "Début et fin au format HH:MM:SS — 00:01:30 fait une minute trente. Si vous laissez la fin vide, le passage va du point de départ jusqu'à la fin du fichier.",
+      h: "Choisissez « Découper la vidéo sans réencodage » et saisissez les temps",
+      p: "Le champ de fin se trouve dans « Avancé ». Pour un passage de 1:00 à 1:10, saisissez 00:01:00 et 00:01:10. Laissez la fin vide pour conserver tout le passage à partir du début indiqué.",
     },
     {
-      h: "Lancez et récupérez le passage",
-      p: "Le résultat arrive à côté de l'original sous le nom clip.trim.mp4, et l'original reste intact. C'est assez rapide pour que ce soit fini avant que vous ayez détourné le regard.",
+      h: "Cliquez sur « Ajouter à la file »",
+      p: "Une fois le traitement terminé, ouvrez clip.trim.mp4. La file indique l’emplacement du fichier. Par défaut, il est enregistré à côté de l’original. Si le point de départ est important, vérifiez les premières secondes.",
     },
   ],
   shotAlt:
@@ -60,7 +60,7 @@ export default {
       id: "speed",
       title: "À quel point c'est rapide en réalité",
       lead:
-        "Comme rien n'est recalculé, le travail consiste à copier les octets utiles. Le temps ne dépend pas de la longueur du passage — mesuré sur une source 1080p de vingt secondes.",
+        "Temps mesurés sur une seule vidéo de 20 secondes en 1080p. La recette copie les données sélectionnées. La taille du passage et la vitesse du disque influent sur la durée du traitement.",
       head: ["Passage extrait", "Résultat", "Temps"],
       rows: [
         ["00:00:02 → 00:00:07", "5,2 s", "0,03 s"],
@@ -120,12 +120,8 @@ export default {
   whyTitle: "Pourquoi découper sur son propre ordinateur",
   whyBullets: [
     {
-      h: "Rien n'est envoyé.",
-      p: "Découper est en général la première chose qu'on fait à des rushes, c'est-à-dire précisément aux images qu'on n'a montrées à personne. Elles restent sur votre disque.",
-    },
-    {
-      h: "Aucune attente.",
-      p: "Un outil web doit recevoir le fichier entier avant d'en extraire dix secondes. Ici le travail est fini en centièmes de seconde, sur un fichier de n'importe quelle taille.",
+      h: "Aucun envoi dans le cloud.",
+      p: "MediaChef découpe la vidéo sur votre ordinateur. L’original et l’extrait restent sur votre appareil.",
     },
     {
       h: "Aucun coût en qualité.",
@@ -179,7 +175,7 @@ export default {
     },
     {
       q: "Combien de temps cela prend-il ?",
-      a: "Environ 0,03 seconde dans nos mesures, et cela n'augmente pas avec la longueur du passage : cinq secondes et quinze secondes ont pris le même temps. Réencoder la même source a pris de 1,3 à 2,0 secondes, soit environ cinquante fois plus.",
+      a: "Les découpes courtes du tableau ont pris de 0,03 à 0,04 s sur cette vidéo de 20 secondes en 1080p. Chez vous, le temps dépend de la quantité de données copiées et de la vitesse du disque.",
     },
     {
       q: "Comment écrire le début et la fin ?",
@@ -187,7 +183,7 @@ export default {
     },
     {
       q: "Que se passe-t-il si je laisse la fin vide ?",
-      a: "Le passage va de votre point de départ jusqu'à la fin du fichier. C'est le moyen le plus rapide de couper une longue queue — un enregistrement qui a continué après la fin de la réunion, par exemple.",
+      a: "Une fin vide conserve tout à partir du début indiqué. Pour retirer la fin de l’enregistrement, saisissez le moment auquel le passage doit s’arrêter.",
     },
     {
       q: "Puis-je retirer un morceau au milieu et garder le reste ?",
@@ -203,11 +199,11 @@ export default {
     },
     {
       q: "Y a-t-il une limite de durée ou de taille ?",
-      a: "Non. MediaChef n'en fixe aucune, et comme le travail est une copie et non un calcul, un fichier de deux heures ne se découpe pas plus lentement qu'un de deux minutes. La limite est l'espace disque libre, que l'application vérifie avant de démarrer.",
+      a: "MediaChef ne fixe pas de taille maximale en entrée pour cette recette. Prévoyez assez de place sur le disque pour le nouveau passage.",
     },
     {
       q: "Quels formats puis-je découper ?",
-      a: "Tout ce que FFmpeg sait lire : MP4, MKV, MOV, WebM, AVI, TS et les autres. Le résultat est écrit en MP4 avec les flux vidéo et audio d'origine à l'intérieur.",
+      a: "Un cas courant est le MP4 avec vidéo H.264 et audio AAC. D’autres conteneurs fonctionnent si les pistes peuvent être copiées dans un MP4. En cas de codec incompatible, convertissez d’abord la source en MP4.",
     },
     {
       q: "Puis-je découper plusieurs vidéos d'un coup ?",

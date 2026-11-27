@@ -3,21 +3,21 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Video schneiden ohne Qualitätsverlust — kostenlos, offline, sofort",
+  title: "Video ohne Neukodierung schneiden – kostenlos und offline",
   description:
-    "Wie Sie einen Ausschnitt aus einem Video auf dem eigenen Rechner herausschneiden, ohne die Qualität anzufassen: der Datenstrom wird kopiert, nicht neu berechnet, deshalb ist die Arbeit in Hundertstelsekunden fertig. Drin: gemessene Zeiten und die Keyframe-Grenze ehrlich erklärt.",
+    "Schneiden Sie ein MP4 in MediaChef ohne Neukodierung. Geben Sie Start und Ende ein und sehen Sie, warum der Schnitt früher anfangen kann.",
   h1: "Video schneiden ohne Qualitätsverlust",
   crumb: "Video schneiden",
 
   answer:
-    "Ziehen Sie das Video in MediaChef, wählen Sie „Schneiden ohne Neukodierung“, tragen Sie Anfang und Ende als HH:MM:SS ein und starten Sie. Der Ausschnitt liegt danach neben dem Original. Nichts wird neu berechnet: der Datenstrom wird unverändert kopiert, das Bild ist also bitgenau dasselbe wie vorher, und die Arbeit ist in Hundertstelsekunden fertig — 0,03 Sekunden in unseren Messungen, egal ob der Ausschnitt fünf oder fünfzehn Sekunden lang ist. Der einzige Haken: Schnitte können nur auf einem Keyframe liegen, dazu unten mehr.",
+    "Ziehen Sie ein MP4 in MediaChef, wählen Sie „Video ohne Neukodierung zuschneiden“ und geben Sie Start und Ende als HH:MM:SS ein. Für 1:00 bis 1:10 geben Sie 00:01:00 und 00:01:10 ein. MediaChef speichert das neue MP4 neben dem Original und kopiert Bild und Ton ohne Neukodierung. Zwischen zwei Keyframes kann der Ausschnitt früher beginnen als angegeben.",
 
   facts: [
     { k: "Was Sie brauchen", v: `MediaChef ${FACTS.version} — ein Download, FFmpeg ist schon drin` },
     { k: "Läuft offline", v: "Ja, vollständig — das Netz wird nie angefasst" },
     { k: "Qualitätskosten", v: "Keine. Es wird nichts neu kodiert, der Strom wird kopiert" },
     { k: "Zeitformat", v: "HH:MM:SS. Ende leer lassen heißt: bis zum Dateiende" },
-    { k: "Tempo", v: "Rund 0,03 s, und das wächst nicht mit der Länge" },
+    { k: "Tempo", v: "0,03–0,04 s für die kurzen 1080p-Beispiele unten" },
     { k: "Was herauskommt", v: "clip.trim.mp4 neben dem Original, das erhalten bleibt" },
   ],
 
@@ -43,12 +43,12 @@ export default {
       p: "MediaChef liest die Datei mit ffprobe und zeigt nur die Rezepte, die dazu passen. Jedes Video bekommt die Schnitt-Karte, unabhängig vom Ausgangsformat.",
     },
     {
-      h: "„Schneiden ohne Neukodierung“ wählen und Zeiten eintragen",
-      p: "Anfang und Ende als HH:MM:SS — 00:01:30 sind eineinhalb Minuten. Lassen Sie das Ende leer, läuft der Ausschnitt vom Startpunkt bis zum Dateiende.",
+      h: "„Video ohne Neukodierung zuschneiden“ auswählen und Zeiten eingeben",
+      p: "Das Feld für das Ende steht unter „Erweitert“. Für 1:00 bis 1:10 tragen Sie 00:01:00 und 00:01:10 ein. Lassen Sie das Ende leer, wenn ab dem gewählten Start alles erhalten bleiben soll.",
     },
     {
-      h: "Starten und den Ausschnitt abholen",
-      p: "Das Ergebnis erscheint neben dem Original als clip.trim.mp4, das Original bleibt unangetastet. Es ist schnell genug, dass es fertig ist, bevor Sie wegschauen konnten.",
+      h: "Klicken Sie auf „Zur Warteschlange“",
+      p: "Öffnen Sie nach Abschluss des Auftrags clip.trim.mp4. Die Warteschlange zeigt den Speicherort. Standardmäßig liegt die Ausgabe neben dem Original. Prüfen Sie bei einem wichtigen Startpunkt die ersten Sekunden.",
     },
   ],
   shotAlt:
@@ -60,7 +60,7 @@ export default {
       id: "speed",
       title: "Wie schnell das wirklich ist",
       lead:
-        "Weil nichts neu berechnet wird, besteht die Arbeit darin, die benötigten Bytes zu kopieren. Die Zeit hängt nicht von der Länge des Ausschnitts ab — gemessen an einer zwanzig Sekunden langen 1080p-Quelle.",
+        "Die Zeiten stammen aus einem 20 Sekunden langen 1080p-Video. Das Rezept kopiert die ausgewählten Daten. Daher beeinflussen die Größe des Ausschnitts und die Laufwerksgeschwindigkeit die Dauer.",
       head: ["Herausgeschnitten", "Ergebnis", "Zeit"],
       rows: [
         ["00:00:02 → 00:00:07", "5,2 s", "0,03 s"],
@@ -120,12 +120,8 @@ export default {
   whyTitle: "Warum man auf dem eigenen Rechner schneidet",
   whyBullets: [
     {
-      h: "Nichts wird hochgeladen.",
-      p: "Schneiden ist meist das Erste, was man mit Rohmaterial macht — also genau mit dem Material, das noch niemand gesehen hat. Es bleibt auf Ihrer Platte.",
-    },
-    {
-      h: "Kein Warten.",
-      p: "Ein Webdienst muss die ganze Datei entgegennehmen, bevor er zehn Sekunden daraus holt. Hier ist die Arbeit in Hundertstelsekunden fertig, bei jeder Dateigröße.",
+      h: "Kein Upload in die Cloud.",
+      p: "MediaChef schneidet das Video auf Ihrem Rechner. Das Original und der fertige Ausschnitt bleiben auf Ihrem Gerät.",
     },
     {
       h: "Keine Qualitätskosten.",
@@ -179,7 +175,7 @@ export default {
     },
     {
       q: "Wie lange dauert das?",
-      a: "Rund 0,03 Sekunden in unseren Messungen, und das wächst nicht mit der Länge des Ausschnitts: fünf Sekunden und fünfzehn Sekunden dauerten gleich lang. Dieselbe Quelle neu zu kodieren dauerte 1,3 bis 2,0 Sekunden, also etwa das Fünfzigfache.",
+      a: "Die kurzen Schnitte in der Tabelle dauerten bei unserem 20 Sekunden langen 1080p-Video 0,03–0,04 s. Wie lange es bei Ihnen dauert, hängt von der Datenmenge und dem Laufwerk ab.",
     },
     {
       q: "Wie schreibe ich Anfang und Ende?",
@@ -187,7 +183,7 @@ export default {
     },
     {
       q: "Was passiert, wenn ich das Ende leer lasse?",
-      a: "Der Ausschnitt läuft von Ihrem Startpunkt bis zum Dateiende. Das ist der schnellste Weg, einen langen Nachlauf abzuschneiden — etwa eine Aufnahme, die nach dem Ende der Besprechung weiterlief.",
+      a: "Bei leerem Ende bleibt alles ab dem eingetragenen Start erhalten. Um das Ende einer Aufnahme wegzuschneiden, geben Sie den gewünschten Endzeitpunkt ein.",
     },
     {
       q: "Kann ich ein Stück aus der Mitte entfernen und den Rest behalten?",
@@ -203,11 +199,11 @@ export default {
     },
     {
       q: "Gibt es eine Längen- oder Größenbeschränkung?",
-      a: "Nein. MediaChef setzt keine, und weil die Arbeit ein Kopiervorgang und keine Berechnung ist, schneidet sich eine zweistündige Datei nicht langsamer als eine zweiminütige. Die Grenze ist der freie Speicherplatz, den das Programm vor dem Start prüft.",
+      a: "MediaChef setzt bei diesem Rezept kein Größenlimit für die Eingabedatei. Für den neuen Ausschnitt muss genug Speicherplatz frei sein.",
     },
     {
       q: "Welche Formate kann ich schneiden?",
-      a: "Alles, was FFmpeg lesen kann: MP4, MKV, MOV, WebM, AVI, TS und weitere. Das Ergebnis wird als MP4 mit den ursprünglichen Video- und Tonströmen darin geschrieben.",
+      a: "Ein gängiger Fall ist MP4 mit H.264-Video und AAC-Audio. Andere Container funktionieren, wenn sich die ausgewählten Spuren in MP4 kopieren lassen. Scheitert der Export an einem Codec, konvertieren Sie die Quelldatei zuerst in MP4.",
     },
     {
       q: "Kann ich mehrere Videos auf einmal schneiden?",

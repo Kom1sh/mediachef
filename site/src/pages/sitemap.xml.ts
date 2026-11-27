@@ -2,7 +2,8 @@
 // страницы. Раньше файл лежал руками в public/ и его нужно было помнить: новая
 // посадочная появлялась на сайте, но не в карте. Теперь забыть нечего.
 import type { APIRoute } from "astro";
-import { SITE, ROUTES, FACTS, LOCALES, NOINDEX, pathFor, type Locale, type PageId } from "../content";
+import { SITE, ROUTES, LOCALES, NOINDEX, pathFor, type Locale, type PageId } from "../content";
+import { lastModifiedFor } from "../facts";
 
 // Страницы вне индекса отсеиваются здесь, а не забываются: список один —
 // NOINDEX в content.ts, — и добавить туда страницу значит убрать её из карты.
@@ -22,7 +23,7 @@ function urlNode(page: PageId, locale: Locale): string {
   return [
     "  <url>",
     `    <loc>${loc}</loc>`,
-    `    <lastmod>${FACTS.updated}</lastmod>`,
+    `    <lastmod>${lastModifiedFor(page)}</lastmod>`,
     alts,
     `    <xhtml:link rel="alternate" hreflang="x-default" href="${xDefault}"/>`,
     "  </url>",

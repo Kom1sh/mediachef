@@ -463,7 +463,7 @@ footer { background: var(--card-2); border-top: 1px solid var(--line); color: va
   display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
 }
 .foot-col a:hover { color: var(--basil); }
-.foot-note { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.68rem; opacity: .7; }
+.foot-note { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.68rem; }
 .foot-bottom {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px;
   border-top: 1px solid var(--line); padding-top: 20px; padding-bottom: 44px;
@@ -473,7 +473,6 @@ footer { background: var(--card-2); border-top: 1px solid var(--line); color: va
    адресу, а показывает баннер согласия. */
 .foot-consent { background: none; border: 0; padding: 0; font: inherit; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .foot-consent:hover { color: var(--ink); }
-.foot-tag { opacity: .75; }
 /* Подпись автора стоит в одной строке с © и слоганом и выглядит как обычная
    ссылка подвала: ничего не прячется и ничего не выделяется. */
 .foot-author a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }

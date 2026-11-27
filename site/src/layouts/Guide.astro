@@ -14,6 +14,7 @@ import Ctas from "../components/Ctas.astro";
 import Contact from "../components/Contact.astro";
 import Shot from "../components/Shot.astro";
 import { T, SITE, pathFor, type Locale, type PageId } from "../content";
+import { lastModifiedFor } from "../facts";
 import { GUIDES, type GuideId } from "../guides";
 import { SHOTS } from "../shots";
 import {
@@ -48,6 +49,7 @@ const jsonLd = [
     headline: g.h1,
     description: g.description,
     body: guideBody(g),
+    dateModified: lastModifiedFor(page),
     imageUrl: SITE + SHOTS[locale].light,
   }),
   howToLd({ name: g.stepsTitle, description: g.description, url: pageUrl, steps: g.steps }),
@@ -56,7 +58,7 @@ const jsonLd = [
 ---
 
 <Base locale={locale} page={page} title={g.title} description={g.description} jsonLd={jsonLd} ogType="article">
-  <main id="main">
+  <main id="main" class="guide">
     <div class="band band-hero">
       <div class="wrap guide-hero">
         <p class="crumbs"><a href={homePath}>MediaChef</a> <span aria-hidden="true">/</span> {g.crumb}</p>
@@ -193,6 +195,39 @@ const jsonLd = [
 </Base>
 
 <style>
+  .guide {
+    --ink-2: #414C5B;
+    --guide-accent-text: var(--basil-deep);
+    --guide-warning-text: #784B0A;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .guide {
+      --ink-2: #B6C2D1;
+      --guide-accent-text: var(--basil);
+      --guide-warning-text: var(--t-ochre);
+    }
+  }
+
+  .guide :global(.ctas-note a),
+  .guide :global(.contact a),
+  .guide :global(.also a),
+  .guide :global(.toc-list a:hover),
+  .guide :global(.faq summary::after),
+  .guide :global(.step .n) {
+    color: var(--guide-accent-text);
+  }
+
+  .guide :global(.ctas-note a),
+  .guide :global(.contact a) {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  .guide :global(.btn-sub) {
+    opacity: 1;
+  }
+
   /* Вертикальные отступы нужны здесь свои: `padding: 76px 0` в global.css
      задан селектором `section.band`, а hero — это div, а не section. Остальные
      макеты обходятся классом `.hero`, но он ещё и grid в две колонки, а гайду
@@ -200,7 +235,7 @@ const jsonLd = [
      вплотную. Значения те же, что у `.hero`, чтобы блоки стояли на одной сетке. */
   .guide-hero {
     max-width: 52rem;
-    padding: 52px 0 40px;
+    padding-block: 52px 40px;
   }
 
   /* Ответ крупнее основного текста, но не как заголовок: он читается первым
@@ -214,7 +249,7 @@ const jsonLd = [
 
   .facts {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
     gap: 1px;
     margin: 26px 0 0;
     padding: 0;
@@ -248,6 +283,6 @@ const jsonLd = [
      инструкции, и красить их как шаги значило бы предлагать по ним идти. */
   .n-warn {
     background: var(--t-ochre-bg) !important;
-    color: var(--t-ochre) !important;
+    color: var(--guide-warning-text) !important;
   }
 </style>

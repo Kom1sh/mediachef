@@ -3,21 +3,21 @@
 import { FACTS } from "../../facts";
 
 export default {
-  title: "Cortar vídeo sem recodificar — grátis, sem conexão, instantâneo",
+  title: "Cortar vídeo sem recodificar, grátis e offline",
   description:
-    "Como tirar um trecho de um vídeo no seu computador sem mexer na qualidade: o fluxo é copiado, não recalculado, então termina em centésimos de segundo seja qual for a duração. Dentro, tempos medidos e o limite dos quadros-chave explicado com honestidade.",
+    "Corte um MP4 sem recodificar no MediaChef. Defina início e fim e veja por que o corte pode começar em um quadro-chave anterior.",
   h1: "Cortar vídeo sem perder qualidade",
   crumb: "Cortar vídeo",
 
   answer:
-    "Solte o vídeo no MediaChef, escolha «Cortar sem recodificar», escreva o início e o fim como HH:MM:SS e aperte começar. O trecho aparece ao lado do original. Nada é recalculado — o fluxo é copiado como está, então a imagem é bit a bit a mesma e o trabalho termina em centésimos de segundo: nas nossas medições 0,03 segundo, tanto para um trecho de cinco segundos quanto de quinze. A única ressalva é que os cortes só podem cair num quadro-chave, e isso está explicado abaixo.",
+    "Arraste um MP4 para o MediaChef, escolha «Cortar vídeo sem recodificar» e preencha início e fim em HH:MM:SS. Para um trecho de 1:00 a 1:10, use 00:01:00 e 00:01:10. O MediaChef grava um MP4 ao lado do original e copia vídeo e áudio sem recodificar. Entre quadros-chave, o trecho pode começar antes do ponto pedido.",
 
   facts: [
     { k: "O que você precisa", v: `MediaChef ${FACTS.version} — um download, o FFmpeg já vem dentro` },
     { k: "Funciona sem conexão", v: "Sim, totalmente — a rede não é tocada em momento algum" },
     { k: "Custo em qualidade", v: "Nenhum. Nada é recodificado; o fluxo é copiado" },
     { k: "Formato de tempo", v: "HH:MM:SS. Deixe o fim vazio para cortar até o final" },
-    { k: "Velocidade", v: "Cerca de 0,03 s, e não cresce com a duração do trecho" },
+    { k: "Velocidade", v: "0,03–0,04 s nos exemplos curtos em 1080p abaixo" },
     { k: "O que você recebe", v: "clip.trim.mp4 ao lado do original, que é preservado" },
   ],
 
@@ -43,12 +43,12 @@ export default {
       p: "O MediaChef lê o arquivo com o ffprobe e deixa só as receitas que servem. Qualquer vídeo recebe o cartão de corte, seja qual for o formato de origem.",
     },
     {
-      h: "Escolha «Cortar sem recodificar» e escreva os tempos",
-      p: "Início e fim como HH:MM:SS — 00:01:30 é um minuto e meio. Se deixar o fim vazio, o trecho vai do ponto de início até o final do arquivo.",
+      h: "Escolha «Cortar vídeo sem recodificar» e preencha os tempos",
+      p: "O campo de fim está em «Avançado». Para um trecho de 1:00 a 1:10, indique 00:01:00 e 00:01:10. Deixe o fim vazio para manter tudo a partir do início indicado.",
     },
     {
-      h: "Aperte começar e pegue o trecho",
-      p: "O resultado fica ao lado do original como clip.trim.mp4, e o original não é tocado. É rápido o bastante para terminar antes de você desviar o olhar.",
+      h: "Clique em «Adicionar à fila»",
+      p: "Quando terminar, abra clip.trim.mp4. A fila mostra onde o arquivo foi salvo. Por padrão, ele fica ao lado do original. Confira os primeiros segundos se o ponto inicial for importante.",
     },
   ],
   shotAlt:
@@ -60,7 +60,7 @@ export default {
       id: "speed",
       title: "O quanto é rápido de verdade",
       lead:
-        "Como nada é recalculado, o trabalho é copiar os bytes necessários. O tempo não depende da duração do trecho — medido sobre uma origem 1080p de vinte segundos.",
+        "Medimos os tempos em um vídeo de 20 segundos em 1080p. A receita copia os dados selecionados. O tamanho do trecho e a velocidade do disco afetam o tempo.",
       head: ["Trecho cortado", "Resultado", "Tempo"],
       rows: [
         ["00:00:02 → 00:00:07", "5,2 s", "0,03 s"],
@@ -120,12 +120,8 @@ export default {
   whyTitle: "Por que cortar no seu próprio computador",
   whyBullets: [
     {
-      h: "Nada é enviado.",
-      p: "Cortar costuma ser a primeira coisa feita com o material bruto, que é exatamente o material que você não mostrou a ninguém. Ele fica no seu disco.",
-    },
-    {
-      h: "Não há espera nenhuma.",
-      p: "Uma ferramenta web precisa receber o arquivo inteiro antes de tirar dez segundos dele. Aqui o trabalho acaba em centésimos de segundo, com um arquivo de qualquer tamanho.",
+      h: "Sem enviar arquivos para a nuvem.",
+      p: "O MediaChef corta o vídeo no seu computador. O arquivo original e o trecho ficam no seu dispositivo.",
     },
     {
       h: "Não custa qualidade.",
@@ -179,7 +175,7 @@ export default {
     },
     {
       q: "Quanto tempo leva?",
-      a: "Cerca de 0,03 segundo nas nossas medições, e não cresce com a duração do trecho: cinco segundos e quinze levaram o mesmo. Recodificar a mesma origem levou de 1,3 a 2,0 segundos, cerca de cinquenta vezes mais.",
+      a: "Os cortes curtos da tabela levaram 0,03–0,04 s naquele vídeo de 20 segundos em 1080p. No seu computador, o tempo depende da quantidade de dados copiada e da velocidade do disco.",
     },
     {
       q: "Como escrevo o início e o fim?",
@@ -187,7 +183,7 @@ export default {
     },
     {
       q: "E se eu deixar o fim vazio?",
-      a: "O trecho vai do seu ponto de início até o final do arquivo. É o jeito mais rápido de cortar uma cauda longa — uma gravação que continuou depois de a reunião acabar, por exemplo.",
+      a: "Com o fim vazio, você mantém tudo a partir do início indicado. Para remover o final da gravação, informe onde o trecho deve terminar.",
     },
     {
       q: "Posso remover um pedaço do meio e ficar com o resto?",
@@ -203,11 +199,11 @@ export default {
     },
     {
       q: "Existe limite de duração ou de tamanho?",
-      a: "Não. O MediaChef não impõe nenhum, e como o trabalho é copiar e não calcular, um arquivo de duas horas não é mais lento de cortar que um de dois minutos. O limite é o espaço livre em disco, que o aplicativo confere antes de começar.",
+      a: "O MediaChef não limita o tamanho de entrada para esta receita. Reserve espaço em disco para o novo trecho.",
     },
     {
       q: "Quais formatos posso cortar?",
-      a: "Tudo que o FFmpeg lê: MP4, MKV, MOV, WebM, AVI, TS e o resto. O resultado é escrito como MP4 com os fluxos de vídeo e áudio originais dentro.",
+      a: "MP4 com vídeo H.264 e áudio AAC é um caso comum. Outros contêineres funcionam se as faixas puderem ser copiadas para MP4. Se um codec impedir a exportação, converta primeiro a origem para MP4.",
     },
     {
       q: "Posso cortar vários vídeos de uma vez?",
